@@ -1,0 +1,155 @@
+/* Tokens. Primitives come from LinkedXL OS. The light theme (desk and phone)
+   is the default; [data-theme="meeting"] is the dark TV theme. Contrast ratios
+   are noted where text uses a pair. */
+
+:root {
+  /* LinkedXL OS primitives */
+  --lx-navy-950: #011425;
+  --lx-navy-900: #02274c;
+  --lx-navy-800: #003366;
+  --lx-steel-600: #406689;
+  --lx-mint-400: #79cdb5;
+  --lx-mint-700: #17705a;   /* text-safe mint on light: 5.8:1 on --n-0 */
+  --lx-red-700: #b3202e;    /* off track on light: 6.6:1 on white */
+  --lx-red-300: #ff6159;    /* off track on dark: 6.3:1 on navy-950 */
+
+  /* Neutrals tinted toward the navy hue */
+  --n-0: #fbfcfd;
+  --n-50: #f3f6f9;
+  --n-100: #e6ecf2;
+  --n-200: #cbd6e1;
+  --ink-mid-700: #2a4a6c;   /* measure names: 9.0:1 on n-0, 8.2:1 on the off wash */
+  --d-raise: #0a2238;
+  --d-rule: #1c3653;
+  --d-rule-strong: #2a4766;
+  --d-text: #e8eef4;        /* 15.9:1 on navy-950 */
+  --d-text-2: #9db4cc;      /* 8.7:1 on navy-950 */
+  --bar-text-2: #b9cadb;    /* 9.0:1 on navy-900 */
+
+  /* Type */
+  --font-display: "Big Shoulders Display", "Arial Narrow", sans-serif;
+  --font-ui: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --fs-caption: 0.8125rem;
+  --fs-small: 0.875rem;
+  --fs-body: 1rem;
+  --fs-lead: 1.25rem;
+  --fs-sub: 1.5625rem;
+
+  /* Space (4px base) */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+  --s-8: 4rem;
+
+  --gutter: 2.5rem;
+  --radius: 6px;
+  --tap: 44px;
+  --topbar-h: 76px;
+  --mobilebar-h: 0px;
+
+  /* Motion (emil-design-eng): strong ease-out, drawer curve, short */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 140ms;
+  --dur-sheet-in: 260ms;
+  --dur-sheet-out: 180ms;
+
+  /* ---------- Light theme (default) ---------- */
+  color-scheme: light;
+  --surface: var(--n-0);
+  --surface-quiet: var(--n-50);
+  --ink: var(--lx-navy-900);        /* 15:1 */
+  --ink-2: var(--lx-steel-600);     /* 5.9:1 on n-0, 5.6:1 on n-50 */
+  --ink-mid: var(--ink-mid-700);
+  --rule: var(--n-200);
+  --rule-quiet: var(--n-100);
+  --rule-strong: var(--lx-navy-900);
+  --on: var(--lx-mint-700);
+  --off: var(--lx-red-700);         /* 5.8:1 on the off wash */
+  --off-wash: #fbeced;
+  --saved-wash: #dff3ed;
+  --neutral: var(--lx-steel-600);
+  --progress: #9a5b00;              /* problem "In progress": 5.4:1 on white */
+  --focus: var(--lx-navy-900);
+  --error: var(--lx-red-700);
+
+  --bar-bg: var(--lx-navy-900);
+  --bar-ink: var(--n-0);            /* 14.6:1 */
+  --bar-ink-2: var(--bar-text-2);
+  --bar-focus: var(--lx-mint-400);
+  --bar-line: #6f8fb0;        /* 4.0:1 on navy-900: control edges on the bar */
+
+  --btn-primary-bg: var(--lx-navy-900);
+  --btn-primary-ink: var(--n-0);
+  --btn-mint-bg: var(--lx-mint-400);
+  --btn-mint-ink: var(--lx-navy-950); /* 9.9:1 */
+  --btn-line: var(--lx-navy-900);
+
+  --logo-ink: var(--n-0);
+  --logo-navy: var(--n-0);
+  --logo-mint: var(--lx-mint-400);
+
+  --chart-bar: var(--lx-navy-900);
+  --chart-off: var(--lx-red-700);
+  --chart-goal: var(--lx-steel-600);
+  --chart-grid: var(--n-100);
+  --chart-label: var(--lx-steel-600);
+  --chart-ring: var(--n-0);
+
+  --tip-bg: var(--lx-navy-950);
+  --tip-ink: var(--n-0);
+  --tip-ink-2: var(--d-text-2);
+  --tip-on: var(--lx-mint-400);     /* 9.9:1 on the dark tooltip */
+  --tip-off: var(--lx-red-300);     /* 6.3:1 on the dark tooltip */
+
+  --backdrop: rgb(1 20 37 / 0.42);   /* dimming layer behind the sheet */
+}
+
+@media (max-width: 759px) {
+  :root { --gutter: 1rem; --topbar-h: 60px; }
+}
+@media (max-width: 599px) {
+  :root { --mobilebar-h: calc(68px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ---------- Meeting theme (TV, dark) ---------- */
+[data-theme="meeting"] {
+  color-scheme: dark;
+  --surface: var(--lx-navy-950);
+  --surface-quiet: var(--d-raise);
+  --ink: var(--d-text);
+  --ink-2: var(--d-text-2);
+  --ink-mid: var(--d-text-2);
+  --rule: var(--d-rule);
+  --rule-quiet: var(--d-rule);
+  --rule-strong: var(--d-rule-strong);
+  --on: var(--lx-mint-400);         /* 9.9:1 */
+  --off: var(--lx-red-300);         /* 6.3:1 */
+  --neutral: var(--d-text-2);
+  --progress: #f2b14c;              /* 9.6:1 on navy-950 */
+  --focus: var(--lx-mint-400);
+
+  --btn-primary-bg: var(--lx-mint-400);
+  --btn-primary-ink: var(--lx-navy-950);
+  --btn-line: var(--d-text-2);
+
+  --chart-bar: var(--d-text);
+  --chart-off: var(--lx-red-300);
+  --chart-goal: var(--d-text-2);
+  --chart-grid: var(--d-rule);
+  --chart-label: var(--d-text-2);
+  --chart-ring: var(--lx-navy-950);
+
+  --tip-bg: var(--d-text);
+  --tip-ink: var(--lx-navy-950);
+  --tip-ink-2: var(--lx-steel-600);
+  --tip-on: var(--lx-mint-700);     /* 5.1:1 on the light tooltip */
+  --tip-off: var(--lx-red-700);     /* 5.7:1 on the light tooltip */
+
+  background: var(--surface);
+  color: var(--ink);
+}

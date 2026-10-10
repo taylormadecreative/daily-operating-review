@@ -1,0 +1,438 @@
+/* Board screen ("Plant Ledger"): navy top bar, summary on the light ground,
+   then a ruled ledger with one row per function in meeting order. */
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+  position: relative;
+  z-index: 5;
+  background: var(--bar-bg);
+  color: var(--bar-ink);
+}
+.topbar :focus-visible { outline-color: var(--bar-focus); }
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4) var(--s-5);
+  min-height: var(--topbar-h);
+  padding: var(--s-2) var(--gutter);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.brand-badge { display: block; height: 64px; width: auto; flex: none; }
+.brand-badge .lx-ink { fill: var(--logo-ink); }
+.brand-badge .lx-navy { fill: var(--logo-navy); }
+.brand-badge .lx-mint { fill: var(--logo-mint); }
+.brand-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.brand-plant {
+  display: block;
+  color: var(--bar-ink-2);
+  font-size: var(--fs-small);
+  font-weight: 500;
+}
+
+.datebar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-left: auto;
+}
+.datebar .icon-btn { border-color: var(--bar-line); }
+.date-label {
+  min-width: 10.5em;
+  text-align: center;
+  font-size: 1.125rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.topbar .actions { display: flex; gap: var(--s-3); }
+/* Back to the dashboard on the same day and area. */
+.topbar-home {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-3);
+  border: 1px solid var(--bar-line);
+  border-radius: var(--radius);
+  color: inherit;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.topbar-home .icon { width: 18px; height: 18px; }
+@media (hover: hover) and (pointer: fine) {
+  .topbar-home:hover { background: rgb(255 255 255 / 0.08); }
+}
+
+/* ---------- Summary (light ground) ---------- */
+
+.board-page { padding: 0 var(--gutter) var(--s-6); }
+
+.summary {
+  padding: var(--s-4) 0 var(--s-4);
+}
+.summary-lead {
+  max-width: 34em;
+  font-family: var(--font-display);
+  font-size: 2.125rem;
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: 0.004em;
+  text-wrap: balance;
+}
+.summary-lead a,
+.summary-month a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: var(--ink-2);
+  text-decoration-thickness: 0.045em;
+  text-underline-offset: 0.14em;
+}
+.summary-month a {
+  text-decoration-thickness: 1px;
+  /* Inline padding grows the tap area to 44px without moving the line */
+  padding: 13.5px 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .summary a:hover { text-decoration-color: currentColor; }
+}
+.summary-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--s-4);
+  margin-top: var(--s-1);
+}
+.summary-month { color: var(--ink-2); }
+.howto-btn { min-height: var(--tap); gap: 6px; color: var(--ink); font-size: var(--fs-small); }
+.howto-btn .icon { width: 16px; height: 16px; }
+.your-row { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s-3); font-size: var(--fs-small); }
+.your-row[hidden] { display: none; }
+.your-row-link { display: inline-flex; align-items: center; min-height: var(--tap); font-weight: 650; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+.your-row .status { font-size: var(--fs-small); }
+.date-note { margin-top: var(--s-2); color: var(--ink); font-size: var(--fs-small); }
+.date-note[hidden] { display: none; }
+
+/* ---------- Ledger ---------- */
+
+.board {
+  --cols-desktop:
+    minmax(270px, 1.25fr)
+    minmax(190px, 0.9fr)
+    minmax(190px, 0.9fr)
+    minmax(180px, 0.85fr)
+    minmax(260px, 1.5fr);
+  outline: none;
+}
+
+.board-head { display: none; }
+
+.row {
+  --cols: 1fr;
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--cols);
+  grid-template-areas: "fn" "day" "month" "trend" "notes";
+  border-bottom: 2px solid var(--rule-strong);
+  scroll-margin-top: var(--s-4);
+}
+.row:has(.fn-link:focus-visible) {
+  z-index: 2;
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .row:hover .cell--fn { background: var(--surface-quiet); }
+}
+
+.cell { min-width: 0; padding: var(--s-3) var(--s-4); }
+.cell--fn { grid-area: fn; padding-left: 0; }
+.cell--day { grid-area: day; }
+.cell--month { grid-area: month; }
+.cell--trend { grid-area: trend; }
+.cell--notes { grid-area: notes; }
+.cell[data-status="off"] { background: var(--off-wash); }
+
+.cell-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-1) var(--s-3);
+  margin-bottom: var(--s-2);
+  color: var(--ink-2);
+  font-size: var(--fs-caption);
+  font-weight: 650;
+}
+.cell--notes .cell-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Function: painted-signage name */
+.fn-name {
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 0.86;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.fn-link { color: inherit; text-decoration: none; }
+.fn-link::after { content: ""; position: absolute; inset: 0; }
+.fn-link:focus-visible { outline: none; }
+.fn-owner {
+  margin-top: var(--s-2);
+  font-size: var(--fs-small);
+  font-weight: 650;
+  line-height: 1.25;
+}
+.fn-question {
+  margin-top: 2px;
+  max-width: 40ch;
+  color: var(--ink-2);
+  font-size: var(--fs-small);
+  line-height: 1.3;
+}
+
+/* Day / month figures */
+.cell--day .status,
+.cell--month .status { font-size: var(--fs-body); font-weight: 700; }
+.figure {
+  margin-top: var(--s-2);
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+.figure-actual { font-size: 1.25rem; font-weight: 700; }
+.figure-rest { white-space: nowrap; }
+.figure--empty { color: var(--ink-2); }
+.measure {
+  margin-top: 2px;
+  color: var(--ink-mid);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  line-height: 1.3;
+}
+.measure-note { display: block; color: var(--ink-2); }
+
+/* Trend */
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  font-weight: 500;
+  font-size: var(--fs-caption);
+}
+.key { display: inline-block; width: 16px; height: 0; }
+.key--actual { border-top: 2px solid var(--chart-bar); }
+.key--goal { margin-left: 8px; border-top: 2px dashed var(--chart-goal); }
+
+.spark { position: relative; z-index: 1; height: 48px; }
+.spark svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.spark-actual { fill: none; stroke: var(--chart-bar); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.spark-goal { fill: none; stroke: var(--chart-goal); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.spark-end { position: absolute; width: 14px; height: 14px; transform: translate(-50%, -50%); pointer-events: none; border-radius: 50%; background: var(--chart-ring); }
+.spark-end svg { display: block; width: 100%; height: 100%; }
+.spark-end--on { color: var(--on); }
+.spark-end--off { color: var(--off); }
+.spark-end--not-entered, .spark-end--no-goal { color: var(--neutral); }
+.spark-cross { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--ink-2); opacity: 0; pointer-events: none; }
+.spark-tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  z-index: 5;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: var(--tip-bg);
+  color: var(--tip-ink);
+  font-size: var(--fs-small);
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-12px);
+}
+.spark-tip[data-side="left"] { transform: translateX(calc(-100% + 12px)); }
+.spark-tip strong { display: block; font-weight: 700; font-variant-numeric: tabular-nums; }
+.spark-tip span { color: var(--tip-ink-2); font-size: var(--fs-caption); }
+.spark.is-hover .spark-cross { opacity: 0.7; }
+.spark.is-hover .spark-tip { opacity: 1; }
+.spark.is-hover .spark-end { opacity: 0.35; }
+.spark-caption { margin-top: var(--s-1); color: var(--ink-2); font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
+
+/* Problem → Next 24 hours */
+.notes { display: grid; gap: var(--s-1); }
+.note-label { margin-right: 0.5em; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; white-space: nowrap; }
+.note-text {
+  max-width: 62ch;
+  font-size: 0.9375rem;
+  line-height: 1.33;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.note-text.is-empty { color: var(--ink-2); }
+.entered-by { margin-top: var(--s-1); color: var(--ink-2); font-size: var(--fs-caption); }
+.undo-link {
+  position: relative;
+  z-index: 2;
+  margin-left: var(--s-2);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: var(--fs-caption);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.undo-link::before { content: ""; position: absolute; inset: -14px -8px; }
+
+/* Saved highlight is driven from JS (Web Animations) so it can respect
+   reduced motion and stay color-only. */
+
+.board-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-5);
+  margin-top: var(--s-4);
+  color: var(--ink-2);
+  font-size: var(--fs-caption);
+}
+.board-foot .btn--quiet { font-size: var(--fs-caption); color: var(--ink-2); }
+
+/* ---------- Phone sticky action bar ---------- */
+
+.mobile-bar { display: none; }
+
+/* ---------- Responsive structure ---------- */
+
+@media (max-width: 1179px) {
+  .board { border-top: 2px solid var(--rule-strong); }
+  .row {
+    --cols: repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      "fn fn fn"
+      "day month trend"
+      "notes notes notes";
+  }
+  .cell--fn { padding: var(--s-4) 0 var(--s-2); }
+  .cell--day, .cell--month, .cell--trend { border-top: 1px solid var(--rule); }
+  .cell--month, .cell--trend { border-left: 1px solid var(--rule); }
+  .cell--day { padding-left: var(--s-3); }
+  .cell--notes { border-top: 1px solid var(--rule); padding: var(--s-3) 0 var(--s-4); }
+}
+
+/* Tablet: two rows on the navy bar (brand + Home, then the day and the actions). */
+@media (min-width: 760px) and (max-width: 1179px) {
+  .topbar-inner { flex-wrap: wrap; row-gap: var(--s-2); }
+  .brand { flex: 1 1 calc(100% - 140px); }
+  .topbar-home { order: 1; }
+  .datebar { order: 2; margin-left: 0; }
+  .topbar .actions { order: 3; margin-left: auto; }
+}
+
+@media (max-width: 759px) {
+  .topbar-inner { flex-wrap: wrap; padding: 0; gap: 0; }
+  .brand { width: 100%; padding: var(--s-2) var(--gutter); padding-right: calc(var(--gutter) + 92px); }
+  .topbar-home { position: absolute; top: var(--s-2); right: var(--gutter); margin-top: 2px; }
+  .brand-badge { height: 48px; }
+  .brand-title { font-size: 1.0625rem; }
+  .datebar {
+    width: 100%;
+    margin: 0;
+    padding: var(--s-2) var(--gutter);
+    background: var(--surface);
+    color: var(--ink);
+    border-bottom: 1px solid var(--rule);
+  }
+  .datebar .icon-btn { border-color: var(--ink-2); }
+  .topbar .datebar :focus-visible { outline-color: var(--focus); }
+  .date-label { flex: 1; min-width: 0; }
+  .topbar .actions { width: 100%; padding: var(--s-2) var(--gutter) var(--s-3); background: var(--surface); }
+  .topbar .actions .btn { flex: 1; }
+  .topbar .actions .btn--outline-light { color: var(--ink); border-color: var(--btn-line); }
+  .topbar .actions .btn--outline-light:hover { background: var(--surface-quiet); }
+  .topbar .actions :focus-visible { outline-color: var(--focus); }
+  .summary-lead { font-size: 1.875rem; line-height: 1.14; }
+  /* 44px tap area on the summary's links; the type does not move. */
+  .summary-lead a { padding-block: 0.22em; }
+  .row {
+    --cols: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "fn fn"
+      "day month"
+      "trend trend"
+      "notes notes";
+  }
+  .cell { padding: var(--s-3); }
+  .cell--fn { padding: var(--s-4) 0 var(--s-2); }
+  .cell--trend { border-left: 0; padding-left: 0; padding-right: 0; }
+  .cell--notes { padding: var(--s-3) 0 var(--s-4); }
+  .fn-name { font-size: 2.5rem; }
+  .spark { height: 56px; }
+  .note-text { -webkit-line-clamp: 3; line-clamp: 3; }
+}
+
+@media (max-width: 599px) {
+  .topbar .actions { display: none; }
+  /* Room for the board's fixed bottom bar; the dashboard's bar is sticky and needs none. */
+  [data-view="dor"] body { padding-bottom: var(--mobilebar-h); }
+  .mobile-bar {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 20;
+    display: flex;
+    padding: var(--s-3) var(--gutter) calc(var(--s-3) + env(safe-area-inset-bottom, 0px));
+    background: var(--bar-bg);
+  }
+  .mobile-bar .btn { flex: 1; min-height: 48px; }
+  .mobile-bar :focus-visible { outline-color: var(--bar-focus); }
+}
+
+@media (min-width: 1180px) {
+  .board-head {
+    display: grid;
+    grid-template-columns: var(--cols-desktop);
+    align-items: stretch;
+    background: var(--surface-quiet);
+    border-top: 2px solid var(--rule-strong);
+    border-bottom: 2px solid var(--rule-strong);
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+  }
+  .head {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: var(--s-2) var(--s-4);
+  }
+  .head + .head { border-left: 1px solid var(--rule); }
+  .head--fn { padding-left: 0; }
+  .head .legend { font-size: var(--fs-caption); }
+  .row {
+    --cols: var(--cols-desktop);
+    grid-template-areas: "fn day month trend notes";
+  }
+  .cell + .cell { border-left: 1px solid var(--rule); }
+  .row .cell-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

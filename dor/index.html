@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <base href="../">
+  <script>(function(){var q=new URLSearchParams(location.search);if(!q.has('view')){q.set('view','dor');history.replaceState(null,'','./?'+q.toString()+location.hash);}})();</script>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>DOR Board</title>
+  <meta name="description" content="The plant's DOR board, made digital: every department on one row, status calculated from the numbers, numbers entered from any phone. Prototype by Taylormade Creative for LinkedXL OS.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LinkedXL OS">
+  <meta property="og:title" content="DOR Board · The Classic View">
+  <meta property="og:description" content="The plant's DOR board, made digital: every department on one row, status calculated from the numbers, numbers entered from any phone. Prototype by Taylormade Creative for LinkedXL OS.">
+  <meta property="og:url" content="https://taylormadecreative.github.io/daily-operating-review/dor/">
+  <meta property="og:image" content="https://taylormadecreative.github.io/daily-operating-review/og-image-dor.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="DOR board preview">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://taylormadecreative.github.io/daily-operating-review/og-image-dor.jpg">
+  <link rel="icon" href="data:,">
+  <script>
+    // Home (dashboard) by default; ?view=dor shows the ledger board. Set before first paint.
+    document.documentElement.dataset.view = new URLSearchParams(location.search).get('view') === 'dor' ? 'dor' : 'home';
+  </script>
+  <link rel="preload" href="assets/fonts/BigShouldersDisplay-var.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/Archivo-var.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/board.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/detail.css">
+  <link rel="stylesheet" href="css/enter.css">
+  <link rel="stylesheet" href="css/meeting.css">
+  <link rel="stylesheet" href="css/home.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="g-on" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="7.5" fill="currentColor"/>
+    </symbol>
+    <symbol id="g-off" viewBox="0 0 20 20">
+      <path fill="currentColor" fill-rule="evenodd" d="M10 2.5a7.5 7.5 0 1 1 0 15a7.5 7.5 0 1 1 0-15Z M9 5.6h2v6H9Z M10 13a1.25 1.25 0 1 1 0 2.5a1.25 1.25 0 1 1 0-2.5Z"/>
+    </symbol>
+    <symbol id="g-missing" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="6.6" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+    <symbol id="g-nogoal" viewBox="0 0 20 20">
+      <path d="M10 3.2 16.8 10 10 16.8 3.2 10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="g-idle" viewBox="0 0 20 20">
+      <rect x="4.8" y="4" width="3.6" height="12" rx="1.1" fill="currentColor"/>
+      <rect x="11.6" y="4" width="3.6" height="12" rx="1.1" fill="currentColor"/>
+    </symbol>
+    <symbol id="g-prev" viewBox="0 0 20 20">
+      <path d="M12.4 4.2L6.6 10l5.8 5.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="g-next" viewBox="0 0 20 20">
+      <path d="M7.6 4.2l5.8 5.8-5.8 5.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="g-close" viewBox="0 0 20 20">
+      <path d="M5 5l10 10M15 5L5 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="g-external" viewBox="0 0 20 20">
+      <path d="M8 4.5H4.5v11h11V12M11 4.5h4.5V9M15.2 4.8L9 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="g-info" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="7.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M10 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="10" cy="6.3" r="1.2" fill="currentColor"/>
+    </symbol>
+    <symbol id="lx-badge" viewBox="0 0 153.85 127.21"> <g> <path style="fill:var(--logo-mint)" d="M67.31,86.68s-2.75-10.9,4.46-16.97,11.76-10.05,11.76-10.05c0,0,9.48-7.87,19.72.47,9.37,7.63,6.08,19.46.3,24.55-3.17,2.79-11.39,10.14-11.39,10.14,0,0-6.54,5.88-16.78,1.33l7.96-6.92s1.71.57,4.17-1.42,11.28-9.76,11.28-9.76c0,0,5.08-5.24-.19-10.52-4.82-4.83-9.86-1.23-9.86-1.23l-11.05,9.39s-2.31,1.8-2.5,4.65l-7.87,6.35Z"/> <path style="fill:var(--logo-navy)" d="M90.66,67.51s2.75,10.9-4.46,16.97c-7.21,6.07-11.76,10.05-11.76,10.05,0,0-9.48,7.87-19.72-.47-9.37-7.63-6.08-19.46-.3-24.55,3.17-2.79,11.39-10.14,11.39-10.14,0,0,6.54-5.88,16.78-1.33l-7.96,6.92s-1.71-.57-4.17,1.42-11.28,9.76-11.28,9.76c0,0-5.08,5.24.19,10.52,4.82,4.83,9.86,1.23,9.86,1.23l11.05-9.39s2.31-1.8,2.5-4.65l7.87-6.35Z"/> <path style="fill:var(--logo-navy)" d="M76.92,127.21c-1.77,0-3.55-.6-4.99-1.81L2.8,67.77c-1.78-1.49-2.8-3.67-2.8-5.99V7.8C0,3.5,3.5,0,7.8,0h138.25c4.3,0,7.8,3.5,7.8,7.8v53.98c0,2.32-1.02,4.5-2.8,5.99l-69.13,57.63c-1.45,1.21-3.22,1.81-4.99,1.81ZM7.8,2.85c-2.73,0-4.95,2.22-4.95,4.95v53.98c0,1.47.65,2.86,1.78,3.8l69.13,57.63c1.83,1.53,4.5,1.53,6.33,0l69.13-57.63.91,1.1-.91-1.1c1.13-.94,1.78-2.33,1.78-3.8V7.8c0-2.73-2.22-4.95-4.95-4.95H7.8Z"/> <g> <path style="fill:var(--logo-navy)" d="M9,30.19V14.14h3.71v12.79h7.78v3.26h-11.48Z"/> <path style="fill:var(--logo-navy)" d="M22.32,30.19V14.14h3.71v16.05h-3.71Z"/> <path style="fill:var(--logo-navy)" d="M32.81,21.01v9.18h-3.71V14.14h2.89l7.48,9.43v-9.43h3.71v16.05h-2.98l-7.39-9.18Z"/> <path style="fill:var(--logo-navy)" d="M46.25,30.19V14.14h3.71v7.23l6.19-7.23h3.84l-6.01,7.17,6.42,8.88h-3.91l-4.7-6.8-1.83,1.99v4.81h-3.71Z"/> <path style="fill:var(--logo-navy)" d="M72.84,26.93v3.26h-11.28V14.14h11.08v3.26h-7.37v3.12h6.33v3.01h-6.33v3.41h7.57Z"/> <path style="fill:var(--logo-navy)" d="M75.14,30.19V14.14h5.99c1.33,0,2.49.21,3.48.63.99.42,1.83.99,2.5,1.72.67.72,1.18,1.57,1.51,2.54.34.97.51,2.01.51,3.11,0,1.22-.19,2.32-.57,3.31-.38.99-.92,1.83-1.62,2.53-.7.7-1.54,1.24-2.53,1.63-.99.38-2.08.58-3.29.58h-5.99ZM85.36,22.14c0-.71-.09-1.35-.28-1.93-.19-.58-.46-1.08-.83-1.5-.36-.42-.81-.75-1.33-.97-.53-.23-1.12-.34-1.79-.34h-2.28v9.54h2.28c.68,0,1.28-.12,1.81-.36.53-.24.97-.58,1.32-1.01.35-.43.62-.93.81-1.51.19-.58.28-1.22.28-1.91Z"/> </g> <path style="fill:var(--logo-mint)" d="M97.78,17.64l2.74-.1,3.33-3.84c-1.03.03-3.32.09-6.43.13-4.29.06-6.46,4.69-6.46,4.69l4.6.03c.89-.95,2.22-.91,2.22-.91Z"/> <path style="fill:var(--logo-mint)" d="M95.06,19.64l-4.6-.03c-.89.95-2.22.91-2.22.91l-3.99.07-3.16,3.85c.29.03.47.03.47.03,0,0,2.75-.09,7.04-.14,4.29-.06,6.46-4.69,6.46-4.69Z"/> <path style="fill:var(--logo-navy)" d="M92.29,15.15c-.95-.89-.91-2.22-.91-2.22l-.05-2.89-3.89-3.19c.03,1.03.09,3.32.13,6.43.03,2.29,1.26,3.89,2.49,4.96.65-1.86,2.23-3.1,2.23-3.1Z"/> <path style="fill:var(--logo-navy)" d="M93.5,23.29c.95.89.91,2.22.91,2.22l.05,2.89,3.89,3.19c-.03-1.03-.09-3.32-.13-6.43-.03-2.29-1.07-3.91-2.31-4.98-.65,1.86-2.41,3.12-2.41,3.12Z"/> <path style="fill:var(--logo-navy)" d="M111.77,28.07h-7.92v-14.37l-3.69,3.84v11.45h.03c.13,1.45,1.34,2.6,2.83,2.6h11.95l-3.2-3.52Z"/> <g> <path style="fill:var(--logo-mint)" d="M117.91,30.47c-1.33-.79-2.37-1.86-3.13-3.21-.76-1.34-1.14-2.8-1.14-4.37s.38-3.03,1.15-4.37c.77-1.34,1.81-2.41,3.12-3.19,1.31-.79,2.76-1.18,4.35-1.18s3,.39,4.32,1.18,2.37,1.85,3.13,3.19,1.14,2.8,1.14,4.37-.38,3.03-1.14,4.37c-.76,1.34-1.81,2.41-3.13,3.21s-2.77,1.19-4.32,1.19-3.02-.4-4.35-1.19ZM124.73,27.34c.73-.46,1.29-1.08,1.68-1.85s.59-1.63.59-2.57-.2-1.81-.59-2.59c-.39-.78-.95-1.4-1.68-1.85-.73-.46-1.56-.69-2.49-.69s-1.76.23-2.47.69c-.71.46-1.27,1.08-1.67,1.85-.4.78-.6,1.64-.6,2.59s.2,1.79.6,2.57c.4.78.96,1.4,1.67,1.85.71.46,1.54.69,2.47.69s1.76-.23,2.49-.69Z"/> <path style="fill:var(--logo-mint)" d="M135.84,31c-.93-.44-1.65-1.06-2.16-1.85-.52-.79-.77-1.71-.77-2.74h3.86c0,.36.11.69.32.99.21.3.51.54.88.7s.78.25,1.2.25.81-.07,1.14-.21c.34-.14.6-.34.79-.6.19-.26.28-.57.28-.93s-.14-.71-.4-1.01c-.27-.29-.76-.54-1.46-.74l-2.01-.64c-1.67-.46-2.83-1.13-3.48-2.03s-.97-1.84-.97-2.84.26-1.9.79-2.69c.52-.79,1.24-1.41,2.14-1.85.9-.44,1.91-.66,3.02-.66s2.08.21,2.95.63,1.55,1.02,2.05,1.82c.5.8.75,1.72.75,2.79h-3.83c0-.52-.17-.97-.5-1.33-.34-.36-.82-.54-1.46-.54-.39,0-.74.08-1.04.23-.3.16-.54.36-.71.63-.17.26-.26.55-.26.86,0,.28.11.56.34.85.23.29.68.54,1.35.75l1.77.54c1.47.48,2.65,1.09,3.54,1.84.88.75,1.33,1.82,1.33,3.19,0,1.16-.29,2.14-.88,2.92-.59.79-1.36,1.37-2.3,1.76-.94.38-1.96.58-3.06.58-1.2,0-2.26-.22-3.18-.66Z"/> </g> <g> <path style="fill:var(--logo-ink)" d="M10.65,45.19c-.5-.3-.9-.71-1.2-1.22-.3-.51-.45-1.07-.45-1.68s.15-1.17.45-1.68c.3-.52.7-.93,1.2-1.24s1.05-.46,1.66-.46c.51,0,.98.1,1.41.3s.79.48,1.09.85l-.69.57c-.22-.26-.49-.46-.8-.61-.31-.15-.64-.23-1-.23-.43,0-.82.11-1.19.34-.36.23-.65.53-.86.92-.21.39-.32.8-.32,1.24s.11.85.32,1.23c.21.38.5.68.85.91.36.22.76.34,1.2.34.35,0,.68-.08,1-.23.31-.15.58-.36.8-.61l.69.57c-.3.36-.66.65-1.09.85-.43.2-.9.3-1.41.3-.6,0-1.16-.15-1.66-.45Z"/> <path style="fill:var(--logo-ink)" d="M17.06,45.19c-.51-.3-.91-.71-1.19-1.22s-.43-1.07-.43-1.68.14-1.17.43-1.69c.29-.52.69-.93,1.19-1.23.51-.31,1.06-.46,1.67-.46s1.16.15,1.66.46.9.72,1.19,1.23c.29.52.44,1.08.44,1.69s-.15,1.16-.44,1.68c-.29.51-.69.92-1.19,1.22-.5.3-1.06.45-1.66.45s-1.16-.15-1.67-.45ZM19.91,44.43c.36-.22.64-.53.85-.91s.31-.79.31-1.23-.1-.85-.31-1.24c-.21-.39-.49-.69-.85-.92-.36-.23-.75-.34-1.19-.34s-.83.11-1.19.34c-.36.23-.64.53-.85.92-.21.39-.31.8-.31,1.24s.1.85.31,1.23.49.68.85.91c.36.22.75.34,1.19.34s.83-.11,1.19-.34Z"/> <path style="fill:var(--logo-ink)" d="M23.34,39.03h.93l3.06,5.11h-.21v-5.11h.94v6.5h-.9l-3.1-5.14h.22v5.14h-.95v-6.5Z"/> <path style="fill:var(--logo-ink)" d="M29.83,39.03h.93l3.06,5.11h-.21v-5.11h.94v6.5h-.9l-3.1-5.14h.22v5.14h-.95v-6.5Z"/> <path style="fill:var(--logo-ink)" d="M36.31,39.03h3.88v.87h-3.32l.39-.39v5.54l-.39-.39h3.43v.87h-3.98v-6.5ZM36.9,41.9h2.92v.87h-2.92v-.87Z"/> <path style="fill:var(--logo-ink)" d="M42.7,45.19c-.5-.3-.9-.71-1.2-1.22-.3-.51-.45-1.07-.45-1.68s.15-1.17.45-1.68c.3-.52.7-.93,1.2-1.24s1.05-.46,1.66-.46c.51,0,.98.1,1.41.3s.79.48,1.09.85l-.69.57c-.22-.26-.49-.46-.8-.61-.31-.15-.64-.23-1-.23-.43,0-.82.11-1.19.34-.36.23-.65.53-.86.92-.21.39-.32.8-.32,1.24s.11.85.32,1.23c.21.38.5.68.85.91.36.22.76.34,1.2.34.35,0,.68-.08,1-.23.31-.15.58-.36.8-.61l.69.57c-.3.36-.66.65-1.09.85-.43.2-.9.3-1.41.3-.6,0-1.16-.15-1.66-.45Z"/> <path style="fill:var(--logo-ink)" d="M47.32,39.03h4.84v.87h-4.84v-.87ZM49.27,39.73h.95v5.8h-.95v-5.8Z"/> <path style="fill:var(--logo-ink)" d="M53.23,39.03h3.88v.87h-3.32l.39-.39v5.54l-.39-.39h3.43v.87h-3.98v-6.5ZM53.83,41.9h2.92v.87h-2.92v-.87Z"/> <path style="fill:var(--logo-ink)" d="M58.58,39.03h2.54c.6,0,1.13.14,1.57.42.44.28.78.67,1.01,1.17s.35,1.05.35,1.68-.12,1.17-.35,1.66-.58.88-1.01,1.16c-.44.28-.96.42-1.57.42h-2.54v-6.5ZM59.14,44.66h1.97c.41,0,.77-.1,1.08-.31.3-.2.53-.49.68-.84.15-.36.23-.76.23-1.22s-.08-.86-.23-1.22c-.15-.36-.38-.65-.68-.86-.3-.21-.66-.32-1.08-.32h-1.97l.39-.39v5.54l-.39-.39Z"/> <path style="fill:var(--logo-ink)" d="M67.77,39.03h2.47c.36,0,.68.07.95.2.27.14.48.33.62.58s.22.55.22.88c0,.36-.09.68-.28.95-.19.27-.49.44-.91.5l.04-.11c.3,0,.57.07.8.23s.4.37.52.62.18.52.18.81c0,.31-.08.61-.23.89-.15.28-.38.51-.67.68-.29.17-.64.26-1.03.26h-2.68v-6.5ZM68.34,44.66h1.93c.25,0,.46-.05.63-.14.17-.09.3-.22.39-.39s.14-.34.14-.53-.04-.36-.12-.53-.2-.3-.37-.4c-.17-.1-.38-.15-.63-.15h-1.87v-.82h1.8c.27,0,.48-.08.62-.25s.22-.39.22-.66-.08-.5-.23-.66-.36-.25-.63-.25h-1.89l.39-.39v5.54l-.39-.39Z"/> <path style="fill:var(--logo-ink)" d="M74.85,45.36c-.36-.19-.66-.46-.87-.82-.22-.36-.33-.77-.33-1.24v-4.28h.95v4.27c0,.32.06.59.19.81.13.22.3.38.52.48.22.1.46.16.73.16s.51-.05.73-.16c.22-.1.39-.26.52-.48s.19-.49.19-.81v-4.27h.95v4.28c0,.47-.11.89-.33,1.24-.22.36-.51.63-.87.82-.36.19-.76.28-1.2.28s-.83-.09-1.2-.28Z"/> <path style="fill:var(--logo-ink)" d="M80.83,45.37c-.35-.18-.62-.42-.82-.73s-.29-.63-.29-.97h.93c.01.18.08.36.19.53.12.17.28.31.48.42.2.11.44.16.7.16s.48-.05.67-.15c.19-.1.33-.23.43-.39.1-.16.15-.33.15-.51,0-.27-.1-.48-.3-.64-.2-.16-.46-.28-.77-.37l-.82-.21c-.62-.16-1.04-.39-1.26-.7-.23-.31-.34-.64-.34-1s.1-.69.29-.98c.19-.29.46-.51.79-.67s.69-.25,1.07-.25.74.08,1.06.24c.31.16.57.38.75.67s.28.63.27,1.01h-.93c0-.31-.11-.56-.33-.75s-.5-.29-.85-.29c-.2,0-.39.04-.58.13-.18.08-.33.21-.43.37-.11.16-.16.34-.16.52,0,.16.06.32.18.48.12.15.36.28.72.38l.83.23c.57.15,1.01.37,1.32.67s.46.67.46,1.12c0,.36-.09.69-.27.99-.18.3-.44.54-.77.71s-.71.26-1.15.26-.85-.09-1.2-.27Z"/> <path style="fill:var(--logo-ink)" d="M85.52,39.03h.95v6.5h-.95v-6.5Z"/> <path style="fill:var(--logo-ink)" d="M88.23,39.03h.93l3.06,5.11h-.21v-5.11h.94v6.5h-.9l-3.1-5.14h.22v5.14h-.95v-6.5Z"/> <path style="fill:var(--logo-ink)" d="M94.71,39.03h3.88v.87h-3.32l.39-.39v5.54l-.39-.39h3.43v.87h-3.98v-6.5ZM95.31,41.9h2.92v.87h-2.92v-.87Z"/> <path style="fill:var(--logo-ink)" d="M100.76,45.37c-.35-.18-.62-.42-.82-.73s-.29-.63-.29-.97h.93c.01.18.08.36.19.53.12.17.28.31.48.42.2.11.44.16.7.16s.48-.05.67-.15c.19-.1.33-.23.43-.39.1-.16.15-.33.15-.51,0-.27-.1-.48-.3-.64-.2-.16-.46-.28-.77-.37l-.82-.21c-.62-.16-1.04-.39-1.26-.7-.23-.31-.34-.64-.34-1s.1-.69.29-.98c.19-.29.46-.51.79-.67s.69-.25,1.07-.25.74.08,1.06.24c.31.16.57.38.75.67s.28.63.27,1.01h-.93c0-.31-.11-.56-.33-.75s-.5-.29-.85-.29c-.2,0-.39.04-.58.13-.18.08-.33.21-.43.37-.11.16-.16.34-.16.52,0,.16.06.32.18.48.12.15.36.28.72.38l.83.23c.57.15,1.01.37,1.32.67s.46.67.46,1.12c0,.36-.09.69-.27.99-.18.3-.44.54-.77.71s-.71.26-1.15.26-.85-.09-1.2-.27Z"/> <path style="fill:var(--logo-ink)" d="M106.16,45.37c-.35-.18-.62-.42-.82-.73s-.29-.63-.29-.97h.93c.01.18.08.36.19.53.12.17.28.31.48.42.2.11.44.16.7.16s.48-.05.67-.15c.19-.1.33-.23.43-.39.1-.16.15-.33.15-.51,0-.27-.1-.48-.3-.64-.2-.16-.46-.28-.77-.37l-.82-.21c-.62-.16-1.04-.39-1.26-.7-.23-.31-.34-.64-.34-1s.1-.69.29-.98c.19-.29.46-.51.79-.67s.69-.25,1.07-.25.74.08,1.06.24c.31.16.57.38.75.67s.28.63.27,1.01h-.93c0-.31-.11-.56-.33-.75s-.5-.29-.85-.29c-.2,0-.39.04-.58.13-.18.08-.33.21-.43.37-.11.16-.16.34-.16.52,0,.16.06.32.18.48.12.15.36.28.72.38l.83.23c.57.15,1.01.37,1.32.67s.46.67.46,1.12c0,.36-.09.69-.27.99-.18.3-.44.54-.77.71s-.71.26-1.15.26-.85-.09-1.2-.27Z"/> <path style="fill:var(--logo-ink)" d="M113.64,39.03h.86l2.43,5.09h-.36l2.43-5.09h.86l.79,6.5h-.93l-.63-5.19.24.05-2.15,4.43h-.81l-2.17-4.43.24-.05-.62,5.19h-.93l.78-6.5Z"/> <path style="fill:var(--logo-ink)" d="M123.22,45.19c-.51-.3-.91-.71-1.19-1.22s-.43-1.07-.43-1.68.14-1.17.43-1.69c.29-.52.69-.93,1.19-1.23.51-.31,1.06-.46,1.67-.46s1.16.15,1.66.46.9.72,1.19,1.23c.29.52.44,1.08.44,1.69s-.15,1.16-.44,1.68c-.29.51-.69.92-1.19,1.22-.5.3-1.06.45-1.66.45s-1.16-.15-1.67-.45ZM126.08,44.43c.36-.22.64-.53.85-.91s.31-.79.31-1.23-.1-.85-.31-1.24c-.21-.39-.49-.69-.85-.92-.36-.23-.75-.34-1.19-.34s-.83.11-1.19.34c-.36.23-.64.53-.85.92-.21.39-.31.8-.31,1.24s.1.85.31,1.23.49.68.85.91c.36.22.75.34,1.19.34s.83-.11,1.19-.34Z"/> <path style="fill:var(--logo-ink)" d="M129.5,39.03h2.54c.6,0,1.13.14,1.57.42.44.28.78.67,1.01,1.17s.35,1.05.35,1.68-.12,1.17-.35,1.66-.58.88-1.01,1.16c-.44.28-.96.42-1.57.42h-2.54v-6.5ZM130.07,44.66h1.97c.41,0,.77-.1,1.08-.31.3-.2.53-.49.68-.84.15-.36.23-.76.23-1.22s-.08-.86-.23-1.22c-.15-.36-.38-.65-.68-.86-.3-.21-.66-.32-1.08-.32h-1.97l.39-.39v5.54l-.39-.39Z"/> <path style="fill:var(--logo-ink)" d="M136.34,39.03h3.88v.87h-3.32l.39-.39v5.54l-.39-.39h3.43v.87h-3.98v-6.5ZM136.93,41.9h2.92v.87h-2.92v-.87Z"/> <path style="fill:var(--logo-ink)" d="M141.68,39.03h.95v6.02l-.39-.39h3.01v.87h-3.58v-6.5Z"/> </g> </g> </symbol>
+    </svg>
+
+  <div class="home-app">
+    <a class="skip-link" href="#home">Skip to the dashboard</a>
+    <aside class="side" aria-label="Plant navigation">
+      <div class="side-brand">
+        <svg class="i side-brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1M12 18h1M7 18h1"/></svg>
+        <span class="side-brand-text"><span class="side-brand-name" data-plant-name>Demo plant</span><span class="side-brand-sub">Daily Management System</span></span>
+        <button class="side-menu-btn" type="button" data-open-drawer aria-label="Open menu" aria-haspopup="dialog">
+          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+      <nav class="side-nav" data-side-nav aria-label="Pages and departments"></nav>
+      <div class="side-bottom">
+        <button class="side-link side-settings" type="button" data-settings aria-haspopup="dialog" aria-expanded="false" title="Settings">
+          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span class="side-text">Settings</span>
+        </button>
+        <a class="side-powered" href="https://cbm.linkedxl.com/login" target="_blank" rel="noopener noreferrer">
+          <span class="side-powered-text">Powered by</span>
+          <svg class="side-badge" viewBox="0 0 153.85 127.21" aria-hidden="true" focusable="false"><use href="#lx-badge"></use></svg>
+          <span class="sr-only">LinkedXL OS (opens in a new tab)</span>
+        </a>
+      </div>
+    </aside>
+
+    <div class="h-wrap">
+      <header class="h-header">
+        <div class="h-titles">
+          <h1 class="h-title" data-home-title>Demo DOR Dashboard</h1>
+          <p class="h-sub h-summary" data-home-summary aria-live="polite"></p>
+        </div>
+        <nav class="h-date" aria-label="Production day">
+          <button class="h-date-btn" type="button" data-home-prev aria-label="Previous day">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <span class="h-date-pick">
+            <button class="h-date-label" type="button" data-date-pick aria-describedby="date-pick-hint">
+              <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <time data-home-date datetime=""></time>
+            </button>
+            <span class="sr-only" id="date-pick-hint">Choose a production day</span>
+            <!-- Native picker, limited to the month's data. On touch screens it sits over the button so a tap opens it directly. -->
+            <input class="h-date-input" type="date" data-date-input tabindex="-1" aria-label="Production day">
+          </span>
+          <button class="h-date-btn" type="button" data-home-next aria-label="Next day">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </nav>
+        <div class="h-actions">
+          <a class="hbtn hbtn--primary" href="#enter" data-enter>
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/></svg>
+            <span>Update Daily</span>
+          </a>
+          <button class="hbtn" type="button" data-export-toggle aria-haspopup="menu" aria-expanded="false" aria-controls="export-menu">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+            <span>Export</span>
+            <svg class="i i--chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <label class="h-filter">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+            <span class="h-filter-label">Area</span>
+            <select class="h-select" data-area>
+              <option value="all">All areas</option>
+              <option value="mold">Mold</option>
+              <option value="bond">Bond</option>
+              <option value="prime">Prime</option>
+              <option value="compounding">Compounding</option>
+            </select>
+          </label>
+        </div>
+        <button class="h-chip" type="button" data-chip aria-haspopup="dialog" aria-expanded="false"></button>
+      </header>
+
+      <main id="home" class="h-main" tabindex="-1">
+        <p class="print-meta" data-print-meta></p>
+        <p class="date-note h-date-note" data-date-note role="status" hidden></p>
+        <section class="h-kpis" data-kpis></section>
+        <div class="h-row h-row--2" data-row2></div>
+        <div class="h-row h-row--3" data-row3></div>
+        <footer class="h-foot">
+          <p>Prototype by Taylormade Creative for LinkedXL. One real month of plant numbers with names removed. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
+        </footer>
+      </main>
+    </div>
+
+    <div class="h-mobilebar">
+      <a class="hbtn hbtn--primary" href="#enter" data-enter>Update Daily</a>
+    </div>
+  </div>
+
+  <div class="app">
+    <a class="skip-link" href="#board">Skip to the board</a>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="./" data-nav-home aria-label="Daily Operating Review, LinkedXL OS. Home dashboard">
+          <svg class="brand-badge" viewBox="0 0 153.85 127.21" aria-hidden="true" focusable="false"><use href="#lx-badge"></use></svg>
+          <span class="brand-text">
+            <span class="brand-title">Daily Operating Review</span>
+            <span class="brand-plant" data-plant>Demo plant</span>
+          </span>
+        </a>
+
+        <nav class="datebar" aria-label="Production day">
+          <button class="icon-btn" type="button" data-prev aria-label="Previous day">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-prev"></use></svg>
+          </button>
+          <p class="date-label"><time data-board-date datetime=""></time></p>
+          <button class="icon-btn" type="button" data-next aria-label="Next day">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-next"></use></svg>
+          </button>
+        </nav>
+
+        <a class="topbar-home" href="./" data-nav-home>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Home
+        </a>
+        <div class="actions">
+          <a class="btn btn--mint" href="#enter" data-enter>Enter numbers</a>
+          <a class="btn btn--outline-light" href="#meeting/0" data-run-meeting>Run meeting</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="board" class="board-page" tabindex="-1">
+      <section class="summary" aria-label="Summary">
+        <h1 class="summary-lead" data-summary-lead aria-live="polite"></h1>
+        <div class="summary-line">
+          <p class="summary-month" data-summary-month></p>
+          <button class="btn btn--text howto-btn" type="button" popovertarget="how-to-read">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-info"></use></svg>How to read this board
+          </button>
+          <p class="your-row" data-your-row hidden></p>
+        </div>
+        <p class="date-note" data-date-note role="status" hidden></p>
+      </section>
+
+      <div class="board">
+        <div class="board-head" aria-hidden="true">
+          <span class="head head--fn">Department</span>
+          <span class="head head--day" data-head-day></span>
+          <span class="head head--month" data-head-month></span>
+          <span class="head head--trend">Trend, day by day
+            <span class="legend"><span class="key key--actual"></span>Actual<span class="key key--goal"></span>Goal</span>
+          </span>
+          <span class="head head--notes">Problem → Next 24 hours</span>
+        </div>
+        <ol class="rows" data-rows aria-label="Departments in meeting order"></ol>
+      </div>
+
+      <footer class="board-foot">
+        <p>Prototype by Taylormade Creative for LinkedXL. One real month of plant numbers with names removed. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
+        <button class="btn btn--quiet" type="button" data-reset>Reset demo data</button>
+      </footer>
+    </main>
+
+    <div class="mobile-bar">
+      <a class="btn btn--mint" href="#enter" data-enter>Enter numbers</a>
+    </div>
+  </div>
+
+  <div class="popover howto" id="how-to-read" popover aria-labelledby="howto-title">
+    <h2 class="popover-title" id="howto-title">How to read this board</h2>
+    <p class="popover-lead">Status is calculated from the numbers. Meeting the goal = On track.</p>
+    <ul class="howto-states" data-states></ul>
+    <p class="popover-note">Each row tracks a daily measure and a separate monthly measure, so a row can be off goal for the day and on track for the month.</p>
+    <h3 class="popover-sub">Words on the board</h3>
+    <dl class="howto-glossary" data-glossary></dl>
+    <button class="btn btn--secondary popover-close" type="button" popovertarget="how-to-read" popovertargetaction="hide">Got it</button>
+  </div>
+
+  <div class="popover term-pop" id="term-pop" popover role="dialog" aria-labelledby="term-pop-title">
+    <p class="term-pop-title" id="term-pop-title" data-term-title></p>
+    <p class="term-pop-text" data-term-text></p>
+  </div>
+
+  <div class="hmenu" id="export-menu" popover role="menu" aria-label="Export">
+    <button class="menu-item" type="button" role="menuitem" data-export="csv"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2M14 13h2M8 17h2M14 17h2"/></svg><span>Download this day (CSV)</span></button>
+    <button class="menu-item" type="button" role="menuitem" data-export="print"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span>Print or save as PDF</span></button>
+  </div>
+  <div class="hmenu" id="settings-pop" popover role="dialog" aria-label="Settings"></div>
+  <div class="mx-tip" id="mx-tip" role="tooltip" hidden></div>
+
+  <dialog class="drawer" id="drawer" aria-label="Menu">
+    <div class="drawer-head">
+      <span class="side-brand-text"><span class="side-brand-name" data-plant-name>Demo plant</span><span class="side-brand-sub">Daily Management System</span></span>
+      <button class="drawer-close" type="button" data-close-drawer aria-label="Close menu">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <nav class="side-nav" data-side-nav aria-label="Pages and departments"></nav>
+    <div class="side-bottom">
+      <button class="side-link side-settings" type="button" data-settings aria-haspopup="dialog" aria-expanded="false">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="side-text">Settings</span>
+      </button>
+      <p class="side-powered side-powered--static"><span class="side-powered-text">Powered by</span><svg class="side-badge" viewBox="0 0 153.85 127.21" aria-hidden="true" focusable="false"><use href="#lx-badge"></use></svg><span class="sr-only">LinkedXL OS</span></p>
+    </div>
+  </dialog>
+
+  <dialog class="sheet" id="detail" aria-labelledby="detail-title"></dialog>
+
+  <dialog class="enter" id="enter" aria-labelledby="enter-title"></dialog>
+
+  <section class="meeting" id="meeting" data-theme="meeting" hidden aria-label="Meeting">
+    <header class="meeting-top">
+      <div class="meeting-progress">
+        <p class="meeting-progress-text" data-progress-text aria-live="polite"></p>
+        <div class="meeting-progress-line" aria-hidden="true"><span data-progress-fill></span></div>
+      </div>
+      <p class="meeting-timer"><span class="sr-only">Meeting time </span><span data-timer>0:00</span></p>
+      <button class="btn btn--secondary meeting-exit" type="button" data-exit>Exit <span class="kbd" aria-hidden="true">Esc</span></button>
+    </header>
+    <div class="meeting-stage" data-stage></div>
+    <footer class="meeting-controls">
+      <button class="btn btn--secondary meeting-nav" type="button" data-prev-slide>
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-prev"></use></svg>Previous
+      </button>
+      <p class="meeting-hint">Arrow keys or a presenter clicker move between departments.</p>
+      <button class="btn btn--primary meeting-nav" type="button" data-next-slide>
+        Next<svg class="icon" aria-hidden="true" focusable="false"><use href="#g-next"></use></svg>
+      </button>
+    </footer>
+  </section>
+
+  <div class="toasts" data-toasts aria-live="polite"></div>
+</body>
+</html>

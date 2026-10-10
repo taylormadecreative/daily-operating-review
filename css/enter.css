@@ -1,0 +1,283 @@
+/* Enter numbers: full-screen flow with a centered column and a sticky Save bar. */
+
+.enter {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--surface);
+  color: var(--ink);
+  overflow: hidden;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms var(--ease-out), transform 220ms var(--ease-out), overlay 220ms allow-discrete, display 220ms allow-discrete;
+}
+.enter:not([open]) { opacity: 0; transform: translateY(12px); transition-duration: 150ms; }
+@starting-style {
+  .enter[open] { opacity: 0; transform: translateY(16px); }
+}
+.enter::backdrop { background: var(--surface); }
+@media (prefers-reduced-motion: reduce) {
+  .enter, .enter:not([open]) { transform: none; }
+}
+
+.enter-scroll {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.enter-top {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: 64px;
+  padding: var(--s-2) max(var(--gutter), calc((100vw - 680px) / 2));
+  background: var(--bar-bg);
+  color: var(--bar-ink);
+}
+.enter-top :focus-visible { outline-color: var(--bar-focus); }
+.enter-top .icon-btn { border-color: var(--bar-line); color: var(--bar-ink); }
+.enter-kicker { font-weight: 700; }
+.enter-as { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s-2); color: var(--bar-ink-2); }
+.enter-as strong { color: var(--bar-ink); font-weight: 700; }
+.not-you { min-height: var(--tap); padding: 0; border: 0; background: none; color: var(--bar-ink); font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+
+.enter-body {
+  flex: 1;
+  width: 100%;
+  max-width: calc(680px + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: var(--s-5) var(--gutter) var(--s-6);
+}
+.enter-title {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  text-wrap: balance;
+  outline: none;
+}
+.enter-title:focus { outline: none; }
+.enter-sub { margin-top: var(--s-2); color: var(--ink-2); }
+
+/* Step 1: who's entering */
+.who-list { display: grid; gap: var(--s-2); margin-top: var(--s-5); }
+.who-btn {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--s-3) var(--s-4);
+  border: 1.5px solid var(--ink-2);
+  border-radius: 8px;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 140ms var(--ease-out), border-color 150ms ease, background-color 150ms ease;
+}
+.who-btn:active { transform: scale(0.98); }
+.who-btn.is-current { border-color: var(--ink); }
+.who-name { font-size: 1.125rem; font-weight: 700; }
+.who-fn {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+@media (hover: hover) and (pointer: fine) {
+  .who-btn:hover { border-color: var(--ink); background: var(--surface-quiet); }
+}
+
+/* Step 2: the form */
+.day-pick { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin-top: var(--s-3); }
+.day-pick label { color: var(--ink-2); font-weight: 650; font-size: var(--fs-small); }
+.day-select {
+  min-height: var(--tap);
+  padding: 0 var(--s-6) 0 var(--s-3);
+  border: 2px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-weight: 650;
+}
+
+.group { margin: var(--s-5) 0 0; padding: 0; border: 0; min-width: 0; }
+.group legend { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-3); padding: 0; margin-bottom: var(--s-3); }
+.group-name { font-size: var(--fs-lead); font-weight: 700; }
+.group-note { color: var(--ink-2); font-size: var(--fs-small); }
+.group--primary {
+  padding: var(--s-4);
+  border: 2px solid var(--rule-strong);
+  border-radius: 8px;
+}
+.group--primary legend { float: left; width: 100%; }
+.group--primary legend + * { clear: both; }
+.group--areas summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s-3);
+  min-height: var(--tap);
+  padding: var(--s-2) 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+  list-style: none;
+}
+.group--areas summary::-webkit-details-marker { display: none; }
+.group--areas summary::before {
+  content: "";
+  align-self: center;
+  width: 0.55em;
+  height: 0.55em;
+  margin-right: var(--s-1);
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  transform: rotate(-45deg);
+  transition: transform 150ms var(--ease-out);
+}
+.group--areas[open] summary::before { transform: rotate(45deg); }
+.group--areas[open] summary { margin-bottom: var(--s-4); border-bottom-color: transparent; }
+.area-grid { display: grid; gap: var(--s-4) var(--s-5); }
+@media (min-width: 600px) {
+  .area-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.field-label { display: block; font-weight: 650; }
+.field-label-row { display: flex; align-items: center; gap: var(--s-2); }
+.field-label-row .field-label { display: inline; }
+.field-nudge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+  margin-top: var(--s-2);
+  font-weight: 600;
+}
+.field-nudge[hidden] { display: none; }
+.nudge-btn { min-height: var(--tap); padding: 0 var(--s-4); }
+.field--primary .field-label { font-size: var(--fs-lead); }
+.field-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-4); margin-top: var(--s-2); }
+.input-wrap { position: relative; flex: 0 1 15rem; min-width: 9rem; }
+.field-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 var(--s-3);
+  border: 2px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 1.375rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.field--primary .field-input { min-height: 60px; font-size: 1.75rem; }
+.has-suffix .field-input { padding-right: 2.2em; }
+.suffix {
+  position: absolute;
+  right: var(--s-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-2);
+  font-size: 1.25rem;
+  font-weight: 650;
+  pointer-events: none;
+}
+.field-input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--ink); }
+.field-input[aria-invalid="true"] { border-color: var(--error); }
+.field-goal { color: var(--ink-mid); font-weight: 600; font-variant-numeric: tabular-nums; }
+.field-status { min-height: 1.6em; margin-top: var(--s-2); }
+.field-status .status { font-size: var(--fs-body); }
+.field--primary .field-status .status { font-size: var(--fs-lead); }
+.field-error { margin-top: var(--s-1); color: var(--error); font-weight: 650; }
+
+.group--text { display: grid; gap: var(--s-4); }
+
+/* Problem status: one segmented control (Open · In progress · Closed). The picked
+   segment fills; keyboard focus outlines the whole control and underlines the segment. */
+.field--status { min-width: 0; margin: 0; padding: 0; border: 0; }
+.field--status legend { padding: 0; }
+.segmented {
+  display: inline-flex;
+  max-width: 100%;
+  margin-top: var(--s-2);
+  border: 2px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+.segmented label { position: relative; display: flex; }
+.segmented label + label { border-left: 2px solid var(--ink-2); }
+.segmented input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.segmented span {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--s-4);
+  font-weight: 650;
+  white-space: nowrap;
+  transition: background-color 120ms var(--ease-out), color 120ms var(--ease-out);
+}
+.segmented input:checked + span { background: var(--ink); color: var(--surface); }
+.segmented:has(input:focus-visible), .field--status.is-landed .segmented { outline: 3px solid var(--focus); outline-offset: 2px; }
+.segmented input:focus-visible + span { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.field-hint { margin-top: var(--s-2); color: var(--ink-2); font-size: var(--fs-small); }
+/* Off until a problem is typed: dashed and quiet, with the reason in the hint. */
+.field--status.is-disabled .segmented { border-style: dashed; background: var(--surface-quiet, transparent); }
+.field--status.is-disabled .segmented span { color: var(--ink-2); font-weight: 550; cursor: not-allowed; }
+.field--status.is-disabled .segmented input { cursor: not-allowed; }
+.field--status.is-disabled .segmented label + label { border-left-style: dashed; }
+@media (prefers-reduced-motion: reduce) { .segmented span { transition: none; } }
+.field-textarea {
+  display: block;
+  width: 100%;
+  min-height: 6.5em;
+  margin-top: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border: 2px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  resize: vertical;
+}
+.field-textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--ink); }
+
+/* Sticky Save bar */
+.enter-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
+  padding: var(--s-3) var(--gutter) calc(var(--s-3) + env(safe-area-inset-bottom, 0px));
+}
+.enter-bar-inner { max-width: 680px; margin: 0 auto; }
+.bar-actions { display: flex; justify-content: flex-end; gap: var(--s-3); }
+.btn--save { min-width: 9rem; min-height: 52px; font-size: var(--fs-lead); }
+.form-error { margin-bottom: var(--s-2); color: var(--error); font-weight: 650; }
+.leave-warning { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); }
+.leave-warning[hidden], .bar-actions[hidden] { display: none; }
+.leave-text { font-weight: 700; }
+.leave-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+@media (max-width: 599px) {
+  .enter-title { font-size: 2.125rem; }
+  .bar-actions .btn--save { flex: 1; }
+  .input-wrap { flex: 1 1 9rem; }
+}

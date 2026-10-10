@@ -1,0 +1,7703 @@
+{
+ "plant": "Demo",
+ "month": "2026-02",
+ "daysInMonth": 28,
+ "boardDate": "2026-02-27",
+ "areas": [
+  {
+   "id": "mold",
+   "name": "Mold"
+  },
+  {
+   "id": "bond",
+   "name": "Bond"
+  },
+  {
+   "id": "prime",
+   "name": "Prime"
+  },
+  {
+   "id": "compounding",
+   "name": "Compounding"
+  },
+  {
+   "id": "plant",
+   "name": "Plant total"
+  }
+ ],
+ "functions": [
+  {
+   "id": "safety",
+   "name": "Safety",
+   "owner": "Safety lead",
+   "dorQuestion": "Did we identify and correct hazards before exposure today?",
+   "kpiDaily": {
+    "name": "Safety & EHS incidents",
+    "unit": "count",
+    "better": "lower",
+    "boardLabel": "Safety & EHS incidents"
+   },
+   "kpiMonthly": {
+    "name": "TRIR",
+    "unit": "rate",
+    "better": "lower",
+    "boardLabel": "TRIR"
+   },
+   "issue": "No new issues to report.",
+   "issueExtra": null,
+   "action": null,
+   "actionExtra": null,
+   "kbiLevel1Status": null,
+   "daily": {
+    "mold": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "bond": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "prime": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "compounding": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "plant": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ]
+   },
+   "monthToDate": [
+    {
+     "day": 1,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 2,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 3,
+     "actual": 1,
+     "goal": 0
+    },
+    {
+     "day": 4,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 5,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 6,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 7,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 8,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 9,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 10,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 11,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 12,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 13,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 14,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 15,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 16,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 17,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 18,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 19,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 20,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 21,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 22,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 23,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 24,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 25,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 26,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 27,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 28,
+     "actual": null,
+     "goal": 0
+    }
+   ],
+   "monthly": [
+    {
+     "month": "JAN",
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "month": "FEB",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "MAR",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "APR",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "MAY",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "JUN",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "JUL",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "AUG",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "SEP",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "OCT",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "NOV",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "DEC",
+     "actual": null,
+     "goal": 0
+    }
+   ]
+  },
+  {
+   "id": "people",
+   "name": "People",
+   "owner": "People lead",
+   "dorQuestion": "Do we have the right people, trained and ready, on the floor today?",
+   "kpiDaily": {
+    "name": "Clocked in",
+    "unit": "people",
+    "better": "higher",
+    "boardLabel": "Clocked in"
+   },
+   "kpiMonthly": {
+    "name": "Total DL",
+    "unit": "number",
+    "better": "higher",
+    "boardLabel": "Total DL"
+   },
+   "issue": "One temp quit 1/28/2026. One direct employee went to indirect 2/2/2026. One temp quit 2/02/2026.",
+   "issueExtra": "3rd shift 0/38-1st shift 1/47-one employee training in assembly by Quality Inspector working with employee. Will be monitored by Supervisor and Job Leader.",
+   "action": null,
+   "actionExtra": null,
+   "kbiLevel1Status": "G",
+   "daily": {
+    "mold": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 81.77,
+      "goal": 81.77
+     },
+     {
+      "day": 3,
+      "actual": 90,
+      "goal": 90
+     },
+     {
+      "day": 4,
+      "actual": 83,
+      "goal": 83
+     },
+     {
+      "day": 5,
+      "actual": 86.75,
+      "goal": 86.75
+     },
+     {
+      "day": 6,
+      "actual": 80.5,
+      "goal": 80.5
+     },
+     {
+      "day": 7,
+      "actual": 40,
+      "goal": 40
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": 86,
+      "goal": 86
+     },
+     {
+      "day": 10,
+      "actual": 95,
+      "goal": 95
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "bond": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 2,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 3,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 4,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 5,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "prime": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 2,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 3,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 4,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 5,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "compounding": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 2,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 3,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 4,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 5,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "plant": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 2,
+      "actual": 89,
+      "goal": 89
+     },
+     {
+      "day": 3,
+      "actual": 87,
+      "goal": 89
+     },
+     {
+      "day": 4,
+      "actual": 87,
+      "goal": 89
+     },
+     {
+      "day": 5,
+      "actual": 87,
+      "goal": 89
+     },
+     {
+      "day": 6,
+      "actual": 59,
+      "goal": 54
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": 83,
+      "goal": 89
+     },
+     {
+      "day": 10,
+      "actual": 86,
+      "goal": 89
+     },
+     {
+      "day": 11,
+      "actual": 86,
+      "goal": 89
+     },
+     {
+      "day": 12,
+      "actual": 88,
+      "goal": 89
+     },
+     {
+      "day": 13,
+      "actual": 54,
+      "goal": 53
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": 86,
+      "goal": 89
+     },
+     {
+      "day": 17,
+      "actual": 89,
+      "goal": 89
+     },
+     {
+      "day": 18,
+      "actual": 93,
+      "goal": 89
+     },
+     {
+      "day": 19,
+      "actual": 85,
+      "goal": 89
+     },
+     {
+      "day": 20,
+      "actual": 83,
+      "goal": 89
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": 87,
+      "goal": 89
+     },
+     {
+      "day": 24,
+      "actual": 88,
+      "goal": 89
+     },
+     {
+      "day": 25,
+      "actual": 90,
+      "goal": 89
+     },
+     {
+      "day": 26,
+      "actual": 89,
+      "goal": 89
+     },
+     {
+      "day": 27,
+      "actual": 82,
+      "goal": 89
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ]
+   },
+   "monthToDate": [
+    {
+     "day": 1,
+     "actual": null,
+     "goal": 100
+    },
+    {
+     "day": 2,
+     "actual": 98,
+     "goal": 100
+    },
+    {
+     "day": 3,
+     "actual": 97,
+     "goal": 100
+    },
+    {
+     "day": 4,
+     "actual": 97,
+     "goal": 100
+    },
+    {
+     "day": 5,
+     "actual": 98,
+     "goal": 100
+    },
+    {
+     "day": 6,
+     "actual": 98,
+     "goal": 100
+    },
+    {
+     "day": 7,
+     "actual": null,
+     "goal": 100
+    },
+    {
+     "day": 8,
+     "actual": null,
+     "goal": 100
+    },
+    {
+     "day": 9,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 10,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 11,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 12,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 13,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 14,
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "day": 15,
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "day": 16,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 17,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 18,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 19,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 20,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 21,
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "day": 22,
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "day": 23,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 24,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 25,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 26,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 27,
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "day": 28,
+     "actual": null,
+     "goal": 98
+    }
+   ],
+   "monthly": [
+    {
+     "month": "JAN",
+     "actual": 97,
+     "goal": 97
+    },
+    {
+     "month": "FEB",
+     "actual": 98,
+     "goal": 98
+    },
+    {
+     "month": "MAR",
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "month": "APR",
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "month": "MAY",
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "month": "JUN",
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "month": "JUL",
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "month": "AUG",
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "month": "SEP",
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "month": "OCT",
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "month": "NOV",
+     "actual": null,
+     "goal": 98
+    },
+    {
+     "month": "DEC",
+     "actual": null,
+     "goal": 98
+    }
+   ]
+  },
+  {
+   "id": "quality",
+   "name": "Quality",
+   "owner": "Quality lead",
+   "dorQuestion": "Are our controls strong enough to prevent defects today?",
+   "kpiDaily": {
+    "name": "Quality incidents",
+    "unit": "count",
+    "better": "lower",
+    "boardLabel": "Quality incidents"
+   },
+   "kpiMonthly": {
+    "name": "Customer complaints",
+    "unit": "count",
+    "better": "lower",
+    "boardLabel": "Customer complaints"
+   },
+   "issue": "No new issues to report",
+   "issueExtra": null,
+   "action": "No new issues to report",
+   "actionExtra": "Issue QA",
+   "kbiLevel1Status": "G",
+   "daily": {
+    "mold": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "bond": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "prime": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "compounding": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "plant": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": 0,
+      "goal": 0
+     }
+    ]
+   },
+   "monthToDate": [
+    {
+     "day": 1,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 2,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 3,
+     "actual": 1,
+     "goal": 0
+    },
+    {
+     "day": 4,
+     "actual": 1,
+     "goal": 0
+    },
+    {
+     "day": 5,
+     "actual": 1,
+     "goal": 0
+    },
+    {
+     "day": 6,
+     "actual": 1,
+     "goal": 0
+    },
+    {
+     "day": 7,
+     "actual": 1,
+     "goal": 0
+    },
+    {
+     "day": 8,
+     "actual": 1,
+     "goal": 0
+    },
+    {
+     "day": 9,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 10,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 11,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 12,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 13,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 14,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 15,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 16,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 17,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 18,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 19,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 20,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 21,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 22,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 23,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 24,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 25,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 26,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 27,
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "day": 28,
+     "actual": 2,
+     "goal": 0
+    }
+   ],
+   "monthly": [
+    {
+     "month": "JAN",
+     "actual": 1,
+     "goal": 0
+    },
+    {
+     "month": "FEB",
+     "actual": 2,
+     "goal": 0
+    },
+    {
+     "month": "MAR",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "APR",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "MAY",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "JUN",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "JUL",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "AUG",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "SEP",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "OCT",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "NOV",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "DEC",
+     "actual": null,
+     "goal": 0
+    }
+   ]
+  },
+  {
+   "id": "engineering",
+   "name": "Engineering",
+   "owner": "Engineering lead",
+   "dorQuestion": "Is the process capable and controlled today?",
+   "kpiDaily": {
+    "name": "Scrap %",
+    "unit": "fraction",
+    "better": "lower",
+    "boardLabel": "Scrap %"
+   },
+   "kpiMonthly": {
+    "name": "Scrap as % of sales",
+    "unit": "fraction",
+    "better": "lower",
+    "boardLabel": "Scrap as % of sales"
+   },
+   "issue": "59 u625 hs c74 - cracks\n17 p708 abm fths - shorts\n10 u625 hs c96 - cracks\n128 lbs 40774t",
+   "issueExtra": null,
+   "action": "Added veil to u625 hs c74 charge to block bleeder until the shear can be repaired.\nGMT general operator work instructions.",
+   "actionExtra": null,
+   "kbiLevel1Status": "G",
+   "daily": {
+    "mold": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0.0125
+     },
+     {
+      "day": 2,
+      "actual": 0.0074,
+      "goal": 0.0125
+     },
+     {
+      "day": 3,
+      "actual": 0.0129,
+      "goal": 0.0125
+     },
+     {
+      "day": 4,
+      "actual": 0.0074,
+      "goal": 0.0125
+     },
+     {
+      "day": 5,
+      "actual": 0.0105,
+      "goal": 0.0125
+     },
+     {
+      "day": 6,
+      "actual": 0.0096,
+      "goal": 0.0125
+     },
+     {
+      "day": 7,
+      "actual": 0.0268,
+      "goal": 0.0125
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0.0125
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0.0125
+     }
+    ],
+    "bond": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 2,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 3,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 4,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 5,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 2
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 2
+     }
+    ],
+    "prime": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 2,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 3,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 4,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 5,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 1
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 1
+     }
+    ],
+    "compounding": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": -5.5
+     },
+     {
+      "day": 2,
+      "actual": null,
+      "goal": -4.5
+     },
+     {
+      "day": 3,
+      "actual": null,
+      "goal": -3.5
+     },
+     {
+      "day": 4,
+      "actual": null,
+      "goal": -2.5
+     },
+     {
+      "day": 5,
+      "actual": null,
+      "goal": -1.5
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": -0.5
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0.5
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0.5
+     }
+    ],
+    "plant": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": 0.0113
+     },
+     {
+      "day": 2,
+      "actual": 0.0111,
+      "goal": 0.0113
+     },
+     {
+      "day": 3,
+      "actual": 0.014,
+      "goal": 0.0113
+     },
+     {
+      "day": 4,
+      "actual": 0.008,
+      "goal": 0.0113
+     },
+     {
+      "day": 5,
+      "actual": 0.0115,
+      "goal": 0.0113
+     },
+     {
+      "day": 6,
+      "actual": 0.009,
+      "goal": 0.0113
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": 0.0113
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": 0.0113
+     },
+     {
+      "day": 9,
+      "actual": 0.0087,
+      "goal": 0.0113
+     },
+     {
+      "day": 10,
+      "actual": 0.0196,
+      "goal": 0.0113
+     },
+     {
+      "day": 11,
+      "actual": 0.006,
+      "goal": 0.0113
+     },
+     {
+      "day": 12,
+      "actual": 0.009,
+      "goal": 0.0113
+     },
+     {
+      "day": 13,
+      "actual": 0.0053,
+      "goal": 0.0113
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0.0113
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0.0113
+     },
+     {
+      "day": 16,
+      "actual": 0.0087,
+      "goal": 0.0113
+     },
+     {
+      "day": 17,
+      "actual": 0.0203,
+      "goal": 0.0113
+     },
+     {
+      "day": 18,
+      "actual": 0.0083,
+      "goal": 0.0113
+     },
+     {
+      "day": 19,
+      "actual": 0.0083,
+      "goal": 0.0113
+     },
+     {
+      "day": 20,
+      "actual": 0.0056,
+      "goal": 0.0113
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0.0113
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0.0113
+     },
+     {
+      "day": 23,
+      "actual": 0.0069,
+      "goal": 0.0113
+     },
+     {
+      "day": 24,
+      "actual": 0.0137,
+      "goal": 0.0113
+     },
+     {
+      "day": 25,
+      "actual": 0.0082,
+      "goal": 0.0113
+     },
+     {
+      "day": 26,
+      "actual": 0.0155,
+      "goal": 0.0113
+     },
+     {
+      "day": 27,
+      "actual": 0.0119,
+      "goal": 0.0113
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0.0113
+     }
+    ]
+   },
+   "monthToDate": [
+    {
+     "day": 1,
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "day": 2,
+     "actual": 0.0111,
+     "goal": 0.0113
+    },
+    {
+     "day": 3,
+     "actual": 0.0121,
+     "goal": 0.0113
+    },
+    {
+     "day": 4,
+     "actual": 0.0107,
+     "goal": 0.0113
+    },
+    {
+     "day": 5,
+     "actual": 0.0109,
+     "goal": 0.0113
+    },
+    {
+     "day": 6,
+     "actual": 0.0106,
+     "goal": 0.0113
+    },
+    {
+     "day": 7,
+     "actual": 0.0101,
+     "goal": 0.0113
+    },
+    {
+     "day": 8,
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "day": 9,
+     "actual": 0.0099,
+     "goal": 0.0113
+    },
+    {
+     "day": 10,
+     "actual": 0.0108,
+     "goal": 0.0113
+    },
+    {
+     "day": 11,
+     "actual": 0.0103,
+     "goal": 0.0113
+    },
+    {
+     "day": 12,
+     "actual": 0.0103,
+     "goal": 0.0113
+    },
+    {
+     "day": 13,
+     "actual": 0.0099,
+     "goal": 0.0113
+    },
+    {
+     "day": 14,
+     "actual": 0.0096,
+     "goal": 0.0113
+    },
+    {
+     "day": 15,
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "day": 16,
+     "actual": 0.0095,
+     "goal": 0.0113
+    },
+    {
+     "day": 17,
+     "actual": 0.0101,
+     "goal": 0.0113
+    },
+    {
+     "day": 18,
+     "actual": 0.01,
+     "goal": 0.0113
+    },
+    {
+     "day": 19,
+     "actual": 0.0098,
+     "goal": 0.0113
+    },
+    {
+     "day": 20,
+     "actual": 0.01,
+     "goal": 0.0113
+    },
+    {
+     "day": 21,
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "day": 22,
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "day": 23,
+     "actual": 0.0093,
+     "goal": 0.0113
+    },
+    {
+     "day": 24,
+     "actual": 0.0094,
+     "goal": 0.0113
+    },
+    {
+     "day": 25,
+     "actual": 0.0094,
+     "goal": 0.0113
+    },
+    {
+     "day": 26,
+     "actual": 0.0097,
+     "goal": 0.0113
+    },
+    {
+     "day": 27,
+     "actual": 0.0098,
+     "goal": 0.0113
+    },
+    {
+     "day": 28,
+     "actual": 0.0097,
+     "goal": 0.0113
+    }
+   ],
+   "monthly": [
+    {
+     "month": "JAN",
+     "actual": 0.0108,
+     "goal": 0.0113
+    },
+    {
+     "month": "FEB",
+     "actual": 0.0097,
+     "goal": 0.0113
+    },
+    {
+     "month": "MAR",
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "month": "APR",
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "month": "MAY",
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "month": "JUN",
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "month": "JUL",
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "month": "AUG",
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "month": "SEP",
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "month": "OCT",
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "month": "NOV",
+     "actual": null,
+     "goal": 0.0113
+    },
+    {
+     "month": "DEC",
+     "actual": null,
+     "goal": 0.0113
+    }
+   ]
+  },
+  {
+   "id": "operations",
+   "name": "Operations",
+   "owner": "Operations lead",
+   "dorQuestion": "Did we start the shift in control?",
+   "kpiDaily": {
+    "name": "Parts produced",
+    "unit": "parts",
+    "better": "higher",
+    "boardLabel": "Parts produced"
+   },
+   "kpiMonthly": {
+    "name": "Labor efficiency",
+    "unit": "fraction",
+    "better": "higher",
+    "boardLabel": "Labor efficiency"
+   },
+   "issue": null,
+   "issueExtra": null,
+   "action": null,
+   "actionExtra": null,
+   "kbiLevel1Status": "G",
+   "daily": {
+    "mold": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 5848,
+      "goal": 5209
+     },
+     {
+      "day": 3,
+      "actual": 5866,
+      "goal": 5209
+     },
+     {
+      "day": 4,
+      "actual": 4708,
+      "goal": 5209
+     },
+     {
+      "day": 5,
+      "actual": 4159,
+      "goal": 5209
+     },
+     {
+      "day": 6,
+      "actual": 6481,
+      "goal": 5209
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 4987,
+      "goal": 5209
+     },
+     {
+      "day": 10,
+      "actual": 5770,
+      "goal": 5209
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 5209
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "bond": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 1625,
+      "goal": 1964
+     },
+     {
+      "day": 3,
+      "actual": 1888,
+      "goal": 1964
+     },
+     {
+      "day": 4,
+      "actual": 1888,
+      "goal": 1964
+     },
+     {
+      "day": 5,
+      "actual": 1432,
+      "goal": 1964
+     },
+     {
+      "day": 6,
+      "actual": 1461,
+      "goal": 1964
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 1702,
+      "goal": 1964
+     },
+     {
+      "day": 10,
+      "actual": 1555,
+      "goal": 1964
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 1964
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "prime": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 2235,
+      "goal": 1897
+     },
+     {
+      "day": 3,
+      "actual": 2199,
+      "goal": 1897
+     },
+     {
+      "day": 4,
+      "actual": 2277,
+      "goal": 1897
+     },
+     {
+      "day": 5,
+      "actual": 2055,
+      "goal": 1897
+     },
+     {
+      "day": 6,
+      "actual": 1884,
+      "goal": 1897
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 2224,
+      "goal": 1897
+     },
+     {
+      "day": 10,
+      "actual": 2178,
+      "goal": 1897
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "compounding": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 1877,
+      "goal": 1897
+     },
+     {
+      "day": 3,
+      "actual": 1907,
+      "goal": 1897
+     },
+     {
+      "day": 4,
+      "actual": 2246,
+      "goal": 1897
+     },
+     {
+      "day": 5,
+      "actual": 2426,
+      "goal": 1897
+     },
+     {
+      "day": 6,
+      "actual": 1915,
+      "goal": 1897
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 1899,
+      "goal": 1897
+     },
+     {
+      "day": 10,
+      "actual": 2043,
+      "goal": 1897
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 1897
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "plant": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 2,
+      "actual": 14469,
+      "goal": 15020
+     },
+     {
+      "day": 3,
+      "actual": 14488,
+      "goal": 15325
+     },
+     {
+      "day": 4,
+      "actual": 15028,
+      "goal": 15340
+     },
+     {
+      "day": 5,
+      "actual": 11687,
+      "goal": 13966
+     },
+     {
+      "day": 6,
+      "actual": 8907,
+      "goal": 9448
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": 13544,
+      "goal": 14459
+     },
+     {
+      "day": 10,
+      "actual": 13704,
+      "goal": 14460
+     },
+     {
+      "day": 11,
+      "actual": 12162,
+      "goal": 13204
+     },
+     {
+      "day": 12,
+      "actual": 12360,
+      "goal": 13222
+     },
+     {
+      "day": 13,
+      "actual": 7777,
+      "goal": 8680
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": 12883,
+      "goal": 13683
+     },
+     {
+      "day": 17,
+      "actual": 13465,
+      "goal": 13775
+     },
+     {
+      "day": 18,
+      "actual": 14051,
+      "goal": 14806
+     },
+     {
+      "day": 19,
+      "actual": 11746,
+      "goal": 12966
+     },
+     {
+      "day": 20,
+      "actual": 12597,
+      "goal": 14958
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": 15141,
+      "goal": 15991
+     },
+     {
+      "day": 24,
+      "actual": 12757,
+      "goal": 13647
+     },
+     {
+      "day": 25,
+      "actual": 15799,
+      "goal": 15976
+     },
+     {
+      "day": 26,
+      "actual": 14667,
+      "goal": 15847
+     },
+     {
+      "day": 27,
+      "actual": 14736,
+      "goal": 16980
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ]
+   },
+   "monthToDate": [
+    {
+     "day": 1,
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "day": 2,
+     "actual": 0.961,
+     "goal": 0.93
+    },
+    {
+     "day": 3,
+     "actual": 0.943,
+     "goal": 0.93
+    },
+    {
+     "day": 4,
+     "actual": 0.949,
+     "goal": 0.93
+    },
+    {
+     "day": 5,
+     "actual": 0.952,
+     "goal": 0.93
+    },
+    {
+     "day": 6,
+     "actual": 0.952,
+     "goal": 0.93
+    },
+    {
+     "day": 7,
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "day": 8,
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "day": 9,
+     "actual": 0.94,
+     "goal": 0.93
+    },
+    {
+     "day": 10,
+     "actual": 0.95,
+     "goal": 0.93
+    },
+    {
+     "day": 11,
+     "actual": 0.92,
+     "goal": 0.93
+    },
+    {
+     "day": 12,
+     "actual": 0.95,
+     "goal": 0.93
+    },
+    {
+     "day": 13,
+     "actual": 0.95,
+     "goal": 0.93
+    },
+    {
+     "day": 14,
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "day": 15,
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "day": 16,
+     "actual": 0.959,
+     "goal": 0.93
+    },
+    {
+     "day": 17,
+     "actual": 0.961,
+     "goal": 0.93
+    },
+    {
+     "day": 18,
+     "actual": 0.958,
+     "goal": 0.93
+    },
+    {
+     "day": 19,
+     "actual": 0.954,
+     "goal": 0.93
+    },
+    {
+     "day": 20,
+     "actual": 0.951,
+     "goal": 0.93
+    },
+    {
+     "day": 21,
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "day": 22,
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "day": 23,
+     "actual": 0.953,
+     "goal": 0.93
+    },
+    {
+     "day": 24,
+     "actual": 0.957,
+     "goal": 0.93
+    },
+    {
+     "day": 25,
+     "actual": 0.956,
+     "goal": 0.93
+    },
+    {
+     "day": 26,
+     "actual": 0.96,
+     "goal": 0.93
+    },
+    {
+     "day": 27,
+     "actual": 0.954,
+     "goal": 0.93
+    },
+    {
+     "day": 28,
+     "actual": null,
+     "goal": 0.93
+    }
+   ],
+   "monthly": [
+    {
+     "month": "JAN",
+     "actual": 0.993,
+     "goal": 0.93
+    },
+    {
+     "month": "FEB",
+     "actual": 0.954,
+     "goal": 0.93
+    },
+    {
+     "month": "MAR",
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "month": "APR",
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "month": "MAY",
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "month": "JUN",
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "month": "JUL",
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "month": "AUG",
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "month": "SEP",
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "month": "OCT",
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "month": "NOV",
+     "actual": null,
+     "goal": 0.93
+    },
+    {
+     "month": "DEC",
+     "actual": null,
+     "goal": 0.93
+    }
+   ]
+  },
+  {
+   "id": "maintenance",
+   "name": "Maintenance",
+   "owner": "Maintenance lead",
+   "dorQuestion": "Are we maintaining equipment before it fails?",
+   "kpiDaily": {
+    "name": "Critical equipment down",
+    "unit": "count",
+    "better": "lower",
+    "boardLabel": "Critical equipment down"
+   },
+   "kpiMonthly": {
+    "name": "Uptime %",
+    "unit": "fraction",
+    "better": "higher",
+    "boardLabel": "Uptime %"
+   },
+   "issue": "press 26 won't open",
+   "issueExtra": null,
+   "action": "fill with oil and finish ram seal test run",
+   "actionExtra": null,
+   "kbiLevel1Status": "g",
+   "daily": {
+    "mold": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "bond": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "prime": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "compounding": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "plant": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": 0,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": 1,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ]
+   },
+   "monthToDate": [
+    {
+     "day": 1,
+     "actual": null,
+     "goal": null
+    },
+    {
+     "day": 2,
+     "actual": 0.999,
+     "goal": 0.98
+    },
+    {
+     "day": 3,
+     "actual": 0.999,
+     "goal": 0.98
+    },
+    {
+     "day": 4,
+     "actual": 0.997,
+     "goal": 0.98
+    },
+    {
+     "day": 5,
+     "actual": 0.993,
+     "goal": 0.98
+    },
+    {
+     "day": 6,
+     "actual": 1,
+     "goal": 0.98
+    },
+    {
+     "day": 7,
+     "actual": null,
+     "goal": null
+    },
+    {
+     "day": 8,
+     "actual": null,
+     "goal": null
+    },
+    {
+     "day": 9,
+     "actual": 0.998,
+     "goal": 0.98
+    },
+    {
+     "day": 10,
+     "actual": 0.998,
+     "goal": 0.98
+    },
+    {
+     "day": 11,
+     "actual": 0.999,
+     "goal": 0.98
+    },
+    {
+     "day": 12,
+     "actual": 0.999,
+     "goal": 0.98
+    },
+    {
+     "day": 13,
+     "actual": 0.996,
+     "goal": 0.98
+    },
+    {
+     "day": 14,
+     "actual": null,
+     "goal": null
+    },
+    {
+     "day": 15,
+     "actual": null,
+     "goal": null
+    },
+    {
+     "day": 16,
+     "actual": 0.989,
+     "goal": 0.98
+    },
+    {
+     "day": 17,
+     "actual": 0.998,
+     "goal": 0.98
+    },
+    {
+     "day": 18,
+     "actual": 0.995,
+     "goal": 0.98
+    },
+    {
+     "day": 19,
+     "actual": 0.999,
+     "goal": 0.98
+    },
+    {
+     "day": 20,
+     "actual": 0.999,
+     "goal": 0.98
+    },
+    {
+     "day": 21,
+     "actual": null,
+     "goal": null
+    },
+    {
+     "day": 22,
+     "actual": null,
+     "goal": null
+    },
+    {
+     "day": 23,
+     "actual": 0.991,
+     "goal": 0.98
+    },
+    {
+     "day": 24,
+     "actual": 0.992,
+     "goal": 0.98
+    },
+    {
+     "day": 25,
+     "actual": 0.973,
+     "goal": 0.98
+    },
+    {
+     "day": 26,
+     "actual": 0.974,
+     "goal": 0.98
+    },
+    {
+     "day": 27,
+     "actual": 0.975,
+     "goal": 0.98
+    },
+    {
+     "day": 28,
+     "actual": null,
+     "goal": null
+    }
+   ],
+   "monthly": [
+    {
+     "month": "JAN",
+     "actual": 0.998,
+     "goal": 0.98
+    },
+    {
+     "month": "FEB",
+     "actual": 0.993,
+     "goal": 0.98
+    },
+    {
+     "month": "MAR",
+     "actual": null,
+     "goal": 0.98
+    },
+    {
+     "month": "APR",
+     "actual": null,
+     "goal": 0.98
+    },
+    {
+     "month": "MAY",
+     "actual": null,
+     "goal": 0.98
+    },
+    {
+     "month": "JUN",
+     "actual": null,
+     "goal": 0.98
+    },
+    {
+     "month": "JUL",
+     "actual": null,
+     "goal": 0.98
+    },
+    {
+     "month": "AUG",
+     "actual": null,
+     "goal": 0.98
+    },
+    {
+     "month": "SEP",
+     "actual": null,
+     "goal": 0.98
+    },
+    {
+     "month": "OCT",
+     "actual": null,
+     "goal": 0.98
+    },
+    {
+     "month": "NOV",
+     "actual": null,
+     "goal": 0.98
+    },
+    {
+     "month": "DEC",
+     "actual": null,
+     "goal": 0.98
+    }
+   ]
+  },
+  {
+   "id": "materials",
+   "name": "Materials",
+   "owner": "Materials lead",
+   "dorQuestion": "Will material flow support the schedule today?",
+   "kpiDaily": {
+    "name": "Critical buffer parts inventory",
+    "unit": "count",
+    "better": "higher",
+    "boardLabel": "Critical buffer parts inventory"
+   },
+   "kpiMonthly": {
+    "name": "Expedited shipments",
+    "unit": "count",
+    "better": "lower",
+    "boardLabel": "Expedited shipments"
+   },
+   "issue": "all items at 2 days",
+   "issueExtra": "all items delivered material needed on hand",
+   "action": null,
+   "actionExtra": null,
+   "kbiLevel1Status": "G",
+   "daily": {
+    "mold": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "bond": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "prime": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "compounding": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "plant": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 2,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 3,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 4,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 5,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 6,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": 26
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": 26
+     },
+     {
+      "day": 9,
+      "actual": 25,
+      "goal": 26
+     },
+     {
+      "day": 10,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 11,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 12,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 13,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": 26
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": 26
+     },
+     {
+      "day": 16,
+      "actual": 25,
+      "goal": 26
+     },
+     {
+      "day": 17,
+      "actual": 24,
+      "goal": 26
+     },
+     {
+      "day": 18,
+      "actual": 24,
+      "goal": 26
+     },
+     {
+      "day": 19,
+      "actual": 24,
+      "goal": 26
+     },
+     {
+      "day": 20,
+      "actual": 25,
+      "goal": 26
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": 26
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": 26
+     },
+     {
+      "day": 23,
+      "actual": 24,
+      "goal": 26
+     },
+     {
+      "day": 24,
+      "actual": 22,
+      "goal": 26
+     },
+     {
+      "day": 25,
+      "actual": 23,
+      "goal": 26
+     },
+     {
+      "day": 26,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 27,
+      "actual": 26,
+      "goal": 26
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 26
+     }
+    ]
+   },
+   "monthToDate": [
+    {
+     "day": 1,
+     "actual": null,
+     "goal": null
+    },
+    {
+     "day": 2,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 3,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 4,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 5,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 6,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 7,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 8,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 9,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 10,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 11,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 12,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 13,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 14,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 15,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 16,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 17,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 18,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 19,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 20,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 21,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 22,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 23,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 24,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 25,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 26,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 27,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 28,
+     "actual": 0,
+     "goal": 0
+    }
+   ],
+   "monthly": [
+    {
+     "month": "JAN",
+     "actual": 26,
+     "goal": 0
+    },
+    {
+     "month": "FEB",
+     "actual": 26,
+     "goal": 0
+    },
+    {
+     "month": "MAR",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "APR",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "MAY",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "JUN",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "JUL",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "AUG",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "SEP",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "OCT",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "NOV",
+     "actual": null,
+     "goal": 0
+    },
+    {
+     "month": "DEC",
+     "actual": null,
+     "goal": 0
+    }
+   ]
+  },
+  {
+   "id": "plant",
+   "name": "Plant",
+   "owner": "Plant manager",
+   "dorQuestion": "Are we capable of earning our hours today?",
+   "kpiDaily": {
+    "name": "Earned hours",
+    "unit": "hours",
+    "better": "higher",
+    "boardLabel": "Earned hours"
+   },
+   "kpiMonthly": {
+    "name": "Earned hours, month to date",
+    "unit": "hours",
+    "better": "higher",
+    "boardLabel": "Earned hours, month to date"
+   },
+   "issue": "Good job recovering the month!",
+   "issueExtra": "Only 304 hours earned on third shift. 47 Directs on First shift. Earned hours should be attainable today.",
+   "action": null,
+   "actionExtra": null,
+   "kbiLevel1Status": "G",
+   "daily": {
+    "mold": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 2,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 3,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 4,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 5,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "bond": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 2,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 3,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 4,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 5,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "prime": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 3,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 4,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 5,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 6,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 10,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 11,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 12,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 13,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 14,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 17,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 18,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 19,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 20,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 21,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 24,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": 0
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": 0
+     }
+    ],
+    "compounding": [
+     {
+      "day": 1,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 2,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 3,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 4,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 5,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 6,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 7,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 8,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 9,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 10,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 11,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 12,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 13,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 14,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 15,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 16,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 17,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 18,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 19,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 20,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 21,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 22,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 23,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 24,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 25,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 26,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 27,
+      "actual": null,
+      "goal": null
+     },
+     {
+      "day": 28,
+      "actual": null,
+      "goal": null
+     }
+    ],
+    "plant": [
+     {
+      "day": 1,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 2,
+      "actual": 667.81,
+      "goal": 616
+     },
+     {
+      "day": 3,
+      "actual": 635.62,
+      "goal": 616
+     },
+     {
+      "day": 4,
+      "actual": 675.344,
+      "goal": 616
+     },
+     {
+      "day": 5,
+      "actual": 645.77,
+      "goal": 616
+     },
+     {
+      "day": 6,
+      "actual": 412.5694578,
+      "goal": 616
+     },
+     {
+      "day": 7,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 8,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 9,
+      "actual": 631.4463599,
+      "goal": 616
+     },
+     {
+      "day": 10,
+      "actual": 661.3826896,
+      "goal": 616
+     },
+     {
+      "day": 11,
+      "actual": 638.36,
+      "goal": 616
+     },
+     {
+      "day": 12,
+      "actual": 569.34,
+      "goal": 616
+     },
+     {
+      "day": 13,
+      "actual": 293.66,
+      "goal": 616
+     },
+     {
+      "day": 14,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 15,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 16,
+      "actual": 698.1,
+      "goal": 616
+     },
+     {
+      "day": 17,
+      "actual": 683.011,
+      "goal": 616
+     },
+     {
+      "day": 18,
+      "actual": 675.661,
+      "goal": 616
+     },
+     {
+      "day": 19,
+      "actual": 589.376,
+      "goal": 616
+     },
+     {
+      "day": 20,
+      "actual": 595.134,
+      "goal": 616
+     },
+     {
+      "day": 21,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 22,
+      "actual": 0,
+      "goal": 0
+     },
+     {
+      "day": 23,
+      "actual": 694.513,
+      "goal": 616
+     },
+     {
+      "day": 24,
+      "actual": 707.53,
+      "goal": 616
+     },
+     {
+      "day": 25,
+      "actual": 723.24,
+      "goal": 616
+     },
+     {
+      "day": 26,
+      "actual": 740.907948,
+      "goal": 616
+     },
+     {
+      "day": 27,
+      "actual": 625.38,
+      "goal": 616
+     },
+     {
+      "day": 28,
+      "actual": 0,
+      "goal": 0
+     }
+    ]
+   },
+   "monthToDate": [
+    {
+     "day": 1,
+     "actual": 0,
+     "goal": 0
+    },
+    {
+     "day": 2,
+     "actual": 667.81,
+     "goal": 616
+    },
+    {
+     "day": 3,
+     "actual": 1303.4299999999998,
+     "goal": 1232
+    },
+    {
+     "day": 4,
+     "actual": 1978.774,
+     "goal": 1848
+    },
+    {
+     "day": 5,
+     "actual": 2624.544,
+     "goal": 2464
+    },
+    {
+     "day": 6,
+     "actual": 3037.1134578,
+     "goal": 3080
+    },
+    {
+     "day": 7,
+     "actual": 3037.1134578,
+     "goal": 3080
+    },
+    {
+     "day": 8,
+     "actual": 3037.1134578,
+     "goal": 3080
+    },
+    {
+     "day": 9,
+     "actual": 3668.5598177,
+     "goal": 3696
+    },
+    {
+     "day": 10,
+     "actual": 4329.9425073,
+     "goal": 4312
+    },
+    {
+     "day": 11,
+     "actual": 4968.3025073,
+     "goal": 4928
+    },
+    {
+     "day": 12,
+     "actual": 5537.6425073,
+     "goal": 5544
+    },
+    {
+     "day": 13,
+     "actual": 5831.3025073,
+     "goal": 6160
+    },
+    {
+     "day": 14,
+     "actual": 5831.3025073,
+     "goal": 6160
+    },
+    {
+     "day": 15,
+     "actual": 5831.3025073,
+     "goal": 6160
+    },
+    {
+     "day": 16,
+     "actual": 6529.4025073,
+     "goal": 6776
+    },
+    {
+     "day": 17,
+     "actual": 7212.4135073,
+     "goal": 7392
+    },
+    {
+     "day": 18,
+     "actual": 7888.0745073,
+     "goal": 8008
+    },
+    {
+     "day": 19,
+     "actual": 8477.4505073,
+     "goal": 8624
+    },
+    {
+     "day": 20,
+     "actual": 9072.5845073,
+     "goal": 9240
+    },
+    {
+     "day": 21,
+     "actual": 9072.5845073,
+     "goal": 9240
+    },
+    {
+     "day": 22,
+     "actual": 9072.5845073,
+     "goal": 9240
+    },
+    {
+     "day": 23,
+     "actual": 9767.0975073,
+     "goal": 9856
+    },
+    {
+     "day": 24,
+     "actual": 10474.627507300002,
+     "goal": 10472
+    },
+    {
+     "day": 25,
+     "actual": 11197.867507300001,
+     "goal": 11088
+    },
+    {
+     "day": 26,
+     "actual": 11938.775455300001,
+     "goal": 11704
+    },
+    {
+     "day": 27,
+     "actual": 12564.1554553,
+     "goal": 12320
+    },
+    {
+     "day": 28,
+     "actual": 12564.1554553,
+     "goal": 12320
+    }
+   ],
+   "monthly": [
+    {
+     "month": "JAN",
+     "actual": 11788.1,
+     "goal": 13104
+    },
+    {
+     "month": "FEB",
+     "actual": 12564,
+     "goal": 12320
+    },
+    {
+     "month": "MAR",
+     "actual": null,
+     "goal": 13200
+    },
+    {
+     "month": "APR",
+     "actual": null,
+     "goal": 12600
+    },
+    {
+     "month": "MAY",
+     "actual": null,
+     "goal": 12160
+    },
+    {
+     "month": "JUN",
+     "actual": null,
+     "goal": 12672
+    },
+    {
+     "month": "JUL",
+     "actual": null,
+     "goal": 11040
+    },
+    {
+     "month": "AUG",
+     "actual": null,
+     "goal": 12600
+    },
+    {
+     "month": "SEP",
+     "actual": null,
+     "goal": 12600
+    },
+    {
+     "month": "OCT",
+     "actual": null,
+     "goal": 13200
+    },
+    {
+     "month": "NOV",
+     "actual": null,
+     "goal": 10944
+    },
+    {
+     "month": "DEC",
+     "actual": null,
+     "goal": 10200
+    }
+   ]
+  }
+ ],
+ "leadingIndicators": {
+  "Environmental Health and Safety": {
+   "purpose": "Predict injury risk before harm occurs",
+   "kbis": [
+    {
+     "level": "Level 1",
+     "text": "% of near-miss cards submitted vs target (daily)"
+    },
+    {
+     "level": "Level 2",
+     "text": "% of near-miss corrective actions completed on time"
+    },
+    {
+     "level": "Level 3",
+     "text": "% of safety audits completed as scheduled"
+    }
+   ],
+   "laggingLink": "TRIR, First Aid, Recordables, Lost Time",
+   "dorQuestion": "Did we identify and correct hazards before exposure today?"
+  },
+  "People": {
+   "purpose": "Ensure capability, coverage, and engagement",
+   "kbis": [
+    {
+     "level": "Level 1",
+     "text": "% of associates fully trained & certified for assigned job"
+    },
+    {
+     "level": "Level 2",
+     "text": "% of critical roles with cross-trained backup"
+    },
+    {
+     "level": "Level 3",
+     "text": "% of planned training completed this week"
+    }
+   ],
+   "laggingLink": "Absenteeism, Turnover, Overtime, Grievances",
+   "dorQuestion": "Do we have the right people, trained and ready, on the floor today?"
+  },
+  "Quality": {
+   "purpose": "Prevent defects from being built or shipped",
+   "kbis": [
+    {
+     "level": "Level 1",
+     "text": "% of critical characteristics verified at first-off"
+    },
+    {
+     "level": "Level 2",
+     "text": "% of layered process audits completed on schedule"
+    },
+    {
+     "level": "Level 3",
+     "text": "% of open corrective actions past due"
+    }
+   ],
+   "laggingLink": "Scrap, PPM, Customer Complaints, Warranty",
+   "dorQuestion": "Are our controls strong enough to prevent defects today?"
+  },
+  "Engineering": {
+   "purpose": "Reduce variation and process risk",
+   "kbis": [
+    {
+     "level": "Level 1",
+     "text": "% of jobs running within control limits"
+    },
+    {
+     "level": "Level 2",
+     "text": "% of open process deviations without containment"
+    },
+    {
+     "level": "Level 3",
+     "text": "% of process capability checks completed as planned"
+    }
+   ],
+   "laggingLink": "Scrap, Rework, Chronic Downtime, Quality Escapes",
+   "dorQuestion": "Is the process capable and controlled today?"
+  },
+  "Tooling": {
+   "purpose": "Ensure tooling readiness and longevity",
+   "kbis": [
+    {
+     "level": "Level 1",
+     "text": "% of PMs completed on time"
+    },
+    {
+     "level": "Level 2",
+     "text": "% of temporary repairs without permanent fix plan"
+    },
+    {
+     "level": "Level 3",
+     "text": "Tool PM completion rate"
+    }
+   ],
+   "laggingLink": "Tool-related downtime, Scrap, Quality Issues",
+   "dorQuestion": "Are tools production-ready before we press \u2018start\u2019?"
+  },
+  "Operations": {
+   "purpose": "Ensure stable, predictable production",
+   "kbis": [
+    {
+     "level": "Level 1",
+     "text": "% of pre-flight checklist completed before start-up"
+    },
+    {
+     "level": "Level 2",
+     "text": "% of lines started on time"
+    },
+    {
+     "level": "Level 3",
+     "text": "% of standard work audits completed"
+    }
+   ],
+   "laggingLink": "Attainment, OEE, Throughput, Downtime",
+   "dorQuestion": "Did we start the shift in control?"
+  },
+  "Maintenance": {
+   "purpose": "Prevent unplanned downtime",
+   "kbis": [
+    {
+     "level": "Level 1",
+     "text": "% of PMs completed on time"
+    },
+    {
+     "level": "Level 2",
+     "text": "% of equipment with no overdue work orders"
+    },
+    {
+     "level": "Level 3",
+     "text": "Top 3 repeat failures actively being worked"
+    }
+   ],
+   "laggingLink": "Unplanned Downtime, MTBF, Emergency Repairs",
+   "dorQuestion": "Are we maintaining equipment before it fails?"
+  },
+  "Materials": {
+   "purpose": "Ensure uninterrupted flow",
+   "kbis": [
+    {
+     "level": "Level 1",
+     "text": "% of materials staged & verified before shift start"
+    },
+    {
+     "level": "Level 2",
+     "text": "% of Kanban signals responded to within SLA"
+    },
+    {
+     "level": "Level 3",
+     "text": "Inventory accuracy on critical items"
+    }
+   ],
+   "laggingLink": "Line Stoppages, Expedites, Premium Freight",
+   "dorQuestion": "Will material flow support the schedule today?"
+  }
+ },
+ "glossary": {
+  "TRIR": "Total Recordable Incident Rate: recordable injuries per 200,000 hours worked (OSHA standard).",
+  "DL": "Direct labor: the associates who build product on the line.",
+  "Earned hours": "Standard hours of work the plant produced. More earned than planned = ahead.",
+  "Scrap %": "Share of production thrown away as bad parts. Lower is better.",
+  "Month to date": "Everything from the 1st of the month through the selected day."
+ }
+}

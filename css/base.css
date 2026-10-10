@@ -1,0 +1,183 @@
+/* Base: reset, type defaults, controls shared by every screen. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--surface);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.45;
+  font-kerning: normal;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, p, ol, ul, dl, dd, figure { margin: 0; padding: 0; }
+ol, ul { list-style: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; }
+abbr[title] { text-decoration: none; cursor: help; }
+table { border-collapse: collapse; }
+
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--s-4);
+  top: -100px;
+  z-index: 50;
+  padding: var(--s-3) var(--s-4);
+  background: var(--lx-navy-950);
+  color: var(--n-0);
+  font-weight: 600;
+  border-radius: var(--radius);
+}
+.skip-link:focus { top: var(--s-4); }
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-5);
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  font-weight: 650;
+  letter-spacing: 0.005em;
+  line-height: 1.1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 140ms var(--ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn .icon { width: 18px; height: 18px; flex: none; }
+
+.btn--primary { background: var(--btn-primary-bg); color: var(--btn-primary-ink); }
+.btn--mint { background: var(--btn-mint-bg); color: var(--btn-mint-ink); }
+.btn--secondary { color: var(--ink); border-color: var(--btn-line); }
+.btn--outline-light { color: var(--bar-ink); border-color: var(--bar-ink); }
+.btn--quiet {
+  min-height: var(--tap);
+  padding: 0 var(--s-3);
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+.btn--text {
+  min-height: var(--tap);
+  padding: 0;
+  border: 0;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn--primary:hover, .btn--mint:hover { filter: brightness(1.07); }
+  .btn--secondary:hover { background: var(--surface-quiet); }
+  .btn--outline-light:hover { background: var(--lx-navy-800); }
+  .btn--quiet:hover, .btn--text:hover { text-decoration-thickness: 2px; }
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--ink-2);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 140ms var(--ease-out), border-color 150ms ease, background-color 150ms ease;
+}
+.icon-btn:active:not(:disabled) { transform: scale(0.95); }
+.icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.icon-btn .icon { width: 20px; height: 20px; }
+@media (hover: hover) and (pointer: fine) {
+  .icon-btn:hover:not(:disabled) { border-color: currentColor; }
+}
+
+/* ---------- Status: word + glyph + color, never color alone ---------- */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-weight: 650;
+  line-height: 1.2;
+}
+.status .glyph { width: 1.15em; height: 1.15em; flex: none; }
+.status--on { color: var(--on); }
+.status--off { color: var(--off); }
+.status--not-entered,
+.status--no-production,
+.status--no-goal { color: var(--neutral); font-weight: 550; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.nowrap { white-space: nowrap; }
+
+/* "What does this mean?" buttons for glossary terms. Small to see, 44px to
+   hit, and above the row's stretched link so they never open the row. */
+.term-btn {
+  position: relative;
+  z-index: 2;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin: 0 0 0 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink-2);
+  vertical-align: -4px;
+  cursor: pointer;
+}
+.term-btn::before { content: ""; position: absolute; inset: -12px; }
+.term-btn .icon { width: 17px; height: 17px; }
+.term-btn[aria-expanded="true"] { color: var(--ink); }
+@media (hover: hover) and (pointer: fine) {
+  .term-btn:hover { color: var(--ink); }
+}

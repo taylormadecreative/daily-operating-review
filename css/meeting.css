@@ -1,0 +1,190 @@
+/* Meeting mode (TV). Everything is sized in em of one base that tracks the
+   screen: 30px at 1920x1080, 20px at 1280x720. Problem text = 1em (30px). */
+
+.meeting {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.6em;
+  padding: 0.7em 1.6em 0.6em;
+  font-size: min(calc(100vh / 36), calc(100vw / 64));
+  background: var(--surface);
+  color: var(--ink);
+  overflow: hidden;
+}
+.meeting[hidden] { display: none; }
+html.is-meeting, html.is-meeting body { overflow: hidden; }
+
+.meeting .btn { font-size: max(0.6em, 15px); min-height: max(1.6em, 44px); }
+.meeting .btn .icon { width: 1.1em; height: 1.1em; }
+.meeting .btn--secondary { color: var(--ink); border-color: var(--btn-line); }
+
+.meeting-top { display: flex; align-items: center; gap: 1em; }
+.meeting-progress { flex: 1; min-width: 0; }
+.meeting-progress-text { font-size: max(0.75em, 13px); font-weight: 650; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.meeting-progress-line { position: relative; height: 4px; margin-top: 0.3em; border-radius: 2px; background: var(--rule); overflow: hidden; }
+.meeting-progress-line span { position: absolute; inset: 0; background: var(--lx-mint-400); transform-origin: left center; transform: scaleX(0); transition: transform 200ms var(--ease-out); }
+.meeting-timer { font-size: max(0.8em, 13px); font-weight: 650; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.kbd { margin-left: 0.4em; padding: 0.05em 0.35em; border: 1px solid var(--rule-strong); border-radius: 3px; font-size: max(0.8em, 11px); color: var(--ink-2); }
+
+.meeting-stage { min-height: 0; }
+
+.meeting-controls { display: flex; align-items: center; justify-content: space-between; gap: 1em; }
+.meeting-hint { font-size: max(0.55em, 12px); color: var(--ink-2); text-align: center; }
+.meeting-nav { min-width: 7.5em; }
+
+/* ---------- Slide 0: summary and roadmap ---------- */
+
+.m-summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+.m-date { font-size: 1.1em; font-weight: 650; color: var(--ink-2); }
+.m-headline {
+  margin-top: 0.15em;
+  font-family: var(--font-display);
+  font-size: 5.6em;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: 0.005em;
+}
+.m-sub { margin-top: 0.4em; font-size: 1em; color: var(--ink-2); }
+.m-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6em;
+  margin-top: 1.2em;
+}
+.m-tile {
+  display: grid;
+  gap: 0.25em;
+  padding: 0.6em 0.75em 0.7em;
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+}
+.m-tile[data-status="off"] { border: 2px solid var(--off); }
+.m-tile-num { font-size: max(0.65em, 12px); font-weight: 650; color: var(--ink-2); }
+.m-tile-name {
+  font-family: var(--font-display);
+  font-size: 2em;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+}
+.m-tile-status { font-size: 0.85em; }
+
+/* ---------- Slides 1-8: one function ---------- */
+
+.m-fn {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 0 1.6em;
+  height: 100%;
+}
+.m-col { display: flex; flex-direction: column; gap: 0.7em; min-height: 0; }
+.m-col--right { padding-top: 0.2em; }
+.m-col--left { overflow: hidden; }
+.m-col--left .m-notes { flex: 1 1 auto; overflow: hidden; }
+.m-name {
+  font-family: var(--font-display);
+  font-size: 3.4em;
+  font-weight: 800;
+  line-height: 0.86;
+  letter-spacing: 0.012em;
+  text-transform: uppercase;
+}
+.m-owner { margin-top: 0.35em; font-size: 0.9em; font-weight: 650; }
+.m-question { margin-top: 0.1em; font-size: 0.9em; color: var(--ink-2); max-width: 34em; }
+
+.m-kpis {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-content: start;
+  border-top: 1px solid var(--rule-strong);
+}
+.m-kpi { padding: 0.45em 0.6em 0 0; min-width: 0; }
+.m-kpi + .m-kpi { padding-left: 0.8em; border-left: 1px solid var(--rule); }
+.m-kpi-label { font-size: max(0.9em, 13px); font-weight: 650; color: var(--ink-2); }
+.m-status { margin-top: 0.2em; font-size: 1.05em; font-weight: 700; }
+.m-num {
+  margin-top: 0.15em;
+  font-family: var(--font-display);
+  font-size: 3.6em;
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: 0.005em;
+}
+.m-num--empty { font-family: var(--font-ui); font-size: 1em; font-weight: 600; color: var(--ink-2); }
+.m-rest { font-size: 0.9em; font-variant-numeric: tabular-nums; }
+.m-measure { margin-top: 0.25em; font-size: max(0.85em, 13px); font-weight: 600; color: var(--ink); }
+
+.m-chart { display: flex; flex-direction: column; min-height: 0; }
+.m-record { margin-top: 0.4em; font-size: max(0.8em, 13px); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.m-section-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2em 0.8em;
+  font-size: max(0.8em, 13px);
+  font-weight: 650;
+  color: var(--ink-2);
+}
+.m-section-title .legend { font-size: 0.9em; }
+/* Problem heading with its status (Open · In progress · Closed) on the same line. */
+.m-note-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 1em; }
+.m-problem-status { margin-top: 0; font-size: 0.85em; }
+.m-problem-status .problem-status-label { font-size: 1em; }
+.m-chart .chart-host { flex: 1; min-height: 9em; margin-top: 0.4em; }
+.m-chart .chart-label { font-weight: 500; }
+
+.m-notes {
+  display: grid;
+  align-content: start;
+  gap: 0.5em;
+  min-height: 0;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--rule-strong);
+}
+.m-note-text {
+  margin-top: 0.15em;
+  font-size: 1em;
+  line-height: 1.28;
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--clamp, 5);
+  line-clamp: var(--clamp, 5);
+  overflow: hidden;
+}
+.m-note-text--problem { -webkit-line-clamp: var(--clamp, 8); line-clamp: var(--clamp, 8); }
+.m-note-text.is-empty { color: var(--ink-2); }
+
+/* Short screens (720p): the fixed 44px controls cost more, so the display
+   type gives back a little room for Problem and Next 24 hours. */
+@media (max-height: 820px) and (min-aspect-ratio: 4/3) {
+  .m-name { font-size: 3em; }
+  .m-num { font-size: 3.2em; }
+  .m-col { gap: 0.55em; }
+}
+
+/* Portrait or narrow screens: stack */
+@media (max-aspect-ratio: 4/3) {
+  .meeting { font-size: min(calc(100vh / 44), calc(100vw / 30)); }
+  .m-fn { grid-template-columns: 1fr; gap: 0.9em; overflow-y: auto; }
+  .m-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Phones are not the meeting screen, but keep it tidy there too */
+@media (max-width: 699px) {
+  .meeting { padding-inline: 1em; }
+  .meeting-hint { display: none; }
+  .meeting .btn { padding: 0 var(--s-4); }
+}
+
+/* Goal dashes need more weight at 15 ft */
+.meeting .chart-goal { stroke-width: 3; stroke-dasharray: 7 5; }
