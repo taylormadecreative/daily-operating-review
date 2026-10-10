@@ -67,8 +67,11 @@
   padding: 0 var(--s-3);
   border: 1px solid var(--bar-line);
   border-radius: var(--radius);
+  background: none;
   color: inherit;
+  font: inherit;
   font-weight: 650;
+  cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -340,10 +343,10 @@
   .cell--notes { border-top: 1px solid var(--rule); padding: var(--s-3) 0 var(--s-4); }
 }
 
-/* Tablet: two rows on the navy bar (brand + Home, then the day and the actions). */
-@media (min-width: 760px) and (max-width: 1179px) {
+/* Tablet: two rows on the navy bar (brand + Home + Customize, then the day and the actions). */
+@media (min-width: 760px) and (max-width: 1339px) {
   .topbar-inner { flex-wrap: wrap; row-gap: var(--s-2); }
-  .brand { flex: 1 1 calc(100% - 140px); }
+  .brand { flex: 1 1 calc(100% - 300px); }
   .topbar-home { order: 1; }
   .datebar { order: 2; margin-left: 0; }
   .topbar .actions { order: 3; margin-left: auto; }

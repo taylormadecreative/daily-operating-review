@@ -1,0 +1,241 @@
+/* Customize (classic board only). Two parts:
+   1. What the settings do to the board (read from data-cz-* on <html>; the
+      colors arrive as --cz-* custom properties, see tokens.css).
+   2. The "Customize this board" sheet. */
+
+/* ---------- 1. The board, customized ---------- */
+
+/* Where the off-goal color shows. "The cell" is the stylesheet's own wash. */
+:root[data-view="dor"][data-cz-place="row"] .row:has(.cell--day[data-status="off"]) { background: var(--off-wash); }
+:root[data-view="dor"][data-cz-place="row"] .row:has(.cell--day[data-status="off"]) .cell[data-status="off"] { background: transparent; }
+:root[data-view="dor"][data-cz-place="words"] .cell[data-status="off"] { background: transparent; }
+
+/* Which columns show. Each layout keeps its own grid; the hidden column's space goes to the others. */
+:root[data-view="dor"][data-cz-trend="off"] :is(.cell--trend, .head--trend),
+:root[data-view="dor"][data-cz-notes="off"] :is(.cell--notes, .head--notes) { display: none; }
+:root[data-view="dor"][data-cz-question="off"] .fn-question { display: none; }
+
+@media (min-width: 1180px) {
+  :root[data-view="dor"][data-cz-trend="off"] .board {
+    --cols-desktop: minmax(270px, 1.25fr) minmax(190px, 0.9fr) minmax(190px, 0.9fr) minmax(260px, 2fr);
+  }
+  :root[data-view="dor"][data-cz-trend="off"] .row { grid-template-areas: "fn day month notes"; }
+  :root[data-view="dor"][data-cz-notes="off"] .board {
+    --cols-desktop: minmax(270px, 1.25fr) minmax(190px, 0.9fr) minmax(190px, 0.9fr) minmax(220px, 1.4fr);
+  }
+  :root[data-view="dor"][data-cz-notes="off"] .row { grid-template-areas: "fn day month trend"; }
+  :root[data-view="dor"][data-cz-trend="off"][data-cz-notes="off"] .board {
+    --cols-desktop: minmax(270px, 1.4fr) minmax(190px, 1fr) minmax(190px, 1fr);
+  }
+  :root[data-view="dor"][data-cz-trend="off"][data-cz-notes="off"] .row { grid-template-areas: "fn day month"; }
+}
+@media (min-width: 760px) and (max-width: 1179px) {
+  :root[data-view="dor"][data-cz-trend="off"] .row { --cols: repeat(2, minmax(0, 1fr)); grid-template-areas: "fn fn" "day month" "notes notes"; }
+  :root[data-view="dor"][data-cz-notes="off"] .row { grid-template-areas: "fn fn fn" "day month trend"; }
+  :root[data-view="dor"][data-cz-trend="off"][data-cz-notes="off"] .row { grid-template-areas: "fn fn" "day month"; }
+}
+@media (max-width: 759px) {
+  :root[data-view="dor"][data-cz-trend="off"] .row { grid-template-areas: "fn fn" "day month" "notes notes"; }
+  :root[data-view="dor"][data-cz-notes="off"] .row { grid-template-areas: "fn fn" "day month" "trend trend"; }
+  :root[data-view="dor"][data-cz-trend="off"][data-cz-notes="off"] .row { grid-template-areas: "fn fn" "day month"; }
+}
+
+/* Large text: the board's type and spacing are in rem, so one root size scales them together. */
+:root[data-view="dor"][data-cz-size="large"] { font-size: 118.75%; }
+/* …and the masthead takes its two-row layout so the bigger brand never squeezes. */
+@media (min-width: 1340px) {
+  :root[data-view="dor"][data-cz-size="large"] .topbar-inner { flex-wrap: wrap; row-gap: var(--s-2); }
+  :root[data-view="dor"][data-cz-size="large"] .brand { flex: 1 1 calc(100% - 340px); }
+  :root[data-view="dor"][data-cz-size="large"] .topbar-home { order: 1; }
+  :root[data-view="dor"][data-cz-size="large"] .datebar { order: 2; margin-left: 0; }
+  :root[data-view="dor"][data-cz-size="large"] .topbar .actions { order: 3; margin-left: auto; }
+}
+
+/* A light header gets a hairline so it doesn't melt into the page. */
+:root[data-view="dor"][data-cz-header-rule="on"] .topbar { border-bottom: 1px solid var(--rule); }
+:root[data-view="dor"][data-cz-header-rule="on"] .mobile-bar { border-top: 1px solid var(--rule); }
+
+/* Phone masthead: two lines at most (the title and the plant), at any text size.
+   Large text grows the board; the masthead keeps standard type and spacing. */
+@media (max-width: 759px) {
+  .brand-title, .brand-plant { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  :root[data-view="dor"][data-cz-size="large"] .brand { padding: 8px 108px 8px 16px; }
+  :root[data-view="dor"][data-cz-size="large"] .brand-badge { height: 48px; }
+  :root[data-view="dor"][data-cz-size="large"] .brand-title { font-size: 17px; }
+  :root[data-view="dor"][data-cz-size="large"] .brand-plant { font-size: 14px; }
+  :root[data-view="dor"][data-cz-size="large"] .topbar-more { top: 8px; right: 16px; padding: 0 12px; font-size: 16px; }
+  :root[data-view="dor"][data-cz-size="large"] .date-label { font-size: 18px; }
+}
+/* Narrow phones: the Menu button keeps its icon only, so the title has room. */
+@media (max-width: 419px) {
+  .topbar-more { padding: 0 10px !important; }
+  .topbar-more-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .topbar .brand, :root[data-view="dor"][data-cz-size="large"] .brand { padding-right: 70px; }
+}
+
+/* A light custom header: the outline button's hover stays readable. */
+:root[data-view="dor"][data-cz-header="light"] .btn--outline-light:hover,
+:root[data-view="dor"][data-cz-header="light"] .topbar-home:hover { background: rgb(1 20 37 / 0.08); }
+
+/* ---------- Masthead: Customize, and the phone menu ---------- */
+
+.topbar-more { display: none; }
+.dor-menu { min-width: 230px; }
+.dor-menu .menu-item { color: inherit; text-decoration: none; }
+@media (max-width: 759px) {
+  .topbar .topbar-home { display: none; }
+  .topbar-more {
+    position: absolute;
+    top: var(--s-2);
+    right: var(--gutter);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    min-height: var(--tap);
+    margin-top: 2px;
+    padding: 0 var(--s-3);
+    border: 1px solid var(--bar-line);
+    border-radius: var(--radius);
+    background: none;
+    color: var(--bar-ink);
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .topbar-more .icon { width: 18px; height: 18px; }
+}
+
+/* ---------- 2. The sheet ---------- */
+
+.cz-sheet {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(420px, 100vw);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  box-shadow: -18px 0 40px -24px rgb(1 20 37 / 0.45);
+  transform: translateX(0);
+  transition: transform var(--dur-sheet-in) var(--ease-drawer), overlay var(--dur-sheet-in) allow-discrete, display var(--dur-sheet-in) allow-discrete;
+}
+.cz-sheet:not([open]) { transform: translateX(100%); transition-duration: var(--dur-sheet-out); }
+@starting-style { .cz-sheet[open] { transform: translateX(100%); } }
+/* The board stays fully visible beside the sheet: that is the live preview. */
+.cz-sheet::backdrop { background: transparent; }
+.cz-sheet[open] { display: flex; }
+.cz-panel { display: flex; flex-direction: column; width: 100%; min-height: 0; }
+.cz-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-4) 0; }
+.cz-title { font-family: var(--font-ui); font-size: 1.375rem; font-weight: 750; line-height: 1.15; outline: none; }
+.cz-lead { padding: var(--s-1) var(--s-4) var(--s-3); color: var(--ink-2); font-size: var(--fs-small); border-bottom: 1px solid var(--rule); }
+.cz-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--s-2) var(--s-4) var(--s-4); }
+.cz-group { margin: 0; padding: var(--s-4) 0 var(--s-3); border: 0; border-bottom: 1px solid var(--rule-quiet); min-width: 0; }
+.cz-group:last-child { border-bottom: 0; }
+.cz-legend { padding: 0; margin-bottom: var(--s-2); font-weight: 700; }
+.cz-sub { margin: var(--s-3) 0 0; padding: 0; border: 0; min-width: 0; }
+.cz-sub:disabled { opacity: 0.55; }
+.cz-sublegend { padding: 0; margin-bottom: var(--s-1); color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
+.cz-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-2); }
+.cz-options--stack { grid-template-columns: minmax(0, 1fr); }
+
+/* An option: a real radio (visually hidden), a sample in its color, the name, and a check when picked. */
+.cz-opt {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px var(--s-2);
+  min-height: var(--tap);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+}
+.cz-opt input[type="radio"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.cz-opt .cz-name { grid-column: 1; font-size: var(--fs-small); font-weight: 600; }
+.cz-default { color: var(--ink-2); font-weight: 500; }
+.cz-check { grid-column: 2; grid-row: 1 / span 2; width: 20px; height: 20px; color: var(--ink); opacity: 0; }
+.cz-opt:has(input:checked) { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+.cz-opt:has(input:checked) .cz-check { opacity: 1; }
+.cz-opt:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .cz-opt:hover { background: var(--surface-quiet); } }
+.cz-sample { display: inline-flex; align-items: center; gap: 6px; color: var(--sample, var(--ink)); font-weight: 700; }
+.cz-dot { width: 1.05em; height: 1.05em; flex: none; }
+.cz-bar { display: grid; place-items: center start; height: 26px; padding: 0 10px; border-radius: 4px; background: var(--sample, var(--lx-navy-900)); color: var(--sample-ink, #fff); font-weight: 700; }
+.cz-note { display: flex; align-items: center; gap: var(--s-2); min-height: 0; margin-top: var(--s-1); color: var(--ink-2); font-size: var(--fs-small); }
+.cz-shade { width: 18px; height: 18px; flex: none; border-radius: 4px; background: var(--sample); box-shadow: inset 0 0 0 1px rgb(1 20 37 / 0.2); }
+
+/* The Custom tile: a radio for "use my color" and, inside the same tile, the picker. */
+.cz-opt--custom { grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; padding-right: 8px; cursor: default; }
+/* The check sits at the end of the "Custom" line, so the sample and the picker keep their room. */
+.cz-opt--custom .cz-check { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; }
+.cz-custom-label { position: relative; display: grid; gap: 2px; min-width: 0; cursor: pointer; }
+.cz-custom-label input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.cz-pick-empty { white-space: nowrap; }
+.cz-opt .cz-color { position: relative; z-index: 1; width: 36px; height: 36px; margin: 0; padding: 2px; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); cursor: pointer; }
+.cz-pick-empty { display: none; color: var(--ink-2); font-size: var(--fs-small); font-weight: 600; }
+/* No custom color yet: "Pick a color" and a dashed tile, never a look-alike of a preset. */
+.cz-opt--custom.is-empty { border-style: dashed; }
+.cz-opt--custom.is-empty .cz-sample, .cz-opt--custom.is-empty .cz-bar { display: none; }
+.cz-opt--custom.is-empty .cz-pick-empty { display: block; }
+
+
+/* A pair that can't be told apart: the tile is off and says why. */
+.cz-blocked { grid-column: 1; color: var(--ink); font-size: var(--fs-caption); font-weight: 650; }
+.cz-blocked:empty { display: none; }
+.cz-opt.is-blocked { border-style: dashed; background: var(--surface-quiet); cursor: not-allowed; }
+.cz-opt.is-blocked :is(.cz-sample, .cz-name) { opacity: 0.55; }
+.cz-opt.is-blocked input[type="radio"] { cursor: not-allowed; }
+
+/* The preview: one department row, colored and tinted exactly as set. It stays in view while the options scroll. */
+.cz-preview { padding: var(--s-2) var(--s-4) var(--s-3); border-bottom: 1px solid var(--rule); background: var(--surface); }
+.cz-preview-label { margin-bottom: var(--s-1); color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; }
+.cz-mini-row { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr); border-top: 2px solid var(--rule-strong); border-bottom: 2px solid var(--rule-strong); }
+.cz-mini-fn { padding: 8px 8px 8px 0; font-family: var(--font-display); font-size: 1.375rem; font-weight: 700; line-height: 1; text-transform: uppercase; }
+.cz-mini-cell { display: flex; align-items: center; gap: 6px; padding: 8px; border-left: 1px solid var(--rule); font-size: var(--fs-small); font-weight: 700; }
+.cz-mini-cell .cz-dot { width: 1em; height: 1em; }
+.cz-mini-cell--off { color: var(--off); }
+.cz-mini-cell--on { color: var(--on); }
+:root[data-cz-place="cell"] .cz-mini-cell--off { background: var(--off-wash); }
+:root[data-cz-place="row"] .cz-mini-row { background: var(--off-wash); }
+.cz-note:empty { display: none; }
+.cz-warn { margin-top: var(--s-2); padding: var(--s-2) var(--s-3); border-left: 3px solid var(--ink-2); background: var(--surface-quiet); color: var(--ink); font-size: var(--fs-small); }
+.cz-hint { color: var(--ink-2); font-size: var(--fs-small); }
+.cz-group > .cz-hint { margin-top: var(--s-1); }
+
+/* "Where the red shows": a tiny row drawing of each choice. */
+.cz-opt--place { grid-template-columns: auto minmax(0, 1fr) auto; }
+.cz-opt--place .cz-check { grid-column: 3; }
+.cz-place-text { display: grid; gap: 1px; }
+.cz-place-art { display: grid; grid-template-columns: 22px 14px 14px; gap: 2px; padding: 3px; border: 1px solid var(--rule); border-radius: 3px; }
+.cz-place-art i { height: 14px; border-radius: 2px; background: var(--surface-quiet); }
+.cz-place-art--cell i:nth-child(2) { background: var(--off-wash); box-shadow: inset 0 0 0 1px var(--off); }
+.cz-place-art--row { background: var(--off-wash); }
+.cz-place-art--row i { background: transparent; }
+.cz-place-art--words i:nth-child(2) { background: linear-gradient(var(--off), var(--off)) center / 70% 2px no-repeat; }
+
+.cz-toggle { display: flex; align-items: center; gap: var(--s-3); min-height: var(--tap); font-size: var(--fs-small); font-weight: 550; cursor: pointer; }
+.cz-toggle input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--lx-navy-900); }
+.cz-toggle:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+
+/* A toast raised from the sheet (Reset's Undo) sits inside it, just above the footer. */
+.cz-sheet .toasts { position: absolute; left: var(--s-4); right: var(--s-4); bottom: calc(72px + env(safe-area-inset-bottom, 0px)); width: auto; transform: none; }
+.cz-foot { display: flex; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--rule); background: var(--surface); }
+
+/* Phone: a bottom sheet, so the top of the board stays in view above it. */
+@media (max-width: 599px) {
+  .cz-sheet { inset: auto 0 0 0; width: 100vw; height: 55dvh; border-left: 0; border-top: 1px solid var(--rule); border-radius: 14px 14px 0 0; box-shadow: 0 -18px 40px -24px rgb(1 20 37 / 0.45); }
+  .cz-sheet:not([open]) { transform: translateY(100%); }
+  @starting-style { .cz-sheet[open] { transform: translateY(100%); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cz-sheet, .cz-sheet:not([open]) { transform: none; transition: none; }
+}

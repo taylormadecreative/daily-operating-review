@@ -23,6 +23,14 @@
   <script>
     // Home (dashboard) by default; ?view=dor shows the ledger board. Set before first paint.
     document.documentElement.dataset.view = new URLSearchParams(location.search).get('view') === 'dor' ? 'dor' : 'home';
+    // Customize (classic board): paint the saved look before first paint. js/customize.js keeps this cache.
+    try {
+      var cz = JSON.parse(localStorage.getItem('dor.customize.paint.v1') || 'null');
+      if (cz) {
+        for (var k in cz.attrs) document.documentElement.dataset[k] = cz.attrs[k];
+        if (cz.css) { var st = document.createElement('style'); st.id = 'cz-vars'; st.textContent = cz.css; document.head.appendChild(st); }
+      }
+    } catch (e) { /* storage blocked: defaults */ }
   </script>
   <link rel="preload" href="assets/fonts/BigShouldersDisplay-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/Archivo-var.woff2" as="font" type="font/woff2" crossorigin>
@@ -35,6 +43,8 @@
   <link rel="stylesheet" href="css/enter.css">
   <link rel="stylesheet" href="css/meeting.css">
   <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/customize.css">
+  <link rel="stylesheet" href="css/tour.css">
   <script type="module" src="js/app.js"></script>
 </head>
 <body>
@@ -80,13 +90,17 @@
     <aside class="side" aria-label="Plant navigation">
       <div class="side-brand">
         <svg class="i side-brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1M12 18h1M7 18h1"/></svg>
-        <span class="side-brand-text"><span class="side-brand-name" data-plant-name>Demo plant</span><span class="side-brand-sub">Daily Management System</span></span>
+        <span class="side-brand-text"><span class="side-brand-name" data-plant-name>Conneaut plant</span><span class="side-brand-sub">Daily Management System</span></span>
         <button class="side-menu-btn" type="button" data-open-drawer aria-label="Open menu" aria-haspopup="dialog">
           <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
       </div>
       <nav class="side-nav" data-side-nav aria-label="Pages and departments"></nav>
       <div class="side-bottom">
+        <button class="side-link side-tour" type="button" data-start-tour title="How it works">
+          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          <span class="side-text">How it works</span>
+        </button>
         <button class="side-link side-settings" type="button" data-settings aria-haspopup="dialog" aria-expanded="false" title="Settings">
           <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
           <span class="side-text">Settings</span>
@@ -102,7 +116,7 @@
     <div class="h-wrap">
       <header class="h-header">
         <div class="h-titles">
-          <h1 class="h-title" data-home-title>Demo DOR Dashboard</h1>
+          <h1 class="h-title" data-home-title>Conneaut DOR Dashboard</h1>
           <p class="h-sub h-summary" data-home-summary aria-live="polite"></p>
         </div>
         <nav class="h-date" aria-label="Production day">
@@ -154,7 +168,7 @@
         <div class="h-row h-row--2" data-row2></div>
         <div class="h-row h-row--3" data-row3></div>
         <footer class="h-foot">
-          <p>Prototype by Taylormade Creative for LinkedXL. One real month of plant numbers with names removed. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
+          <p>Prototype by Taylormade Creative for LinkedXL. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
         </footer>
       </main>
     </div>
@@ -172,7 +186,7 @@
           <svg class="brand-badge" viewBox="0 0 153.85 127.21" aria-hidden="true" focusable="false"><use href="#lx-badge"></use></svg>
           <span class="brand-text">
             <span class="brand-title">Daily Operating Review</span>
-            <span class="brand-plant" data-plant>Demo plant</span>
+            <span class="brand-plant" data-plant>Conneaut plant</span>
           </span>
         </a>
 
@@ -189,6 +203,12 @@
         <a class="topbar-home" href="./" data-nav-home>
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Home
         </a>
+        <button class="topbar-home topbar-customize" type="button" data-customize>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Customize
+        </button>
+        <button class="topbar-more" type="button" data-topbar-more aria-haspopup="menu" aria-expanded="false" aria-controls="dor-menu">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span class="topbar-more-text">Menu</span>
+        </button>
         <div class="actions">
           <a class="btn btn--mint" href="#enter" data-enter>Enter numbers</a>
           <a class="btn btn--outline-light" href="#meeting/0" data-run-meeting>Run meeting</a>
@@ -204,6 +224,7 @@
           <button class="btn btn--text howto-btn" type="button" popovertarget="how-to-read">
             <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-info"></use></svg>How to read this board
           </button>
+          <button class="btn btn--text howto-btn" type="button" data-start-tour>Take the tour</button>
           <p class="your-row" data-your-row hidden></p>
         </div>
         <p class="date-note" data-date-note role="status" hidden></p>
@@ -223,7 +244,7 @@
       </div>
 
       <footer class="board-foot">
-        <p>Prototype by Taylormade Creative for LinkedXL. One real month of plant numbers with names removed. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
+        <p>Prototype by Taylormade Creative for LinkedXL. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
         <button class="btn btn--quiet" type="button" data-reset>Reset demo data</button>
       </footer>
     </main>
@@ -257,13 +278,17 @@
 
   <dialog class="drawer" id="drawer" aria-label="Menu">
     <div class="drawer-head">
-      <span class="side-brand-text"><span class="side-brand-name" data-plant-name>Demo plant</span><span class="side-brand-sub">Daily Management System</span></span>
+      <span class="side-brand-text"><span class="side-brand-name" data-plant-name>Conneaut plant</span><span class="side-brand-sub">Daily Management System</span></span>
       <button class="drawer-close" type="button" data-close-drawer aria-label="Close menu">
         <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
     <nav class="side-nav" data-side-nav aria-label="Pages and departments"></nav>
     <div class="side-bottom">
+      <button class="side-link side-tour" type="button" data-start-tour>
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+        <span class="side-text">How it works</span>
+      </button>
       <button class="side-link side-settings" type="button" data-settings aria-haspopup="dialog" aria-expanded="false">
         <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
         <span class="side-text">Settings</span>
@@ -271,6 +296,13 @@
       <p class="side-powered side-powered--static"><span class="side-powered-text">Powered by</span><svg class="side-badge" viewBox="0 0 153.85 127.21" aria-hidden="true" focusable="false"><use href="#lx-badge"></use></svg><span class="sr-only">LinkedXL OS</span></p>
     </div>
   </dialog>
+
+  <div class="hmenu dor-menu" id="dor-menu" popover role="menu" aria-label="Menu">
+    <a class="menu-item" role="menuitem" href="./" data-nav-home>Home dashboard</a>
+    <button class="menu-item" type="button" role="menuitem" data-customize>Customize this board</button>
+    <button class="menu-item" type="button" role="menuitem" data-start-tour>Take the tour</button>
+  </div>
+  <dialog class="cz-sheet" id="customize" aria-labelledby="cz-title"></dialog>
 
   <dialog class="sheet" id="detail" aria-labelledby="detail-title"></dialog>
 

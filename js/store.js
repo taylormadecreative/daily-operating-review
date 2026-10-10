@@ -5,7 +5,7 @@
 // localStorage overlay of what people entered on this device. getMonth()
 // returns a fresh merged copy; nothing outside this file touches storage.
 
-const DATA_URL = new URL('../data/plant-2026-02.json', import.meta.url);
+const DATA_URL = new URL('../data/conneaut-2026-02.json', import.meta.url);
 const OVERLAY_KEY = 'dor.overlay.v1';
 export const AREA_IDS = ['plant', 'mold', 'bond', 'prime', 'compounding'];
 

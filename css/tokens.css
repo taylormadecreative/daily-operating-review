@@ -68,20 +68,21 @@
   --rule: var(--n-200);
   --rule-quiet: var(--n-100);
   --rule-strong: var(--lx-navy-900);
-  --on: var(--lx-mint-700);
-  --off: var(--lx-red-700);         /* 5.8:1 on the off wash */
-  --off-wash: #fbeced;
+  /* --cz-* come from Customize (classic board only; js/customize.js); unset = these defaults. */
+  --on: var(--cz-on, var(--lx-mint-700));
+  --off: var(--cz-off, var(--lx-red-700));         /* 5.8:1 on the off wash */
+  --off-wash: var(--cz-off-wash, #fbeced);
   --saved-wash: #dff3ed;
   --neutral: var(--lx-steel-600);
   --progress: #9a5b00;              /* problem "In progress": 5.4:1 on white */
   --focus: var(--lx-navy-900);
   --error: var(--lx-red-700);
 
-  --bar-bg: var(--lx-navy-900);
-  --bar-ink: var(--n-0);            /* 14.6:1 */
-  --bar-ink-2: var(--bar-text-2);
-  --bar-focus: var(--lx-mint-400);
-  --bar-line: #6f8fb0;        /* 4.0:1 on navy-900: control edges on the bar */
+  --bar-bg: var(--cz-bar-bg, var(--lx-navy-900));
+  --bar-ink: var(--cz-bar-ink, var(--n-0));            /* 14.6:1 */
+  --bar-ink-2: var(--cz-bar-ink-2, var(--bar-text-2));
+  --bar-focus: var(--cz-bar-focus, var(--lx-mint-400));
+  --bar-line: var(--cz-bar-line, #6f8fb0);        /* 4.0:1 on navy-900: control edges on the bar */
 
   --btn-primary-bg: var(--lx-navy-900);
   --btn-primary-ink: var(--n-0);
@@ -89,12 +90,12 @@
   --btn-mint-ink: var(--lx-navy-950); /* 9.9:1 */
   --btn-line: var(--lx-navy-900);
 
-  --logo-ink: var(--n-0);
-  --logo-navy: var(--n-0);
-  --logo-mint: var(--lx-mint-400);
+  --logo-ink: var(--cz-logo-ink, var(--n-0));
+  --logo-navy: var(--cz-logo-navy, var(--n-0));
+  --logo-mint: var(--cz-logo-mint, var(--lx-mint-400));
 
   --chart-bar: var(--lx-navy-900);
-  --chart-off: var(--lx-red-700);
+  --chart-off: var(--cz-off, var(--lx-red-700));
   --chart-goal: var(--lx-steel-600);
   --chart-grid: var(--n-100);
   --chart-label: var(--lx-steel-600);
@@ -103,8 +104,8 @@
   --tip-bg: var(--lx-navy-950);
   --tip-ink: var(--n-0);
   --tip-ink-2: var(--d-text-2);
-  --tip-on: var(--lx-mint-400);     /* 9.9:1 on the dark tooltip */
-  --tip-off: var(--lx-red-300);     /* 6.3:1 on the dark tooltip */
+  --tip-on: var(--cz-on-light, var(--lx-mint-400));     /* 9.9:1 on the dark tooltip */
+  --tip-off: var(--cz-off-light, var(--lx-red-300));     /* 6.3:1 on the dark tooltip */
 
   --backdrop: rgb(1 20 37 / 0.42);   /* dimming layer behind the sheet */
 }
@@ -127,8 +128,8 @@
   --rule: var(--d-rule);
   --rule-quiet: var(--d-rule);
   --rule-strong: var(--d-rule-strong);
-  --on: var(--lx-mint-400);         /* 9.9:1 */
-  --off: var(--lx-red-300);         /* 6.3:1 */
+  --on: var(--cz-on-light, var(--lx-mint-400));         /* 9.9:1 */
+  --off: var(--cz-off-light, var(--lx-red-300));         /* 6.3:1 */
   --neutral: var(--d-text-2);
   --progress: #f2b14c;              /* 9.6:1 on navy-950 */
   --focus: var(--lx-mint-400);
@@ -138,7 +139,7 @@
   --btn-line: var(--d-text-2);
 
   --chart-bar: var(--d-text);
-  --chart-off: var(--lx-red-300);
+  --chart-off: var(--cz-off-light, var(--lx-red-300));
   --chart-goal: var(--d-text-2);
   --chart-grid: var(--d-rule);
   --chart-label: var(--d-text-2);
@@ -147,8 +148,8 @@
   --tip-bg: var(--d-text);
   --tip-ink: var(--lx-navy-950);
   --tip-ink-2: var(--lx-steel-600);
-  --tip-on: var(--lx-mint-700);     /* 5.1:1 on the light tooltip */
-  --tip-off: var(--lx-red-700);     /* 5.7:1 on the light tooltip */
+  --tip-on: var(--cz-on, var(--lx-mint-700));     /* 5.1:1 on the light tooltip */
+  --tip-off: var(--cz-off, var(--lx-red-700));     /* 5.7:1 on the light tooltip */
 
   background: var(--surface);
   color: var(--ink);

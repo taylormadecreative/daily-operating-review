@@ -10,6 +10,14 @@ export function initToast() {
 
 export function toast(message, { actionLabel, onAction, duration = 10000 } = {}) {
   dismiss(true);
+  // Over an open modal (the Customize sheet) the page is inert, so the toast
+  // lives in that dialog, where its Undo can be pressed; otherwise in the page.
+  const host = [...document.querySelectorAll('dialog[open]')].pop() ?? document.body;
+  if (region.parentElement !== host) {
+    host.append(region);
+    // When that dialog closes, the message stays on screen in the page.
+    if (host !== document.body) host.addEventListener('close', () => document.body.append(region), { once: true });
+  }
   const el = document.createElement('div');
   el.className = 'toast';
   const text = document.createElement('p');

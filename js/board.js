@@ -69,7 +69,7 @@ export function problemStatusMarkup(fn, day, cls = 'problem-status') {
   return `<p class="${cls}"><span class="problem-status-label">Status:</span>${n.status ? issueStatusMarkup(n.status) : '<span class="ist ist--unset"><span class="ist-dot" aria-hidden="true"></span>Not set</span>'}</p>`;
 }
 
-/** "Entered by Safety lead · 6:41 AM" (the dot stays with the time). */
+/** "Entered by Jeff VanSickle · 6:41 AM" (the dot stays with the time). */
 export function enteredByMarkup(fn, day, { undo = false } = {}) {
   const info = entryInfo(fn, day);
   if (!info?.enteredBy) return '';

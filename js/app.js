@@ -11,9 +11,11 @@ import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscree
 import { initToast, toast } from './toast.js';
 import { formatDayMedium } from './format.js';
 import { renderHome, revealHomeRow, AREA_OPTIONS } from './home.js';
-import { renderNav, wireShell, setNavState } from './shell.js';
+import { renderNav, wireShell, setNavState, openMenu } from './shell.js';
 import { downloadCsv, printDay } from './export.js';
 import { esc, statusMarkup } from './ui.js';
+import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js';
+import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js';
 import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION } from './status.js';
 
 // We decide where the page scrolls after views close (the saved row).
@@ -51,6 +53,7 @@ function parseRoute() {
     };
   }
   if (v === 'meeting') return { ...base, view: 'meeting', slide: Math.max(0, Math.min(month.functions.length, Number(arg) || 0)) };
+  if (v === 'customize' && page === 'dor') return { ...base, view: 'customize' };
   if (store.functionById(month, v)) return { ...base, view: 'detail', fnId: v };
   return { ...base, view: 'board' };
 }
@@ -128,6 +131,10 @@ function applyRoute() {
     history.replaceState(history.state, '', urlFor(r.day, location.hash.slice(1)));
   }
 
+  // Anything opening on top of the board (Detail, Enter, Meeting, Customize: by a
+  // link, the URL or Forward) ends the tour without counting it as seen.
+  if (isTourOpen() && r.view !== 'board') endTour('interrupted');
+
   if (r.day !== day || r.page !== view || r.area !== area) {
     day = r.day;
     view = r.page;
@@ -145,6 +152,9 @@ function applyRoute() {
 
   if (r.view === 'meeting') openMeeting(month, r.day, r.slide);
   else if (isMeetingOpen()) closeMeeting();
+
+  if (r.view === 'customize') openCustomize();
+  else if (isCustomizeOpen()) closeCustomize();
 }
 
 function onPop() {
@@ -223,7 +233,27 @@ function wireBoard() {
       return;
     }
     if (e.target.closest('[data-reset]')) resetDemo();
+    if (e.target.closest('[data-customize]')) {
+      e.preventDefault();
+      document.getElementById('dor-menu')?.hidePopover?.();
+      navigate('customize');
+      return;
+    }
+    const more = e.target.closest('[data-topbar-more]');
+    if (more) { openMenu(document.getElementById('dor-menu'), more, 240); document.querySelector('#dor-menu .menu-item')?.focus(); return; }
+    if (e.target.closest('[data-start-tour]')) {
+      e.preventDefault();
+      document.getElementById('dor-menu')?.hidePopover?.();
+      const drawer = document.getElementById('drawer');
+      if (drawer?.open) drawer.close();
+      runTour();
+    }
   });
+}
+
+/** Start this view's tour; its last card can open the form straight away. */
+function runTour() {
+  startTour(view, { month, day, onTry: () => navigate('enter') });
 }
 
 /** Show another day (the ‹ › buttons and the date picker). */
@@ -463,10 +493,39 @@ async function init() {
   wireHowTo();
   wireTerms();
   wireDatePicker();
+  initCustomize({ onClose: closeView });
   window.addEventListener('popstate', onPop);
   let resizeTimer;
   window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(refreshMeeting, 150); });
   applyRoute();
+  autoTour();
+}
+
+/**
+ * First visit to each view: the tour starts by itself, once, and only on the
+ * board itself (never over Detail, Enter numbers, Meeting or Customize).
+ * ?tour=off keeps it away; ?tour=1 runs it again.
+ */
+function autoTour() {
+  const params = new URLSearchParams(location.search);
+  const ask = params.get('tour');
+  // Arrived from the other view's tour: one greeting, no second tour back to back.
+  let arrived = null;
+  try { arrived = sessionStorage.getItem(ARRIVAL_KEY); sessionStorage.removeItem(ARRIVAL_KEY); } catch { /* storage blocked */ }
+  if (arrived === view) {
+    toast(view === 'dor'
+      ? 'This is the classic board. Take its tour anytime from Take the tour.'
+      : 'This is the new dashboard. Take its tour anytime from How it works.');
+  }
+  if (ask === 'off' || parseRoute().view !== 'board' || isTourOpen()) return;
+  if (ask === '1' || !tourSeen(view)) {
+    runTour();
+    if (ask === '1') {
+      // ?tour=1 is for this visit only: a reload or a shared link won't re-run it.
+      params.delete('tour');
+      history.replaceState(history.state, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
+    }
+  }
 }
 
 init();

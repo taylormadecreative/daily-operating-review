@@ -1,5 +1,5 @@
 {
- "plant": "Demo",
+ "plant": "Conneaut",
  "month": "2026-02",
  "daysInMonth": 28,
  "boardDate": "2026-02-27",
@@ -29,7 +29,7 @@
   {
    "id": "safety",
    "name": "Safety",
-   "owner": "Safety lead",
+   "owner": "Jeff VanSickle",
    "dorQuestion": "Did we identify and correct hazards before exposure today?",
    "kpiDaily": {
     "name": "Safety & EHS incidents",
@@ -968,7 +968,7 @@
   {
    "id": "people",
    "name": "People",
-   "owner": "People lead",
+   "owner": "Beverly Merlene",
    "dorQuestion": "Do we have the right people, trained and ready, on the floor today?",
    "kpiDaily": {
     "name": "Clocked in",
@@ -1907,7 +1907,7 @@
   {
    "id": "quality",
    "name": "Quality",
-   "owner": "Quality lead",
+   "owner": "Rick Bachman",
    "dorQuestion": "Are our controls strong enough to prevent defects today?",
    "kpiDaily": {
     "name": "Quality incidents",
@@ -1922,7 +1922,7 @@
     "boardLabel": "Customer complaints"
    },
    "issue": "No new issues to report",
-   "issueExtra": null,
+   "issueExtra": "Prepping for the Huntington transfer",
    "action": "No new issues to report",
    "actionExtra": "Issue QA",
    "kbiLevel1Status": "G",
@@ -2846,7 +2846,7 @@
   {
    "id": "engineering",
    "name": "Engineering",
-   "owner": "Engineering lead",
+   "owner": "Mike Hagle",
    "dorQuestion": "Is the process capable and controlled today?",
    "kpiDaily": {
     "name": "Scrap %",
@@ -3785,7 +3785,7 @@
   {
    "id": "operations",
    "name": "Operations",
-   "owner": "Operations lead",
+   "owner": "Garold Hajec",
    "dorQuestion": "Did we start the shift in control?",
    "kpiDaily": {
     "name": "Parts produced",
@@ -4724,7 +4724,7 @@
   {
    "id": "maintenance",
    "name": "Maintenance",
-   "owner": "Maintenance lead",
+   "owner": "Jake Blarr",
    "dorQuestion": "Are we maintaining equipment before it fails?",
    "kpiDaily": {
     "name": "Critical equipment down",
@@ -5663,7 +5663,7 @@
   {
    "id": "materials",
    "name": "Materials",
-   "owner": "Materials lead",
+   "owner": "April Stanick",
    "dorQuestion": "Will material flow support the schedule today?",
    "kpiDaily": {
     "name": "Critical buffer parts inventory",
@@ -6602,7 +6602,7 @@
   {
    "id": "plant",
    "name": "Plant",
-   "owner": "Plant manager",
+   "owner": "Rick Doering",
    "dorQuestion": "Are we capable of earning our hours today?",
    "kpiDaily": {
     "name": "Earned hours",

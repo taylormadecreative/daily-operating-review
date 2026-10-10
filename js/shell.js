@@ -65,7 +65,7 @@ function place(pop, trigger, width) {
 }
 
 /** Open a popover beside its trigger; inside a modal it must live in that dialog. */
-function openMenu(pop, trigger, width) {
+export function openMenu(pop, trigger, width) {
   const host = trigger.closest('dialog') ?? document.body;
   if (pop.parentElement !== host) {
     if (pop.matches(':popover-open')) pop.hidePopover();
@@ -134,7 +134,7 @@ export function wireShell({ getMonth, onArea, onExport, onSwitchPerson }) {
   }, true);
 
   // Menus: arrow keys move between items, Esc closes (native popover).
-  for (const menu of [exportMenu, settings]) {
+  for (const menu of [exportMenu, settings, document.getElementById('dor-menu')].filter(Boolean)) {
     menu.addEventListener('keydown', (e) => {
       const items = [...menu.querySelectorAll('[role="menuitem"], .menu-item')];
       const i = items.indexOf(document.activeElement);
