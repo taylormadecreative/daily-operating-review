@@ -38,20 +38,31 @@
   border: 0;
 }
 @media (pointer: coarse) { .date-input { pointer-events: auto; opacity: 0.011; } }
+/* Only a tap target, as on the home: no native text ("02/27/2026"), segment highlight, caret or
+   calendar glyph shows through behind the control's own date (a ghost in a 3x touch screenshot).
+   The invisible calendar indicator covers the whole box, so a tap anywhere on it opens the picker. */
+.date-input { background: transparent; color: transparent; caret-color: transparent; -webkit-text-fill-color: transparent; }
+.date-input::-webkit-datetime-edit,
+.date-input::-webkit-datetime-edit-fields-wrapper,
+.date-input::-webkit-datetime-edit-text,
+.date-input::-webkit-datetime-edit-month-field,
+.date-input::-webkit-datetime-edit-day-field,
+.date-input::-webkit-datetime-edit-year-field { background: transparent; color: transparent; }
+.date-input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
 
 /* ---------- Grid ---------- */
 
 .board2 {
   /* Minimums add up to 1,176px, so the full table fits a 1280 laptop (24px gutters). */
   --c-fn: minmax(168px, 1.1fr);
-  --c-owner: minmax(88px, 0.5fr);
+  --c-owner: minmax(96px, 0.5fr);
   --c-kpi: minmax(120px, 0.8fr);
   --c-status: minmax(136px, 0.8fr);
   --c-mtd: minmax(136px, 0.8fr);
   --c-trend: minmax(140px, 1.1fr);
   --c-ytd: minmax(140px, 1.1fr);
-  --c-issue: minmax(124px, 1fr);
-  --c-action: minmax(124px, 1fr);
+  --c-issue: minmax(120px, 1fr);
+  --c-action: minmax(120px, 1fr);
   --v2-cols: var(--c-fn) var(--c-owner) var(--c-kpi) var(--c-status) var(--c-mtd) var(--c-trend) var(--c-ytd) var(--c-issue) var(--c-action);
   --v2-kpi-cols: var(--c-kpi) var(--c-status) var(--c-mtd) var(--c-trend) var(--c-ytd) var(--c-issue) var(--c-action);
   --gap: 2px;
@@ -137,7 +148,12 @@
 .fn-icon .i { width: 20px; height: 20px; }
 .fn-text { min-width: 0; }
 .board2 .fn-name { font-size: 1.5rem; line-height: 0.92; }
-.board2 .fn-question { margin-top: var(--s-1); max-width: 30ch; font-size: var(--fs-caption); }
+/* Under 1240 the question sits in a wide band: 52ch keeps it a comfortable measure without
+   leaving "today?" alone on a line; pretty wrapping evens the last line everywhere. */
+/* A pasted link or a long part number breaks anywhere rather than widening the cell (and a phone's page). */
+.board2 .fn-question { margin-top: var(--s-1); max-width: 52ch; font-size: var(--fs-caption); text-wrap: pretty; overflow-wrap: anywhere; }
+/* With the full table (1240 and up) the question takes its whole column: it's the row's reason to exist. */
+@media (min-width: 1240px) { .board2 .fn-question { max-width: none; } }
 /* The function name opens its Detail from anywhere in the function cell; each KPI
    row opens that KPI's Detail from anywhere in the row. Charts, info and undo
    buttons sit above those links so they keep working. */
@@ -191,7 +207,21 @@
   font-weight: 800;
   letter-spacing: 0.02em;
 }
-.owner-name { font-size: var(--fs-caption); font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+/* A name never splits mid-word: when its longest word is wider than the column (96px on laptops),
+   fitOwnerNames (board.js) steps it down one or two sizes ("Christopher", "Konstantinos"). Only a word
+   too long even at the smallest step ("Papadopoulos", "Venkatasubramanian") breaks, at a hyphen with three
+   letters on each side (soft hyphens from the pass, since browsers don't hyphenate capitalized words), never
+   clipped: the box stops at the cell's width (a centered flex item otherwise grows to its longest word).
+   The pass measures with words held whole (--measure). */
+.owner-name { max-width: 100%; font-size: var(--fs-caption); font-weight: 700; line-height: 1.2; overflow-wrap: break-word; text-wrap: balance; }
+.board2 .owner-name.owner-name--measure { overflow-wrap: normal; hyphens: manual; }
+.board2 .owner-name.owner-name--s { font-size: 0.75rem; }
+.board2 .owner-name.owner-name--xs { font-size: 0.6875rem; }
+.board2 .owner-name.owner-name--break { hyphens: auto; }
+/* No owner named yet (Board setup's "Owner name"): a neutral person glyph on a navy-tinted circle,
+   the size of the initials avatar at every width (it takes .avatar's sizes). */
+.board2 .avatar--none { background: var(--n-100); color: var(--lx-steel-600); box-shadow: inset 0 0 0 1px var(--n-200); }
+.board2 .avatar--none .i { width: 55%; height: 55%; }
 
 /* ---------- KPI ---------- */
 
@@ -199,7 +229,24 @@
 .kpi-month { margin-top: var(--s-2); padding-top: var(--s-2); border-top: 1px solid var(--rule-quiet); color: var(--ink-mid); font-size: var(--fs-caption); line-height: 1.3; }
 .kpi-month span { color: var(--ink-2); font-weight: 650; }
 .kpi-name { font-size: var(--fs-small); font-weight: 700; line-height: 1.25; }
+/* The name's last word and its info button stay together ("Earned / hours ⓘ", never a lone ⓘ):
+   the link's words wrap; a word joiner (board.js) glues the button to the last word. */
+.kpi-name { white-space: nowrap; }
+.kpi-name .kpi-link { white-space: normal; }
+.kpi-name .term-btn { margin-left: 4px; }
+/* The info button's 44px hit area reaches right of the button, not back over the name, and the
+   words sit above it anyway: a click on "Earned hours" always opens Detail. */
+.kpi-name .term-btn::before { inset: -12px -22px -12px -2px; }
+.kpi-link-text { position: relative; z-index: 3; }
 .kpi-goal { margin-top: var(--s-1); color: var(--ink); font-size: var(--fs-small); font-weight: 550; font-variant-numeric: tabular-nums; }
+/* "≥ 89 people" is one unit. Where "Goal: ≥ 16,980 parts" can't fit a line, every KPI puts
+   its value on its own line under a quiet "Goal:", so no row shows "Goal:" stranded by chance. */
+.kpi-goal-value { white-space: nowrap; }
+.v2cell--kpi { container: kpicell / inline-size; }
+@container kpicell (max-width: 135px) {
+  .kpi-goal-label { display: block; color: var(--ink-2); font-size: 0.75rem; font-weight: 600; line-height: 1.3; }
+  .kpi-goal-value { display: block; }
+}
 
 /* ---------- Status blocks (solid, as in the client's design) ---------- */
 
@@ -214,6 +261,10 @@
 }
 .v2cell--block .v2-label { color: inherit; opacity: 0.9; }
 .block-status { justify-content: center; gap: 5px; font-size: 0.75rem; font-weight: 750; letter-spacing: 0.02em; line-height: 1.15; text-transform: uppercase; white-space: nowrap; }
+/* A word too long to sit beside its glyph goes under it, never past the block's edge
+   ("No production" in a laptop's block); "Tracked from Fri, Feb 20" takes two balanced lines. */
+.block-status { flex-wrap: wrap; row-gap: 3px; }
+.block-status.status--not-tracked .status-word { white-space: normal; text-wrap: balance; }
 .block-status .glyph { width: 15px; height: 15px; flex: none; }
 .block-figure {
   margin-top: 2px;
@@ -224,7 +275,7 @@
   font-variant-numeric: tabular-nums;
 }
 .block-rest { margin-top: 2px; font-size: var(--fs-caption); font-weight: 600; font-variant-numeric: tabular-nums; }
-.block-measure { margin-top: 2px; font-size: 0.75rem; font-weight: 600; line-height: 1.25; text-wrap: balance; }
+.block-measure { margin-top: 4px; font-size: 0.75rem; font-weight: 600; line-height: 1.25; text-wrap: balance; }
 
 .v2cell--block[data-status="on"] { background: var(--on); color: var(--n-0); }
 .v2cell--block[data-status="off"] { background: var(--off); color: var(--n-0); }
@@ -272,11 +323,15 @@
 .v2cell--trend, .v2cell--ytd { padding: var(--s-2) var(--s-2) var(--s-1); background: var(--surface); }
 .board2 .mini { height: 88px; }
 .board2 .mini .chart-svg svg { overflow: visible; }
-.board2 .mini-caption { text-wrap: pretty; }
+.board2 .mini-caption { text-wrap: balance; }
 .board2 .mini-caption { margin-top: 2px; color: var(--ink-2); font-size: 0.75rem; line-height: 1.25; font-variant-numeric: tabular-nums; }
 .board2 .mini-empty { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.4; }
 .v2cell--fresh { display: flex; flex-direction: column; }
-.v2-first { position: relative; z-index: 3; min-height: var(--tap); padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+.v2-first { position: relative; z-index: 3; min-height: 0; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+/* Inline in its sentence, so the line keeps its height (and lines up with the cells beside it);
+   the hit area still reaches 44px. */
+.board2 .v2-first { display: inline; line-height: inherit; }
+.v2-first::before { content: ""; position: absolute; inset: -13px -4px; }
 .board2 .chart-dot { stroke: none; }
 .board2 .chart-dot--on { fill: var(--on); }
 .board2 .chart-dot--off { fill: var(--chart-off); }
@@ -330,6 +385,8 @@
 .board2-foot .key--actual { border-top-color: var(--bar-ink); }
 .board2-foot .key--goal { margin-left: 0; border-top-color: var(--bar-ink-2); }
 .b2-updated { color: var(--bar-ink-2); }
+/* Actual and Goal key the charts: gone when Customize hides both chart columns. */
+:root[data-cz-trend="off"] .b2-key-chart { display: none; }
 
 /* ---------- Wide: the header row names the columns ---------- */
 
@@ -342,8 +399,9 @@
 @media (max-width: 1239px) {
   .board2 {
     --c-kpi: minmax(120px, 0.9fr);
-    --c-status: minmax(112px, 0.8fr);
-    --c-mtd: minmax(112px, 0.8fr);
+    /* 124px: "No production" and "Tracked from" fit a block with room to spare. */
+    --c-status: minmax(124px, 0.8fr);
+    --c-mtd: minmax(124px, 0.8fr);
     --c-trend: minmax(140px, 1.15fr);
     --c-ytd: minmax(140px, 1.15fr);
     --c-issue: minmax(130px, 1fr);
@@ -404,7 +462,7 @@
   .v2cell--kpi { text-align: left; }
   .board2 .fn-name { font-size: 2rem; }
   .block-figure { font-size: 1.875rem; }
-  .b2-tagline { display: none; }
+  .b2-tagline, .b2-sep { display: none; }
 }
 
 /* ---------- Top bar: Home as an icon (room for the Action register) ---------- */
@@ -420,7 +478,7 @@
 .v2-more { margin-top: var(--s-1); color: var(--ink-2); font-size: 0.75rem; }
 .v2-needs .status { font-size: var(--fs-small); font-weight: 750; }
 .v2cell--needs { background: var(--off-wash); }
-.v2-add { margin-top: var(--s-2); min-height: 36px; padding: 0 var(--s-3); font-size: var(--fs-small); }
+.v2-add { margin-top: var(--s-2); min-height: var(--tap); padding: 0 var(--s-3); font-size: var(--fs-small); }
 .v2-add.btn--text { min-height: var(--tap); padding: 0; }
 .board2 .entered-by { margin-top: var(--s-2); }
 .board2 .entered-by .nowrap { white-space: nowrap; }
@@ -430,7 +488,10 @@
 .board-notes:empty { display: none; }
 .board-note { color: var(--ink); font-size: var(--fs-small); line-height: 1.45; }
 .board-note a { color: inherit; font-weight: 650; text-underline-offset: 0.2em; }
-.board-note--needs .status { font-size: var(--fs-small); font-weight: 750; }
+.board-note--needs .status,
+.board-note--clear .status { display: inline; font-size: var(--fs-small); font-weight: 750; }
+.board-note--needs .status .glyph,
+.board-note--clear .status .glyph { margin-right: 0.35em; vertical-align: -0.2em; }
 
 /* Owner inside the function cell: only where the owner column folds away (phone). */
 .fn-owner-inline { display: none; }
@@ -474,8 +535,18 @@
   :root[data-layout="v2"] .datebar { margin-left: auto; }
   :root[data-layout="v2"] .topbar .actions { margin-left: 0; }
 }
+/* Large text from 1240 to 1339 takes the two-row masthead it has from 1340 up (css/customize.css): on one
+   row the bigger "Daily Operating Review" ran 22 to 71px over the day's ‹ button. */
+@media (min-width: 1240px) and (max-width: 1339px) {
+  :root[data-layout="v2"][data-view="dor"][data-cz-size="large"] .topbar-inner { flex-wrap: wrap; row-gap: var(--s-2); }
+  :root[data-layout="v2"][data-view="dor"][data-cz-size="large"] .brand { flex: 1 1 calc(100% - 340px); }
+  :root[data-layout="v2"][data-view="dor"][data-cz-size="large"] .topbar-home { order: 1; }
+  :root[data-layout="v2"][data-view="dor"][data-cz-size="large"] .datebar { order: 2; margin-left: 0; }
+  :root[data-layout="v2"][data-view="dor"][data-cz-size="large"] .topbar .actions { order: 3; margin-left: auto; }
+}
 @media (min-width: 760px) and (max-width: 1239px) {
-  :root[data-layout="v2"] .brand { flex: 1 1 calc(100% - 140px); }
+  /* Row 1: brand, Home, Menu. Row 2: the day, Enter numbers, Run meeting. */
+  :root[data-layout="v2"] .brand { flex: 1 1 calc(100% - 220px); }
   :root[data-layout="v2"] .topbar-more { order: 1; }
 }
 
@@ -493,20 +564,191 @@
 
 /* ---------- A TV (1080p): all eight functions on one screen ---------- */
 
+/* Large text keeps the one-row masthead on a TV where it fits (1920 wide): its forced second row
+   (customize.css, for laptops) would cost the board a function's worth of height. Narrower, it wraps. */
 @media (min-width: 1800px) and (max-height: 1200px) {
-  :root[data-layout="v2"] .summary { padding-block: var(--s-2) var(--s-1); }
+  :root[data-layout="v2"][data-view="dor"][data-cz-size="large"] .brand { flex: 0 1 auto; }
+  :root[data-layout="v2"][data-view="dor"][data-cz-size="large"] :is(.topbar-home, .datebar, .topbar .actions) { order: 0; }
+  :root[data-layout="v2"][data-view="dor"][data-cz-size="large"] .datebar { margin-left: auto; }
+}
+
+@media (min-width: 1800px) and (max-height: 1200px) {
+  /* The count, the month line and the notes flow on as few rows as they fit. */
+  :root[data-layout="v2"] .summary { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--s-6); padding-block: var(--s-2) var(--s-1); }
+  :root[data-layout="v2"] .summary .date-note { flex-basis: 100%; }
+  :root[data-layout="v2"] .summary-lead { font-size: 1.5rem; }
+  :root[data-layout="v2"] .summary-line { margin-top: 0; }
+  :root[data-layout="v2"] .board-notes { margin-top: 0; }
+  :root[data-layout="v2"] .board2 .v2cell { padding: 4px 8px; }
+  :root[data-layout="v2"] .board2 .v2cell--fn { padding-left: var(--s-3); }
+  :root[data-layout="v2"] .board2 .mini { height: 52px; }
+  /* The name sits beside its icon and the question runs under both, the cell's whole width: a question of
+     Board setup's 140 characters shows whole in four lines (five with Large text). The clamp only guards
+     an older, longer question, which ends on a clean "…" with its full text as a title. */
+  :root[data-layout="v2"] .board2 .v2cell--fn { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; align-content: start; column-gap: var(--s-2); row-gap: 2px; }
+  :root[data-layout="v2"] .board2 .fn-text { display: contents; }
+  :root[data-layout="v2"] .board2 .fn-icon { margin-top: 0; }
+  :root[data-layout="v2"] .board2 .fn-question { grid-column: 1 / -1; margin-top: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
+  :root[data-layout="v2"][data-cz-size="large"] .board2 .fn-question { -webkit-line-clamp: 5; line-clamp: 5; }
+  /* Issue, action and register actions get two lines. */
+  :root[data-layout="v2"] .board2 :is(.v2-note, .v2-assigned-text) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  /* A weekend's "as of Fri, Feb 20" shows once, in the column head, not on every row (screen readers keep it per row). */
+  :root[data-layout="v2"] .board2 .block-asof { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :root[data-layout="v2"] .board2-head .h2c-asof { display: inline; }
+  :root[data-layout="v2"] .board2-head small:has(.h2c-asof) .h2c-month { display: none; }
+  :root[data-layout="v2"] .board2 .avatar { width: 40px; height: 40px; font-size: 1.125rem; }
+  :root[data-layout="v2"] .board2 .v2cell--owner { padding-top: var(--s-2); gap: 4px; }
+  :root[data-layout="v2"] .block-status { font-size: 0.8125rem; }
+  :root[data-layout="v2"] .block-figure { font-size: 2.125rem; }
+  :root[data-layout="v2"] .board2 .kpi-goal { margin-top: 2px; }
+  :root[data-layout="v2"] .cap-lower,
+  :root[data-layout="v2"] .cap-full { display: none; }
+  :root[data-layout="v2"] .cap-short { display: inline; }
+  :root[data-layout="v2"] .board2 .entered-by { display: none; }
+  /* 12px at the least (it was 11px); 2px under the goal line instead of 4 keeps the rows at their height. */
+  :root[data-layout="v2"] .board2 .block-measure { margin-top: 2px; font-size: 0.75rem; }
+  :root[data-layout="v2"] .board2 .block-measure .term-btn { display: none; }
+  :root[data-layout="v2"] .board2 .mini { height: 48px; }
+  :root[data-layout="v2"] .board2 .mini-caption { margin-top: 0; }
+  /* Add action under a note or a register action: a 20px line, so the row stays one row tall.
+     Its hit area is exactly 44px (20 + 16 above + 8 below), reaching up over the owner line rather than into the next row. */
+  :root[data-layout="v2"] .board2 .v2cell--action .v2-add.btn--text { min-height: 0; height: 20px; margin-top: 4px; }
+  :root[data-layout="v2"] .board2 .v2cell--action .v2-add.btn--text::before { content: ""; position: absolute; left: -4px; right: -4px; top: -16px; bottom: -8px; }
+  /* Every function is at least one full row tall (Plant, with one measure and no action, was shorter). */
+  :root[data-layout="v2"] .board2 .v2cell--owner + .kpirow { min-height: 98px; }
+}
+
+/* ---------- Chrome maximized on a 1080p screen (1920×945): all eight functions, one added KPI and the footer, no scroll ---------- */
+
+/* data-tv-dense (js/app.js): a short 1920 window, or a 1080p TV with added rows. */
+@media (min-width: 1800px) and (max-height: 1200px) {
+  /* A smaller badge; the controls keep their 44px. */
+  :root[data-layout="v2"][data-tv-dense] .topbar-inner { min-height: 60px; padding-block: 6px; }
+  :root[data-layout="v2"][data-tv-dense] .brand-badge { height: 48px; }
+  :root[data-layout="v2"][data-tv-dense] .summary { padding-block: 6px 2px; }
+  :root[data-layout="v2"][data-tv-dense] .h2c { padding-block: 3px; line-height: 1.05; }
+  :root[data-layout="v2"][data-tv-dense] .board2-foot { --foot-pad: 4px; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2cell { padding: 3px 8px; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2cell--fn { padding-left: var(--s-3); }
+  /* The question is the row's reason to exist: never cut. Four lines across the cell, as on the TV (five
+     with Large text), a smaller icon (as on a short laptop) and slightly tighter leading. */
+  :root[data-layout="v2"][data-tv-dense] .board2 .fn-question { -webkit-line-clamp: 4; line-clamp: 4; line-height: 1.2; }
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .board2 .fn-question { -webkit-line-clamp: 5; line-clamp: 5; line-height: 1.15; }
+  /* Large text on a short TV window: the masthead's controls keep their 44px, with a little less around them. */
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .topbar-inner { padding-block: 4px; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2cell--fn { column-gap: var(--s-2); }
+  :root[data-layout="v2"][data-tv-dense] .board2 .fn-icon { width: 28px; height: 28px; border-radius: 6px; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .fn-icon .i { width: 16px; height: 16px; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .avatar { width: 32px; height: 32px; font-size: 0.9375rem; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2cell--owner { padding-top: 6px; gap: 2px; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .owner-name { line-height: 1.15; }
+  /* Every block is one column (status, figure, "of 16,980 parts", measure), centered across and packed
+     from the top, as on the 1080p TV: no block puts its goal beside the figure while its neighbor stacks
+     it, and a row's Status and Month words share one line even when the month block has a measure line
+     under its figure (centered, each block sat on its own and the two words were 7 to 16px apart).
+     4px over the word sets it level with the KPI name and the Issue beside it (6px set it 2px lower and,
+     with Large text, pushed the 945px window's page 39px past the screen). */
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2cell--block { flex-flow: column nowrap; align-items: center; justify-content: flex-start; padding-block: 4px 2px; }
+  /* Set solid (one line each), so the stack costs the rows as little height as it can. */
+  :root[data-layout="v2"][data-tv-dense] .board2 .block-status { line-height: 1.1; }
+  :root[data-layout="v2"][data-tv-dense] .block-figure { margin-top: 0; font-size: 1.875rem; line-height: 0.9; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .block-rest { margin-top: 0; line-height: 1.1; }
+  /* Large text: the figure keeps the dense board's 1.875rem, so it reads larger than the standard TV's
+     34px (1.625rem made it 30.9px, smaller than standard), set solid so all eight functions keep
+     fitting the TV. Long figures keep their steps. */
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .block-figure:where(:not(.block-figure--l, .block-figure--m, .block-figure--s, .block-figure--xs)) { font-size: 1.875rem; line-height: 0.88; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .block-measure { margin-top: 1px; line-height: 1.1; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .mini { height: 44px; }
+  /* Add action stays 44px to hit; its outline is smaller so the row stays one row tall. */
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2cell--action .v2-add { margin-top: 4px; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2cell--action .v2-add.btn--text { margin-top: 2px; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2-needs-row { row-gap: 4px; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2-needs-row .v2-add { min-height: 36px; }
+  /* The hit area is measured from the padding box, so it reaches past the 2px border: 44px tall, centered. */
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2-needs-row .v2-add::before { content: ""; position: absolute; left: -2px; right: -2px; top: 50%; height: 44px; margin-top: -22px; }
+  :root[data-layout="v2"][data-tv-dense] .board2 .v2cell--owner + .kpirow { min-height: 72px; }
+}
+
+/* Large text in a short TV window (Chrome maximized on a 1080p screen, 945px; or 1000px tall): the figure
+   keeps 1.625rem (30.9px, still larger than the standard board's 30px on the same screen), since the
+   1080 TV's 1.875rem doesn't leave eight functions room to fit, and the block's other lines are set
+   solid, so the page stays exactly the screen's height. */
+@media (min-width: 1800px) and (max-height: 1000px) {
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .block-figure:where(:not(.block-figure--l, .block-figure--m, .block-figure--s, .block-figure--xs)) { font-size: 1.625rem; line-height: 0.9; }
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .board2 :is(.block-status, .block-rest) { line-height: 1; }
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .board2 .block-measure { line-height: 1.05; }
+  /* Standard text: the fill (fillTv) leaves the blocks 13 to 45px to spare under their lines, so the
+     word, the figure and the goal line get a little air (they touched) and the stack starts 7px down
+     (4 + 3, then 3px and 2px between the lines). The 8px comes out of each row's share of the fill
+     (--tv-fill), so a full board (an added KPI, no fill left) keeps the tight stack and never scrolls.
+     Large text keeps the tight stack: its page grew past the 945px window with this spacing. Both
+     blocks of a row take the same spacing, so their words stay level. */
+  :root[data-layout="v2"][data-tv-dense]:not([data-cz-size="large"]) .board2 .v2cell--block { padding-top: calc(4px + min(3px, var(--tv-fill, 0px) * 0.375)); }
+  :root[data-layout="v2"][data-tv-dense]:not([data-cz-size="large"]) .board2 .block-figure { margin-top: min(3px, var(--tv-fill, 0px) * 0.375); }
+  :root[data-layout="v2"][data-tv-dense]:not([data-cz-size="large"]) .board2 .block-rest { margin-top: min(2px, var(--tv-fill, 0px) * 0.25); }
+}
+/* Large text on the TV: the goal line clears the figure's comma ("14,736" crossed into "of 16,980 parts"
+   by 0.4px at 1080) and the status word gets its air. In a short window (945, 1000) the figure rises 1px
+   and the goal line drops 3px, so the page keeps the screen's height. On a 1080 TV the space comes out of
+   the row's fill (--tv-fill, which left 16 to 48px of empty color under the stack): up to 3px over the
+   figure and 3 + 3px over the goal line; a full board (no fill left) keeps the 3px the comma needs. */
+@media (min-width: 1800px) and (max-height: 1000px) {
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .board2 .block-figure { margin-top: -1px; }
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .board2 .block-rest { margin-top: 3px; }
+}
+@media (min-width: 1800px) and (min-height: 1001px) and (max-height: 1200px) {
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .board2 .block-figure { margin-top: min(3px, var(--tv-fill, 0px) * 0.375); }
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .board2 .block-rest { margin-top: calc(3px + min(3px, var(--tv-fill, 0px) * 0.375)); }
+}
+/* Large text on a TV narrower than 1920: the masthead keeps one row (its second row pushed the page past
+   the screen). Customize and the Action register are in the Menu, as on a laptop. */
+/* Large text in a short window under 1920 (1800×945): the narrower function column gives the questions their
+   five lines in every row, so they're set a touch tighter (the page ran 3px past the screen). */
+@media (min-width: 1800px) and (max-width: 1919px) and (max-height: 1000px) {
+  :root[data-layout="v2"][data-tv-dense][data-cz-size="large"] .board2 .fn-question { line-height: 1.12; }
+}
+@media (min-width: 1800px) and (max-width: 1919px) and (max-height: 1200px) {
+  :root[data-layout="v2"][data-view="dor"][data-cz-size="large"] :is(.topbar-customize, .topbar-actions) { display: none; }
+  /* The navy strip stays one row (at 1800 to 1830 "Start the demo over" wrapped to a second row). */
+  :root[data-layout="v2"][data-cz-size="large"] .board2-foot { column-gap: 16px; }
+  :root[data-layout="v2"][data-cz-size="large"] .b2-key { column-gap: 12px; }
+}
+
+/* The TV board fills the screen: after the dense decision js/app.js (fillTv) measures the space left
+   under the footer and shares it out as --tv-fill on every KPI row, over each row's own measured
+   height (--row-h, which already includes the 72px / 98px floors above). Written once after the
+   decision, so it can't loop; on a screen only. (.fgroup > lifts it over the floors' specificity.) */
+@media screen and (min-width: 1800px) and (max-height: 1200px) {
+  :root[data-layout="v2"] .board2 .fgroup > .kpirow.kpirow--fill { min-height: calc(var(--row-h, 0px) + var(--tv-fill, 0px)); }
+  /* The row's extra height goes to its two charts (they redraw at their host's height), not to blank
+     space under the text. Each chart cell stays within its row: it was no taller than the row before. */
+  :root[data-layout="v2"] .board2 .kpirow--fill .mini { height: calc(48px + var(--tv-fill, 0px)); }
+  :root[data-layout="v2"][data-tv-dense] .board2 .kpirow--fill .mini { height: calc(44px + var(--tv-fill, 0px)); }
+}
+
+/* ---------- A short laptop (1366×768): about four functions above the fold ---------- */
+
+@media (min-width: 1240px) and (max-width: 1599px) and (max-height: 820px) {
+  :root[data-layout="v2"] .summary { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--s-5); padding-block: var(--s-2) var(--s-1); }
   :root[data-layout="v2"] .summary-lead { font-size: 1.75rem; }
-  :root[data-layout="v2"] .board2 .v2cell { padding: 6px 10px; }
-  :root[data-layout="v2"] .board2 .mini { height: 60px; }
-  :root[data-layout="v2"] .board2 .mini-caption { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  :root[data-layout="v2"] .board2 .fn-question { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  :root[data-layout="v2"] .summary .date-note { flex-basis: 100%; }
+  :root[data-layout="v2"] .summary-line { margin-top: 0; }
+  :root[data-layout="v2"] .board-notes { margin-top: 0; }
+  :root[data-layout="v2"] .h2c { padding-block: 4px; }
+  :root[data-layout="v2"] .board2 .v2cell { padding: var(--s-2); }
+  :root[data-layout="v2"] .board2 .v2cell--fn { gap: 6px; padding-left: var(--s-3); }
+  :root[data-layout="v2"] .board2 .fn-icon { width: 28px; height: 28px; border-radius: 6px; }
+  :root[data-layout="v2"] .board2 .fn-icon .i { width: 16px; height: 16px; }
+  :root[data-layout="v2"] .board2 .avatar { width: 40px; height: 40px; font-size: 1.125rem; }
+  :root[data-layout="v2"] .board2 .v2cell--owner { padding-top: var(--s-3); gap: 6px; }
+  :root[data-layout="v2"] .board2 .v2cell--block { padding: 6px; }
+  :root[data-layout="v2"] .block-figure { font-size: 1.875rem; }
+  :root[data-layout="v2"] .board2 .mini { height: 56px; }
+  :root[data-layout="v2"] .board2 .mini-caption { margin-top: 0; }
   :root[data-layout="v2"] .board2 .v2-note { -webkit-line-clamp: 3; line-clamp: 3; }
-  :root[data-layout="v2"] .board2 .avatar { width: 44px; height: 44px; font-size: 1.25rem; }
-  :root[data-layout="v2"] .board2 .v2cell--owner { padding-top: var(--s-2); }
-  :root[data-layout="v2"] .block-status { font-size: 0.875rem; }
-  :root[data-layout="v2"] .block-figure { font-size: 2.375rem; }
-  :root[data-layout="v2"] .block-measure { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  :root[data-layout="v2"] .board-foot { display: none; }
+  :root[data-layout="v2"] .cap-lower,
+  :root[data-layout="v2"] .cap-full { display: none; }
+  :root[data-layout="v2"] .cap-short { display: inline; }
 }
 
 /* Detail's day and month cards match the board's solid blocks (unless Customize asks for a wash or words). */
@@ -518,3 +760,240 @@
 :root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .sheet .kpi[data-status="off"] { background: var(--off); }
 :root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .sheet .kpi:is([data-status="on"], [data-status="off"]) :is(.kpi-label, .kpi-measure, .status, .kpi-figure, .kpi-num, .kpi-rest, .term-btn, .measure) { color: inherit; }
 :root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .sheet .kpi:is([data-status="on"], [data-status="off"]) :focus-visible { outline-color: var(--n-0); }
+
+/* Touch targets: the phone Menu button never drops under 44px. */
+.topbar-more { min-width: var(--tap); justify-content: center; }
+
+/* ---------- The TV board ends at the navy strip ----------
+   On a TV (1800+ wide, up to 1200 tall) the source line and its button under the board are gone, so the
+   page is never taller than the screen (no scrollbar gutter, no wheel scrolling the header away); the
+   strip sits 8px above the screen's edge (fillTv in js/app.js). "Start the demo over" moves to the
+   strip's right end (it is in the Menu too). Elsewhere the button stays under the board. */
+.b2-reset { display: none; }
+@media (min-width: 1800px) and (max-height: 1200px) {
+  :root[data-layout="v2"] .board-foot { display: none; }
+  :root[data-layout="v2"] .board-page { padding-bottom: 8px; }
+  :root[data-layout="v2"] .board2-foot { --foot-pad: var(--s-2); padding-block: var(--foot-pad); }
+  /* The key stays centered between the brand and the source line; the button follows the source line. */
+  :root[data-layout="v2"] .b2-key { margin-inline: auto; }
+  :root[data-layout="v2"] .b2-reset {
+    display: inline-block;
+    position: relative;
+    z-index: 1;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--bar-ink);
+    font: inherit;
+    font-weight: 650;
+    line-height: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  /* 44px to hit: down into the strip's padding and the 8px under it (never past the screen's edge), and
+     up over the strip. Above the last row's own link (z-index 1, later in the page), below its controls (2). */
+  :root[data-layout="v2"] .b2-reset::before { content: ""; position: absolute; left: -8px; right: -8px; bottom: calc(-6px - var(--foot-pad)); height: 44px; }
+  :root[data-layout="v2"] .b2-reset:focus-visible { outline: 3px solid var(--bar-focus, var(--n-0)); outline-offset: 3px; border-radius: 2px; }
+  @media (hover: hover) and (pointer: fine) { :root[data-layout="v2"] .b2-reset:hover { text-decoration-thickness: 2px; } }
+}
+
+/* Caption forms: full on desks, short on a 1080p TV (see the TV pass). */
+.cap-short { display: none; }
+
+/* Laptops and wide desks (1240 to 1799, short of the TV): the icon sits above the name, so long names
+   and the daily question get the column's whole width (beside the icon at 1700 they wrapped to four lines). */
+@media (min-width: 1240px) and (max-width: 1799px) {
+  .board2 .v2cell--fn { flex-direction: column; gap: var(--s-2); }
+  .board2 .fn-icon { width: 32px; height: 32px; margin-top: 0; }
+  .board2 .fn-icon .i { width: 18px; height: 18px; }
+  /* The question is never cut here: no clamp, so one of Board setup's 140 characters takes the lines it
+     needs (up to seven in the 1240 to 1440 column) and its row grows to fit. */
+}
+/* Tablet and phone: chart cells line up with the cells around them. */
+@media (max-width: 1239px) {
+  .board2 .v2cell--trend, .board2 .v2cell--ytd { padding-inline: var(--s-3); }
+}
+@media (max-width: 759px) {
+  .board2 .v2cell--fn { align-items: flex-start; }
+  .board2 .v2cell--kpi { display: block; }
+  .board2 .kpi-goal::before { content: none; }
+  .board2 .kpi-goal { display: block; margin-left: 0; margin-top: 2px; }
+  .board2 .kpi-name { display: block; }
+}
+
+/* ---------- Round 4 ---------- */
+
+/* A weekend's month block: "as of Fri, Feb 20" is its own line under the measure ("Total direct labor ⓘ"),
+   so a long measure never pushes the date past the block's edges; it breaks only between "as of" and
+   the date, in a very narrow block. From 1240 up it moves to the column head (the TV pass and round 8). */
+.block-asof { display: block; text-wrap: balance; }
+.h2c-asof { display: none; }
+
+/* Every function hidden in Board setup: no column heads over an empty list (the summary says so). */
+.board2[data-empty] :is(.board2-head, .rows2, .b2-key) { display: none; }
+:root[data-layout="v2"] .summary-month:empty { display: none; }
+.board2[data-empty] .board2-foot { margin-top: var(--s-4); border-radius: var(--radius); }
+.board-note--empty .btn { margin-top: var(--s-1); }
+
+/* Off goal with no issue written: one red line says what's missing (board.js issueCell). */
+.v2-gap { display: flex; align-items: flex-start; margin-top: var(--s-1); font-size: var(--fs-caption); font-weight: 700; line-height: 1.3; }
+/* It is the whole Issue cell (the owner's "No new issues" would contradict it): it starts at the top. */
+.v2-label + .v2-gap { margin-top: 0; }
+.v2-gap .glyph { margin-top: 0.05em; }
+
+/* The needs line when Customize hides Issue and action: it opens the Action register. */
+.needs-register,
+:root[data-cz-notes="off"] .needs-rows { display: none; }
+:root[data-cz-notes="off"] .needs-register { display: inline; }
+.board-note-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+/* 1240 to 1365: "Needs an action" stays on one line beside its glyph (a step smaller). The Action
+   column takes 8px from the two chart columns (the minimums still add to 1,176px) and the cell
+   gives its sides back, so the line fits even at 1240. */
+@media (min-width: 1240px) and (max-width: 1365px) {
+  .board2 { --c-trend: minmax(136px, 1.1fr); --c-ytd: minmax(136px, 1.1fr); --c-action: minmax(128px, 1fr); }
+  .board2 .v2cell--needs { padding-inline: var(--s-2); }
+  .board2 .v2-needs .status { gap: 4px; font-size: 0.75rem; white-space: nowrap; }
+  /* Large text: it takes two lines beside its glyph, as from 1366 up (one line ran 10 to 23px past the cell). */
+  :root[data-cz-size="large"] .board2 .v2-needs .status { white-space: normal; }
+}
+
+/* 1024 to 1239 (the band layout): "Needs an action" stays on one line beside its glyph, a step smaller,
+   in a cell that gives its sides back, as from 1240 to 1365. */
+@media (min-width: 1024px) and (max-width: 1239px) {
+  .board2 .v2cell--needs { padding-inline: var(--s-2); }
+  .board2 .v2-needs .status { gap: 4px; font-size: 0.75rem; white-space: nowrap; }
+  :root[data-cz-size="large"] .board2 .v2-needs .status { white-space: normal; }
+}
+
+/* Long figures step down so they fit the narrowest block (board.js figureStep). */
+:root[data-layout] .board2 .block-figure.block-figure--l { font-size: 1.75rem; }
+:root[data-layout] .board2 .block-figure.block-figure--m { font-size: 1.375rem; }
+:root[data-layout] .board2 .block-figure.block-figure--s { font-size: 1.25rem; }
+:root[data-layout] .board2 .block-figure.block-figure--xs { font-size: 1.0625rem; }
+.board2 .block-figure { max-width: 100%; overflow-wrap: anywhere; }
+
+/* ---------- Round 7 ---------- */
+
+/* Large text on laptops and the band layout (760 to 1599): "Below goal" stays beside its "!" in the
+   narrowest blocks (1440 to 1599 and 1024 to 1239 dropped it under the glyph, so a row's figures
+   didn't line up). Set tight, no tracking, a 4px gap and a 13px glyph, and never smaller than
+   Standard's 12px: 0.75rem (14.25px) on laptops, 0.65rem (12.35px) in the band layout's narrower
+   blocks. Phones keep standard type; the TV has its own size. */
+/* Large text on laptops (1240 to 1799, a 96px owner column): the owner cell gives its sides back
+   (77px for the name instead of 67.5px), so typical names keep whole words ("Jane Doe", "Sam Smith"). */
+@media (min-width: 1240px) and (max-width: 1799px) {
+  :root[data-layout="v2"][data-cz-size="large"] .board2 .v2cell--owner { padding-inline: var(--s-2); }
+}
+@media (min-width: 1240px) and (max-width: 1599px) {
+  :root[data-cz-size="large"] .board2 .block-status { font-size: 0.75rem; letter-spacing: 0; gap: 4px; }
+  :root[data-cz-size="large"] .board2 .block-status .glyph { width: 13px; height: 13px; }
+  /* The blocks give their sides back (their lines are centered), so a weekend's "No production" (125px
+     at this size) sits whole inside the narrowest 136px block, under its glyph as at Standard. */
+  :root[data-layout="v2"][data-cz-size="large"] .board2 .v2cell--block { padding-inline: 4px; }
+  /* The column heads, a little tighter at the sides, so "Month to date" and a weekend's "as of Fri, Feb 20"
+     (round 8: shown once here, not in every block) each keep one line and the sticky heads don't grow. */
+  :root[data-layout="v2"][data-cz-size="large"] .board2-head .h2c:not(.h2c--fn) { padding-inline: 8px; }
+}
+@media (min-width: 760px) and (max-width: 1239px) {
+  :root[data-cz-size="large"] .board2 .block-status { font-size: 0.65rem; letter-spacing: 0; gap: 4px; }
+  :root[data-cz-size="large"] .board2 .block-status .glyph { width: 13px; height: 13px; }
+  :root[data-layout="v2"][data-cz-size="large"] .board2 .v2cell--block { padding-inline: 4px; }
+}
+
+/* Focus never hides under the sticky column heads (WCAG 2.4.11): from 1240 the heads stick to the top
+   of the window, so the window keeps their height (measured into --board2-head-h by board.js) plus 8px
+   clear when Tab or Shift+Tab scrolls a control into view. */
+@media (min-width: 1240px) {
+  :root[data-view="dor"][data-layout="v2"] { scroll-padding-top: calc(var(--board2-head-h, 0px) + 8px); }
+}
+
+/* 1024 to 1239 (the band layout): the chart cells' labels sit level with KPI, Issue and Action
+   (12px from the cell's top, not 8), and the Action label is "Next 24 hours" so it stays on one line.
+   Screen readers keep "Action, next 24 hours" (board.js) at every width. */
+.v2-label-short { display: none; }
+@media (max-width: 1239px) {
+  .board2 :is(.v2cell--trend, .v2cell--ytd) { padding-top: var(--s-3); }
+}
+@media (min-width: 1024px) and (max-width: 1239px) {
+  .board2 .v2-label-long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .board2 .v2-label-short { display: inline; }
+}
+
+/* The year caption on a short laptop under 1340 (and at any short-laptop width with Large text): "By month ·"
+   broke onto its own line, and the J F A J O axis already says it, so the caption is just "Met goal 2 of 2" (board.js). */
+.cap-tiny { display: none; }
+@media (min-width: 1240px) and (max-width: 1339px) and (max-height: 820px) {
+  :root[data-layout="v2"] .cap-short { display: none; }
+  :root[data-layout="v2"] .cap-tiny { display: inline; }
+}
+@media (min-width: 1240px) and (max-width: 1599px) and (max-height: 820px) {
+  :root[data-layout="v2"][data-cz-size="large"] .cap-short { display: none; }
+  :root[data-layout="v2"][data-cz-size="large"] .cap-tiny { display: inline; }
+}
+
+/* Every function hidden: the summary's "Board setup" link would sit beside the "Open Board setup"
+   button under it, two ways to the same place. Only the button shows. */
+.board-page:has(.board2[data-empty]) .summary-line [data-open-setup] { display: none; }
+
+/* ---------- Round 8 ---------- */
+
+/* The strip under the board on a phone: the key is three short columns ("Goal" never sits alone on a
+   second line). Below the TV the source line under the board already says where the numbers come from,
+   so the strip doesn't say it a second time. */
+@media (max-width: 759px) {
+  .board2 .b2-key { display: grid; grid-template-columns: repeat(3, max-content); column-gap: 16px; }
+}
+@media (max-width: 1799px) {
+  .board2 .b2-updated { display: none; }
+}
+
+/* 760 to 1239: How to read this board, Take the tour and Board setup start their own row, so they read
+   as one set (at 820 "Board setup" sat alone under the other two). */
+@media (min-width: 760px) and (max-width: 1239px) {
+  :root[data-layout="v2"] .summary-line .summary-month { flex-basis: 100%; }
+}
+
+/* A weekend on laptops and wide desks (1240 to 1799), as on the TV: "as of Fri, Feb 20" shows once, in
+   the Month to date column head, not in every month block (screen readers keep it per row). */
+@media (min-width: 1240px) and (max-width: 1799px) {
+  :root[data-layout="v2"] .board2 .block-asof { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :root[data-layout="v2"] .board2-head .h2c-asof { display: inline; }
+  :root[data-layout="v2"] .board2-head small:has(.h2c-asof) .h2c-month { display: none; }
+}
+
+/* "Entered by Jane Doe at 10:27 AM Undo" keeps an even line: the inline Undo is as tall as its
+   text (its 44px tap area is the ::before in css/board.css), so it no longer opens a gap under the name. */
+.board2 .entered-by .undo-link { min-height: 0; }
+
+/* Shift+Tab to a function or KPI link: the focus ring is drawn on its cell (or KPI row), 5px outside it,
+   so the link keeps its offset inside that cell (measured by board.js) plus 6px clear of the sticky
+   column heads, not just its own top. */
+.board2 .fn-link { scroll-margin-top: calc(var(--fn-link-off, 0px) + 6px); }
+.board2 .kpi-link { scroll-margin-top: calc(var(--kpi-link-off, 0px) + 6px); }
+/* Under 1240 nothing sticks over the board, but a link scrolled into view keeps 12px off the window's
+   top edge (the summary's links and How to read this board were flush with it on a phone). */
+@media (max-width: 1239px) {
+  :root[data-view="dor"][data-layout="v2"] { scroll-padding-top: 12px; }
+}
+/* Take the tour and Board setup are a pair (index.html): where all three links don't fit one line (a phone),
+   How to read this board takes the first and the pair the next, never Board setup alone. */
+.summary-line .howto-pair { display: flex; flex-wrap: nowrap; align-items: center; column-gap: var(--s-4); }
+/* The first function sits 2px under the column heads even unscrolled, so a ring drawn 5px outside its cell
+   would lose its top edge behind them: from 1240 up, its rings are drawn just inside the cell instead. */
+@media (min-width: 1240px) {
+  .rows2 > .fgroup:first-child > .v2cell--fn:has(.fn-link:focus-visible),
+  .rows2 > .fgroup:first-child > .v2cell--owner + .kpirow:has(.kpi-link:focus-visible) { outline-offset: -3px; }
+}

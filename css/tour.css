@@ -62,3 +62,8 @@ html.is-touring { overflow: hidden; scrollbar-gutter: stable; }
   .tour-spot, .tour-card { transition: none; }
 }
 @media print { .tour-block, .tour-spot, .tour-card { display: none !important; } }
+
+/* The last card: its two next steps get their own row, so they never spill out of the card. */
+.tour-cta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.tour-cta .btn { flex: 1 1 auto; min-height: 44px; }
+.tour-actions { flex-wrap: wrap; }

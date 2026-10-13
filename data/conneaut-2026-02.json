@@ -7696,8 +7696,8 @@
  "glossary": {
   "TRIR": "Total Recordable Incident Rate: recordable injuries per 200,000 hours worked (OSHA standard).",
   "DL": "Direct labor: the associates who build product on the line.",
-  "Earned hours": "Standard hours of work the plant produced. More earned than planned = ahead.",
-  "Scrap %": "Share of production thrown away as bad parts. Lower is better.",
+  "Earned hours": "Standard hours of work the plant produced. More earned than planned means the plant is ahead.",
+  "Scrap %": "Bad parts scrapped, as a percent. The month figure is scrap as a percent of sales. Lower is better.",
   "Month to date": "Everything from the 1st of the month through the selected day."
  }
 }

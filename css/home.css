@@ -102,7 +102,8 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 }
 .side-link[aria-current="page"] { background: var(--h-side-active); color: var(--h-side-ink); font-weight: 650; }
 .side-link--dept { min-height: 44px; font-size: 13.5px; }
-.side-link--dept .i { width: 16px; height: 16px; }
+/* Function icons draw at 16px inside the same 18px box as the page icons, so every label lines up. */
+.side-link--dept .i { width: 16px; height: 16px; margin: 0 1px; }
 @media (hover: hover) and (pointer: fine) {
   .side-link:hover { background: var(--h-side-hover); color: var(--h-side-ink); }
 }
@@ -136,6 +137,56 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   .side-powered .side-badge { width: 46px; }
 }
 
+/* Shorter still (1366x768, 1280x800): the links keep 44px, and the sidebar fits without
+   scrolling. How it works and Settings sit side by side as icons (their names stay for
+   screen readers and in the tooltip), so "Powered by LinkedXL OS" keeps one compact row
+   under them. The spacing tightens and the plant name gets the room to stay on one line
+   beside a smaller icon. */
+@media (min-width: 1280px) and (max-height: 820px) {
+  .side { padding-top: 6px; padding-bottom: 6px; }
+  .side-brand { grid-template-columns: 22px minmax(0, 1fr); gap: 4px 10px; padding: 2px 4px 6px 8px; }
+  .side-brand-icon { width: 22px !important; height: 22px !important; }
+  .side-brand-name { font-size: 14px; } /* a longer plant name wraps rather than being cut */
+  .side-group { margin: 4px 10px 2px; }
+  .side-bottom { grid-template-columns: 44px 44px minmax(0, 1fr); gap: 4px 8px; padding-top: 4px; }
+  .side-bottom .side-link { justify-content: center; width: 44px; padding: 0; }
+  .side-bottom .side-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .side-powered { grid-column: 1 / -1; grid-auto-flow: column; justify-content: center; align-items: center; gap: 10px; padding: 4px 8px; }
+  .side-powered .side-badge { width: 40px; }
+}
+/* 768px tall: the sidebar's subtitle repeats the page title beside it, and a rule
+   takes the "Functions" label's place (screen readers still hear both). */
+@media (min-width: 761px) and (max-height: 790px) {
+  .side-brand-sub, .side-group { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .side-group + .side-list { margin-top: 4px; padding-top: 4px; border-top: 1px solid #1c4570; }
+}
+/* The LinkedXL OS badge in the brand's place, for the icons-only sidebar on a short screen
+   (below): hidden everywhere else. */
+.side-lx {
+  --logo-ink: var(--lx-navy-950);
+  --logo-navy: var(--lx-navy-800);
+  --logo-mint: var(--lx-mint-400);
+  display: none;
+  place-items: center;
+  padding: 2px 3px;
+  border-radius: 6px;
+  background: #fbfcfd;
+}
+.side-lx .side-badge { width: 38px; }
+
+/* Every function removed in Board setup: no empty "Functions" heading or list (sidebar and drawer). */
+.side-group:not(:has(+ .side-list > li)), .side-list:not(:has(li)) { display: none; }
+
+/* Functions added in Board setup can make the list longer than the screen (home.js fitSide):
+   the "Powered by" panel goes first, then How it works and Settings sit side by side as icons.
+   Links keep 44px. The icons-only sidebar (below 1280px) has no room for two in a row. */
+.side.is-tight .side-powered { display: none; }
+@media (min-width: 1280px) {
+  .side.is-tighter .side-bottom { grid-template-columns: repeat(2, 44px); gap: 0 8px; padding-top: 4px; }
+  .side.is-tighter .side-bottom .side-link { justify-content: center; width: 44px; padding: 0; }
+  .side.is-tighter .side-bottom .side-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
 /* ---------- Header ---------- */
 
 .h-wrap { min-width: 0; padding: 8px 18px 4px; }
@@ -159,12 +210,22 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 }
 .h-titles { min-width: 0; margin-right: 12px; }
 .h-title { font-size: 25px; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; }
+/* 1600 to 1639 wide the header is one row, and at 25px the title broke after the dot
+   ("… plant ·" / "Daily Operating Review"): a step smaller keeps it on one line. */
+@media (min-width: 1600px) and (max-width: 1639px) { .h-title { font-size: 22px; } }
+/* No functions on the board: the one way back, under the line that says so. */
+.h-needs .h-setup-btn { margin-top: 6px; }
 .h-sub { color: var(--h-ink-2); font-size: 13.5px; }
 /* The one-line answer: count first (ink), then who is off goal, each a link to Detail. */
 .h-summary { margin-top: 2px; line-height: 1.35; }
 .h-summary strong { color: var(--h-ink); font-weight: 700; }
 .h-sum-link { color: var(--h-ink); font-weight: 600; text-decoration: underline; text-decoration-color: #b8c3d1; text-underline-offset: 3px; }
 @media (hover: hover) and (pointer: fine) { .h-sum-link:hover { text-decoration-color: currentColor; } }
+/* The board's needs line under the answer: red with the off glyph, or the green all-clear. */
+.h-needs { margin-top: 2px; line-height: 1.35; }
+.h-needs[hidden] { display: none; }
+.h-needs-lead { font-weight: 700; }
+.h-needs .mdot { width: 13px; height: 13px; margin-right: 5px; vertical-align: -0.15em; }
 .h-date {
   display: flex;
   align-items: center;
@@ -218,6 +279,17 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   pointer-events: none;
 }
 @media (pointer: coarse) { .h-date-input { pointer-events: auto; opacity: 0.011; } }
+/* Only a tap target: no native text ("02/27/2026"), segment highlight, caret or calendar
+   glyph shows through behind the button's own date. The invisible calendar indicator
+   covers the whole box, so a tap anywhere on it opens the picker. */
+.h-date-input { background: transparent; color: transparent; caret-color: transparent; -webkit-text-fill-color: transparent; }
+.h-date-input::-webkit-datetime-edit,
+.h-date-input::-webkit-datetime-edit-fields-wrapper,
+.h-date-input::-webkit-datetime-edit-text,
+.h-date-input::-webkit-datetime-edit-month-field,
+.h-date-input::-webkit-datetime-edit-day-field,
+.h-date-input::-webkit-datetime-edit-year-field { background: transparent; color: transparent; }
+.h-date-input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
 .h-date-label .i { color: var(--h-icon); }
 .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-left: auto; }
 .hbtn {
@@ -299,6 +371,9 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   display: grid;
   /* One column per card: Board setup can hide a function, and its cards with it. */
   grid-template-columns: repeat(var(--kpi-n, 8), minmax(0, 1fr));
+  /* Each card spans four rows (name, tag, number, status) shared across the row of
+     cards, so every big number sits at the same height however its name wraps. */
+  grid-template-rows: repeat(4, auto);
   gap: 8px;
   margin-top: 8px;
 }
@@ -314,7 +389,11 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   background: var(--h-card);
   box-shadow: var(--h-shadow);
 }
-.kcard { min-height: 0; }
+.kcard { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 1px; min-height: 0; }
+.kcard > .kc-tag, .kcard > .kc-value { align-self: end; }
+/* "Goal 89" under the figure: only when the row of cards stacks its goals (below 1600px,
+   or .is-stacked), where it replaces "/ 89". */
+.kc-under { display: none; }
 .kc-head, .tile-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .kc-icon .i, .tile-icon .i { width: 22px; height: 22px; }
 .kc-icon, .tile-icon, .panel-icon { display: inline-flex; flex: none; } /* icon boxes are the icon's size, not a text line */
@@ -322,35 +401,60 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .kc-icon--on { color: var(--h-green); }
 .kc-icon--off { color: var(--h-red); }
 .tile-icon { color: var(--h-icon); }
-.kc-label, .tile-label { min-width: 0; font-size: 12.75px; font-weight: 650; line-height: 1.2; }
+/* The name and its "What does it mean?" button share one text flow beside the icon (the button
+   follows the last word), so the name has the card's whole width. A long name from Board setup
+   wraps inside the card; a word longer than the card breaks rather than being cut off. */
+.kc-name { flex: 1 1 auto; min-width: 0; font-size: 12.75px; font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; }
+.kc-label, .tile-label { display: inline; font: inherit; line-height: inherit; }
 .kc-head .kc-icon .i, .tile-head .tile-icon .i { width: 22px; height: 22px; }
 .kc-head, .tile-head { min-height: 24px; }
 .kc-link { color: inherit; text-decoration: none; }
 .kc-link::after { content: ""; position: absolute; inset: 0; border-radius: var(--h-radius); }
 .kc-link:focus-visible { outline: none; }
 .kcard:has(.kc-link:focus-visible), .tile:has(.kc-link:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
-.kcard .term-btn, .tile .term-btn { margin-left: -2px; color: var(--h-ink-2); }
+.kcard .term-btn, .tile .term-btn { margin-left: 3px; color: var(--h-ink-2); vertical-align: -5px; }
 @media (hover: hover) and (pointer: fine) {
   .kcard:hover, .tile:hover { border-color: #c9d3df; }
 }
-.kc-tag { color: var(--h-ink-2); font-size: 11.75px; font-weight: 500; line-height: 1.3; }
+.kc-tag { min-width: 0; color: var(--h-ink-2); font-size: 11.75px; font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
+/* A card's one column is never wider than the card: a long name or tag wraps inside it
+   (Board setup allows 80-character KPI names and 60-character function names). */
+.kcard { grid-template-columns: minmax(0, 1fr); }
+.kcard > * { min-width: 0; }
 .kc-value { margin-top: 1px; font-size: 30px; font-weight: 750; line-height: 1.05; white-space: nowrap; }
 .kc-value strong { font-weight: 750; }
 .kc-of { color: var(--h-ink-2); font-size: 18px; font-weight: 550; white-space: nowrap; }
 .kc-value:has(.kc-goal) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
+/* Below 1600px (and on paper) the cards are too narrow for "1.19% Goal 1.13%" on one
+   line: every card puts its goal on its own line under the figure, the same way.
+   Wider, home.js adds .is-stacked when any one card's goal would wrap. */
+@media (max-width: 1599px), print {
+  .kcard .kc-value:not(.kc-value--empty) { display: grid; justify-items: start; gap: 1px; }
+  .kcard .kc-value--of .kc-of { display: none; }
+  .kcard .kc-under { display: block; }
+}
+.h-kpis.is-stacked .kcard .kc-value:not(.kc-value--empty) { display: grid; justify-items: start; gap: 1px; }
+.h-kpis.is-stacked .kcard .kc-value--of .kc-of { display: none; }
+.h-kpis.is-stacked .kcard .kc-under { display: block; }
+.kc-under { color: var(--h-ink-2); font-size: 11.75px; font-weight: 500; }
 /* Nothing entered: one honest line in the value's place, never a goal posing as a number. */
 .home-app .kc-value.kc-value--empty { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin-top: auto; padding: 4px 0 2px; font-size: 13px; font-weight: 650; white-space: normal; }
 .kc-value--empty .kc-goal { font-weight: 500; }
+/* The glyph keeps to its words (they wrap beside it); the goal takes its own line, under the words.
+   In a row of cards, the line starts where the figures start. */
+.kc-value--empty .kc-empty { flex: 1 1 0; min-width: 0; }
+.kc-value--empty .kc-goal { flex-basis: 100%; padding-left: 20px; }
+.home-app .kcard > .kc-value.kc-value--empty { align-self: start; margin-top: 0; padding-top: 2px; }
 .kc-goal { color: var(--h-ink-2); font-size: 11.75px; font-weight: 500; }
 .hs-note { margin-left: 4px; color: var(--h-ink-2); font-weight: 500; }
 .hs { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 2px; font-size: 12.75px; font-weight: 650; }
 .hs--on { color: var(--h-green); }
 .hs--off { color: var(--h-red); }
-.hs--not-entered, .hs--no-goal, .hs--no-production { color: var(--h-gray); }
+.hs--not-entered, .hs--no-goal, .hs--no-production, .hs--not-tracked { color: var(--h-gray); }
 .mdot { width: 14px; height: 14px; flex: none; }
 .mdot--on { color: var(--h-green-dot); }
 .mdot--off { color: var(--h-red); }
-.mdot--not-entered, .mdot--no-goal, .mdot--no-production { color: var(--h-gray-mark); }
+.mdot--not-entered, .mdot--no-goal, .mdot--no-production, .mdot--not-tracked { color: var(--h-gray-mark); }
 
 .h-row { display: grid; gap: 8px; margin-top: 8px; }
 .h-row--2 { grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr); }
@@ -369,11 +473,17 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .panel-title { font-size: 17px; font-weight: 700; line-height: 1.2; }
 .panel-sub { color: var(--h-ink-2); font-size: 12.5px; }
 .panel-aside { margin-left: auto; color: var(--h-ink-2); font-size: 12.5px; }
+/* Narrower panels: the aside starts its own line under the title (past the 22px icon
+   and its 10px gap), instead of floating right on a line of its own. */
+@media (max-width: 1599px) { .panel-aside { margin-left: 0; width: 100%; padding-left: 32px; } }
 
 /* Department × area matrix */
 .mx-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-left: auto; font-size: 12.5px; }
 .mx-legend li { display: inline-flex; align-items: center; gap: 6px; }
 .mx-scroll { overflow-x: auto; container-type: inline-size; }
+/* "Comp." and its screen-reader twin are hidden by default. This rule sits before the
+   @container rule below on purpose: same specificity, so the later rule wins in a narrow grid. */
+.mx .col-abbr, .mx .col-abbr-sr { display: none; }
 /* A narrow grid (1280 with the full sidebar, small phones) shortens Compounding to "Comp."; screen readers still hear the full word. */
 @container (max-width: 580px) {
   .mx .col-full { display: none; }
@@ -389,22 +499,43 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .mx thead th:first-child, .mx thead th.mx-owner { text-align: left; }
 .mx thead th.mx-wrap { white-space: normal; line-height: 1.2; } /* "Plant total" / "Month so far" may take two lines in a narrow grid */
 .mx tbody tr:last-child > * { border-bottom: 0; }
-.mx tbody th { text-align: left; font-weight: 650; white-space: nowrap; }
+.mx tbody th { text-align: left; font-weight: 650; }
 .mx-link { color: inherit; text-decoration: none; }
-.mx-owner { white-space: nowrap; }
+/* Board setup allows long names (function 60, owner 80 characters). Each name keeps its own
+   width up to about 14ch and wraps past it (a long word breaks anywhere); the workbook's names
+   are all shorter, so they stay on one line. When the grid still wouldn't fit its panel,
+   home.js adds .mx--fit: the names give way (they may wrap narrower), and the status columns
+   keep their own width (width: 1px is the table idiom for "fit the content"), so Plant total
+   and Month so far always show without scrolling. */
+.mx tbody th, .mx td.mx-owner { padding-top: 3px; padding-bottom: 3px; line-height: 1.25; }
+.mx-cap { display: inline-block; width: max-content; max-width: 14ch; overflow-wrap: anywhere; vertical-align: middle; }
+.mx--fit .mx-cap { width: auto; }
+.mx--fit thead th.mx-st { width: 1px; }
 .mcell { text-align: center; }
 .mcell-in { display: inline-grid; place-items: center; width: 24px; height: 29px; vertical-align: middle; }
 .mx .mdot { width: 15px; height: 15px; }
 /* A function added in Board setup has a plant total only: one quiet line across the area columns. */
 .mx .mcell--untracked { color: var(--h-ink-2); font-size: 12px; font-style: normal; }
 .mcell-none { display: inline-block; line-height: 1.2; }
+/* No area numbers that day: one line in place of the four area columns, spanning every row. */
+.mx thead th.mx-areas-gap-head { text-align: left; }
+/* The areas line's own row (home.js areaGapRow): no height, so the grid looks the same;
+   it only puts "See that day" before the function links in reading and Tab order. */
+.mx tbody tr.mx-gaprow > td.mx-gaprow-pad { height: 0; padding: 0; border-bottom: 0; }
+.mx tbody tr.mx-gaprow { cursor: default; }
+.mx .mcell--areas-gap { padding: 8px 14px; text-align: left; vertical-align: middle; background: var(--h-head); cursor: default; }
+.mx-gap { max-width: 34ch; color: var(--h-ink-2); font-size: 13px; line-height: 1.45; }
+.mx-gap-link { display: inline-flex; align-items: center; min-height: 24px; color: var(--h-blue); font-weight: 600; text-decoration: underline; text-decoration-color: #b8c3d1; text-underline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) { .mx-gap-link:hover { text-decoration-color: currentColor; } }
+/* A function with several KPIs is off goal when any of them is: the KPI that missed is named under the dot. */
+.mcell-kpi { display: block; margin: -4px auto 3px; max-width: 8em; color: var(--h-red); font-size: 11px; font-weight: 600; line-height: 1.15; }
 .mx tbody th, .mx tbody td { height: 29px; }
 .mx .is-area { background: #eef4fb; }
-.mx .col-abbr, .mx .col-abbr-sr { display: none; }
 .mx tbody tr { cursor: pointer; }
 @media (hover: hover) and (pointer: fine) {
   .mx tbody tr:hover > * { background: #f6f8fb; }
   .mx tbody tr:hover > .is-area { background: #e6eef8; }
+  .mx tbody tr:hover > .mcell--areas-gap { background: var(--h-head); } /* it spans every row: not part of the first row's hover */
 }
 .mx-tip {
   position: absolute;
@@ -424,7 +555,8 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 /* Trends & key metrics */
 .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .tile { min-height: 0; padding: 8px 10px; box-shadow: none; }
-.tile .kc-value { font-size: 28px; }
+/* "14,736 of 16,980": "of 16,980" wraps under the number when the tile is narrow. */
+.tile .kc-value { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; font-size: clamp(22px, 1.6vw, 28px); }
 .buf { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 8px; }
 .buf-pct { color: var(--h-ink-2); font-size: 12.5px; white-space: nowrap; }
 .buf-pct strong { color: var(--h-ink); font-weight: 700; }
@@ -461,7 +593,8 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .iss thead th:nth-child(3) { width: 27%; }
 .iss thead th:nth-child(4) { width: 104px; }
 .iss thead th:nth-child(5) { width: 92px; }
-.iss-dept { position: relative; padding-left: 16px !important; font-weight: 650; white-space: nowrap; }
+/* A long name from Board setup (up to 60 characters) wraps in its column; it never pushes the table sideways. */
+.iss-dept { position: relative; padding-left: 16px !important; font-weight: 650; overflow-wrap: anywhere; }
 .iss-dept a { color: inherit; text-decoration: none; }
 /* The bar runs the full height of the row, so a department's rows read as one block. */
 .iss-bar { position: absolute; top: 0; bottom: 0; left: 5px; width: 4px; background: var(--h-gray-mark); }
@@ -469,8 +602,9 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .iss-row:not(:has(+ .iss-row:not(.is-first))) .iss-bar { bottom: 3px; border-radius: 0 0 2px 2px; }
 .iss-row.is-first:not(:has(+ .iss-row:not(.is-first))) .iss-bar { border-radius: 2px; }
 .iss-link { display: inline-flex; align-items: center; min-height: 24px; }
-.set-status { position: relative; z-index: 1; display: inline-flex; align-items: center; min-height: 24px; color: var(--h-blue); font-weight: 600; text-decoration: underline; text-decoration-color: #b8c3d1; text-underline-offset: 3px; }
-@media (hover: hover) and (pointer: fine) { .set-status:hover { text-decoration-color: currentColor; } }
+/* An issue with no status: one quiet "Set status" link (Enter numbers, on the status control). */
+.set-status { position: relative; z-index: 1; display: inline-flex; align-items: center; min-height: 24px; color: var(--h-ink-2); font-size: 11.75px; font-weight: 550; white-space: nowrap; text-decoration: underline; text-decoration-color: #b8c3d1; text-underline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) { .set-status:hover { color: var(--h-blue); text-decoration-color: currentColor; } }
 .iss-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .iss-key-item { display: inline-flex; align-items: center; gap: 5px; }
 .iss-key-bar { display: inline-block; width: 4px; height: 14px; border-radius: 2px; background: var(--h-gray-mark); }
@@ -486,7 +620,38 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .iss-reg-meta { display: block; color: var(--h-ink-2); font-size: 11.5px; }
 .iss-over { display: inline-flex; align-items: center; gap: 3px; color: var(--h-red); font-weight: 650; }
 .iss-over .mdot { width: 11px; height: 11px; }
+/* A register action closed that day or later: "Done:" with the on-track glyph. */
+.iss-done { color: var(--h-green); font-weight: 700; white-space: nowrap; }
+.iss-done .mdot { width: 11px; height: 11px; margin-right: 4px; vertical-align: -0.1em; }
+/* Off goal with no action yet: the board's "Needs an action", word + glyph + red. */
+.iss-needs { display: inline-flex; align-items: flex-start; gap: 5px; color: var(--h-red); font-weight: 700; }
+.iss-needs .mdot { width: 13px; height: 13px; margin-top: 0.15em; }
+.iss-needs-why { font-weight: 550; }
+/* The board's Add action after "Needs an action": it opens the Action register on that KPI.
+   Drawn 24px tall so the dense row keeps its height; the hit area is 44px. */
+.iss-needs-row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
+.home-app .iss-add {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--h-blue);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.home-app .iss-add::before { content: ""; position: absolute; inset: -10px -8px; }
 .iss-entered { margin-top: 2px; color: var(--h-ink-2); font-size: 11.5px; }
+/* Off goal, something recorded, no issue written: a red line under the owner's muted words. */
+.iss-gap { display: flex; align-items: flex-start; gap: 5px; margin-top: 2px; color: var(--h-red); font-weight: 700; }
+.iss-gap .mdot { width: 13px; height: 13px; margin-top: 0.1em; }
+.is-gap > .iss-gap { margin-top: 0; }
 .home-app .undo-link { margin-left: 4px; color: var(--h-blue); font-size: 11.5px; }
 /* Problem status on the dashboard (the base look is in components.css). */
 .home-app .ist-dot { width: 9px; height: 9px; }
@@ -516,10 +681,13 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .kbi-n { display: grid; place-items: center; width: 26px; height: 26px; flex: none; border-radius: 50%; background: #e7ecf3; font-size: 13px; font-weight: 700; }
 .kbi-question { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.3; }
 .kbi-question.is-empty { color: var(--h-ink-2); }
-.kbi-meta { display: grid; justify-items: end; flex: none; gap: 1px; text-align: right; }
-.kbi-dept { color: var(--h-ink-2); font-size: 11.75px; font-weight: 600; }
+/* The function and its status on the right. A long name from Board setup wraps here, within
+   45% of the row, so the question beside it keeps its room and the page never scrolls sideways. */
+.kbi-meta { display: grid; justify-items: end; flex: 0 1 auto; min-width: 0; max-width: 45%; gap: 1px; text-align: right; }
+.kbi-dept { max-width: 100%; color: var(--h-ink-2); font-size: 11.75px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
 .kbi-st { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 650; white-space: nowrap; }
 .kbi-st .mdot { width: 12px; height: 12px; }
+.kbi-which { max-width: 10em; color: var(--h-red); font-size: 11.5px; font-weight: 600; line-height: 1.2; }
 
 .h-foot { margin-top: 4px; color: var(--h-ink-2); font-size: 11.5px; }
 
@@ -586,8 +754,11 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .drawer .i { width: 18px; height: 18px; flex: none; }
 .drawer :focus-visible { outline: 3px solid var(--lx-mint-400); outline-offset: 2px; border-radius: 4px; }
 .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 0 0 10px 8px; font-weight: 700; }
-.drawer-head .side-brand-text { display: grid; gap: 2px; }
+/* The menu has room for a long plant name (Board setup allows 60 characters): it wraps
+   beside the close button instead of running under it. */
+.drawer-head .side-brand-text { display: grid; gap: 2px; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .drawer-head .side-brand-sub { grid-column: auto; }
+.drawer-head .drawer-close { flex: none; }
 .drawer-close { display: grid; place-items: center; width: 44px; height: 44px; border: 0; background: none; color: #fff; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .drawer, .drawer:not([open]) { transform: none; } }
 
@@ -623,9 +794,31 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   .h-row--2, .h-row--3 { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* Icons-only sidebar on a short screen (1024x768): 44px links kept and no scrolling. Two
+   icons can't sit side by side in 68px, so the "Powered by" panel can't stay at the bottom:
+   the LinkedXL OS badge takes the plant glyph's place at the top instead (the page title
+   already names the plant). Screen readers hear "Powered by LinkedXL OS" there. */
+@media (min-width: 761px) and (max-width: 1279px) and (max-height: 820px) {
+  .side { padding-top: 6px; padding-bottom: 6px; }
+  .side-brand { padding: 2px 0 4px; }
+  .side-brand-icon { display: none; }
+  .side-lx { display: grid; }
+  .side-group + .side-list { margin-top: 3px; padding-top: 3px; }
+  .side-bottom { gap: 0; padding-top: 2px; }
+  .side-powered { display: none; }
+}
+
 /* Phone: the sidebar becomes a top bar with a menu button and a drawer */
 @media (max-width: 760px) {
-  .home-app { grid-template-columns: minmax(0, 1fr); }
+  /* Focus scrolled into view stays clear of the two sticky bars (heights measured in home.js
+     watchBars; home.js also nudges a control that's on screen but under a bar). */
+  html[data-view="home"] {
+    scroll-padding-top: calc(var(--home-top-h, 56px) + 8px);
+    scroll-padding-bottom: calc(var(--home-bar-h, 68px) + 8px);
+  }
+  /* Top bar, page, Enter numbers bar: a short page (every function hidden) gives its spare
+     height to the page, never to the two bars. */
+  .home-app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto; }
   .side {
     position: sticky;
     z-index: 30;
@@ -636,9 +829,16 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
     overflow: visible;
   }
   .home-app::before { display: none; }
-  .side-brand { flex: 1; justify-content: flex-start; padding: 0; }
-  .side-menu-btn { margin-left: auto; }
-  .side-brand-text { position: static; width: auto; height: auto; clip: auto; }
+  /* A long plant name (Board setup allows 60 characters) ends in an ellipsis, so the menu
+     button always stays on screen; the page title under it shows the whole name. */
+  .side-brand { flex: 1; min-width: 0; justify-content: flex-start; padding: 0; }
+  .side-menu-btn { flex: none; margin-left: auto; }
+  .side-brand-text { position: static; width: auto; height: auto; clip: auto; min-width: 0; }
+  .side .side-brand-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* The shared link opens here: the LinkedXL OS badge (on its light tile) stands in for the
+     plant glyph, so the brand is on screen without opening the menu. */
+  .side .side-brand-icon { display: none; }
+  .side .side-lx { display: grid; flex: none; }
   .side .side-brand-sub { display: none; }
   .side-menu-btn { display: grid; place-items: center; width: 44px; height: 44px; border: 0; background: none; color: #fff; cursor: pointer; }
   .side .side-nav, .side .side-bottom { display: none; }
@@ -664,7 +864,6 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   .h-filter { flex: 1; min-width: 0; }
   .h-select { flex: 1; min-width: 0; }
   .h-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .kcard { min-height: 0; }
   .kc-value { font-size: 24px; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tiles > .tile--wide { grid-column: 1 / -1; }
@@ -694,11 +893,16 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   .iss-link:focus-visible { outline: none; }
   .iss tr:has(.iss-link:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
   .set-status, .home-app .undo-link { position: relative; z-index: 1; min-height: 44px; }
+  .set-status { min-width: 44px; }
+  /* Add action sits above the card's link, a full 44px tall. */
+  .home-app .iss-add { min-height: 44px; font-size: 13px; }
+  .home-app .iss-add::before { inset: 0 -8px; }
+  .mx-gap-link { min-height: 44px; }
   .iss-status.is-blank { display: none !important; }
   .iss-key > span:first-child { width: 100%; }
   .iss td[data-label]::before { content: attr(data-label); display: block; color: var(--h-ink-2); font-size: 11.5px; font-weight: 650; }
   .iss-owner, .iss-status { display: inline-block !important; margin-top: 4px; margin-right: 12px; }
-  .iss-action:has(> .is-empty) { display: none; }
+  .iss-action:has(> .is-empty), .iss-action:empty { display: none; }
   .iss-owner::before, .iss-status::before { display: none !important; }
   .h-mobilebar {
     position: sticky;
@@ -726,6 +930,8 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   [data-view="home"] .skip-link,
   [data-view="home"] .term-btn,
   [data-view="home"] .undo-link,
+  [data-view="home"] .iss-add,
+  [data-view="home"] .h-setup-btn,
   [data-view="home"] .toasts,
   [data-view="home"] .hmenu,
   [data-view="home"] .mx-tip,
@@ -742,10 +948,11 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   [data-view="home"] .h-row--3 { grid-template-columns: 1.7fr 1fr; }
   [data-view="home"] .mx-scroll, [data-view="home"] .iss-scroll { overflow: visible; }
   [data-view="home"] a { color: inherit; text-decoration: none; }
-  /* Paper is narrower than the screen: stack the panels, keep each one whole.
-     Page 1 = numbers, matrix, trends. Page 2 = issues and questions. */
+  /* Two pages on Letter or A4 landscape, each panel kept whole. Page 1 = numbers, the
+     function grid and trends. Page 2 = issues and questions, with the source line. */
   [data-view="home"] .h-row--2, [data-view="home"] .h-row--3 { grid-template-columns: minmax(0, 1fr); }
   [data-view="home"] .h-row--3 { break-before: page; }
+  [data-view="home"] .h-foot { break-before: avoid; margin-top: 4px; }
   [data-view="home"] .tiles { grid-template-columns: repeat(7, minmax(0, 1fr)); }
   [data-view="home"] .tiles > .tile:nth-child(2) { grid-column: span 2; }
   [data-view="home"] .tile .kc-value { white-space: normal; font-size: 20px; }
@@ -765,4 +972,26 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   [data-view="home"] .panel { padding: 8px 10px; }
   [data-view="home"] .h-row, [data-view="home"] .h-kpis { margin-top: 6px; gap: 6px; }
   [data-view="home"] .h-date-input { display: none; }
+  /* Tighter on paper than on screen, so A4 (the shorter page) also fits the day on two pages. */
+  [data-view="home"] .kcard { padding: 6px 8px; }
+  [data-view="home"] .h-kpis .kc-value { font-size: 20px; }
+  [data-view="home"] .mini { height: 52px; }
+  [data-view="home"] .mx tbody th, [data-view="home"] .mx tbody td { height: 18px; }
+  [data-view="home"] .mcell-in { height: 16px; }
+  [data-view="home"] .panel { padding: 6px 8px; }
+  [data-view="home"] .iss th, [data-view="home"] .iss td { font-size: 11px; line-height: 1.25; }
+  [data-view="home"] .kbi-link { min-height: 26px; }
+  [data-view="home"] .mx tbody th, [data-view="home"] .mx td.mx-owner { padding-top: 1px; padding-bottom: 1px; line-height: 1.15; }
+  [data-view="home"] .panel-head { margin-bottom: 4px; }
+  [data-view="home"] .kc-head { font-size: 11.5px; line-height: 1.2; }
+  [data-view="home"] .kc-head .i { display: none; }
 }
+
+/* Sidebar and drawer: a long plant name or function name stops at two lines with an ellipsis.
+   The whole name stays for screen readers and shows on hover (title, set in js/shell.js).
+   The phone's top bar keeps its one-line plant name (more specific rule above). */
+.side-brand-name, .side-link--dept .side-text {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  min-width: 0; overflow: hidden; overflow-wrap: anywhere;
+}
+.drawer .side-link--dept .side-text { white-space: normal; }

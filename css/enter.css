@@ -32,6 +32,10 @@
   height: 100%;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* A box that takes focus scrolls clear of the sticky top and the sticky Save bar
+     (their heights are measured in enter.js; these are the usual sizes). */
+  scroll-padding-top: calc(var(--enter-top-h, 64px) + 8px);
+  scroll-padding-bottom: calc(var(--enter-bar-h, 77px) + 16px);
 }
 
 .enter-top {
@@ -50,9 +54,18 @@
 .enter-top :focus-visible { outline-color: var(--bar-focus); }
 .enter-top .icon-btn { border-color: var(--bar-line); color: var(--bar-ink); }
 .enter-kicker { font-weight: 700; }
-.enter-as { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s-2); color: var(--bar-ink-2); }
+.enter-as { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; color: var(--bar-ink-2); }
+.enter-as-switch { display: inline-flex; align-items: center; gap: 6px; }
 .enter-as strong { color: var(--bar-ink); font-weight: 700; }
 .not-you { min-height: var(--tap); padding: 0; border: 0; background: none; color: var(--bar-ink); font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+/* Narrow phones: the name on one line, "Not you?" on its own line under it (no dot to start a line). */
+@media (max-width: 480px) {
+  .enter-as { display: grid; justify-items: start; gap: 0; padding-block: 8px; line-height: 1.3; }
+  .enter-as-dot { display: none; }
+  .enter-as .not-you { min-height: 32px; position: relative; }
+  /* The tap area stays 44px tall. */
+  .enter-as .not-you::before { content: ""; position: absolute; inset: -6px 0; }
+}
 
 .enter-body {
   flex: 1;
@@ -75,6 +88,9 @@
 
 /* Step 1: who's entering */
 .who-list { display: grid; gap: var(--s-2); margin-top: var(--s-5); }
+/* Nobody to pick (every function hidden): one line and the way to fix it. */
+.enter-none { color: var(--ink); font-weight: 600; }
+.enter-none-tools { margin-top: var(--s-4); }
 .who-btn {
   display: flex;
   align-items: baseline;
@@ -116,6 +132,10 @@
   background: var(--surface);
   font-weight: 650;
 }
+/* After a day switch: what came along, what it replaced on that day, and one tap back to that day's number. */
+.day-kept-row { display: flex; flex: 1 0 100%; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
+.day-kept-row[hidden], .day-kept-row [hidden] { display: none; }
+.day-kept { color: var(--ink); font-size: var(--fs-small); font-weight: 600; }
 
 .group { margin: var(--s-5) 0 0; padding: 0; border: 0; min-width: 0; }
 .group legend { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-3); padding: 0; margin-bottom: var(--s-3); }
@@ -128,10 +148,12 @@
 }
 .group--primary legend { float: left; width: 100%; }
 .group--primary legend + * { clear: both; }
+/* The chevron in its own column, the words in the next: a note that wraps (a phone) lines up
+   under "By area", never under the chevron. */
 .group--areas summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
   gap: 0 var(--s-3);
   min-height: var(--tap);
   padding: var(--s-2) 0;
@@ -141,12 +163,14 @@
   list-style: none;
 }
 .group--areas summary::-webkit-details-marker { display: none; }
+.group-sum { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-3); min-width: 0; }
 .group--areas summary::before {
   content: "";
+  grid-column: 1;
   align-self: center;
   width: 0.55em;
   height: 0.55em;
-  margin-right: var(--s-1);
+  margin: 0 2px;
   border-right: 2px solid var(--ink);
   border-bottom: 2px solid var(--ink);
   transform: rotate(-45deg);
@@ -203,8 +227,12 @@
 .field-goal { color: var(--ink-mid); font-weight: 600; font-variant-numeric: tabular-nums; }
 .field-status { min-height: 1.6em; margin-top: var(--s-2); }
 .field-status .status { font-size: var(--fs-body); }
+/* A number with a question under it isn't judged yet: neutral words and the info glyph. */
+.status--check { color: var(--neutral); }
 .field--primary .field-status .status { font-size: var(--fs-lead); }
 .field-error { margin-top: var(--s-1); color: var(--error); font-weight: 650; }
+/* A box's own rule, under its label (the month box keeps its number when left empty). */
+.field-hint--box { margin-top: 2px; }
 
 .group--text { display: grid; gap: var(--s-4); }
 
@@ -257,6 +285,9 @@
   resize: vertical;
 }
 .field-textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--ink); }
+
+/* A message shown over the form sits above the Save bar, never on it. */
+.enter .toasts { bottom: calc(var(--enter-bar-h, 77px) + 12px); }
 
 /* Sticky Save bar */
 .enter-bar {

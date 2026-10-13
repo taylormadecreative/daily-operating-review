@@ -45,6 +45,11 @@
 .ma-input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--ink); }
 .ma-input[aria-invalid="true"] { border-color: var(--off); }
 .ma-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 1em; }
+.ma-field[hidden] { display: none; }
+/* Measure: a native select with the form's border; its chevron is the shared one in components.css (light on the dark ground). */
+.ma-pick { position: relative; display: block; }
+.ma-select { font-weight: 650; }
+.ma-select option { background: var(--surface); color: var(--ink); }
 .ma-error, .ma-form-error { color: var(--off); font-size: 0.9em; font-weight: 650; }
 .ma-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.6em; }
 .ma .btn { min-height: 44px; font-size: 1em; }
@@ -57,7 +62,12 @@
 /* ---------- Minutes sheet ---------- */
 
 .mn-title { font-size: 2.5rem; line-height: 0.92; }
-.mn-title-date { white-space: nowrap; }
+.mn-head-text { min-width: 0; }
+/* "Held Tue, Oct 13, 12:41 AM for the Fri, Feb 27 board": when it ran, and which board day. */
+.mn-head-sub { margin-top: var(--s-2); color: var(--ink-mid); font-size: var(--fs-body); font-weight: 650; line-height: 1.35; }
+/* Right after End meeting: "Saved on this device." in the header, never a toast over the minutes. */
+.mn-head-note { margin-top: var(--s-1); color: var(--ink-mid); font-size: var(--fs-small); font-weight: 600; line-height: 1.35; }
+.mn-head-note.is-warn { color: var(--ink); font-weight: 650; }
 .mn-body { padding-top: var(--s-4); }
 .mn-back-row { margin-bottom: var(--s-3); }
 .mn-empty-text + .mn-back-row { margin-top: var(--s-4); }
@@ -79,6 +89,12 @@
   letter-spacing: 0.005em;
 }
 .mn-summary-off { margin-top: var(--s-2); font-weight: 650; }
+/* What still needed an action when the meeting ended: off glyph and red lead, or the all-clear in green. */
+.mn-needs { display: flex; align-items: baseline; gap: 0.45em; margin-top: var(--s-2); max-width: 62ch; font-weight: 600; line-height: 1.4; }
+.mn-needs .glyph { width: 1.15em; height: 1.15em; flex: none; align-self: center; color: var(--off); }
+.mn-needs-lead { color: var(--off); font-weight: 750; }
+.mn-needs--clear .glyph, .mn-needs--clear .mn-needs-lead { color: var(--on); }
+.mn-needs-cell .status { font-weight: 750; }
 
 /* By function: the board's order, a ledger of rules, no cards. */
 .mn-fns { margin-top: var(--s-3); border-top: 2px solid var(--rule-strong); }
@@ -109,6 +125,17 @@
 .mn-cell { min-width: 0; padding: var(--s-2) var(--s-3) var(--s-3) 0; }
 .mn-cell + .mn-cell { padding-left: var(--s-3); border-left: 1px solid var(--rule); }
 .mn-cell[data-status="off"] { padding-left: var(--s-3); background: var(--off-wash); }
+/* On screen the day and month cards match the board's solid blocks (and Detail's): on and
+   off filled, light text, word + glyph. Customize's wash or words looks keep the wash. */
+:root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .mn-sheet .mn-cell:is([data-status="on"], [data-status="off"]) {
+  padding-left: var(--s-3);
+  color: var(--n-0);
+}
+:root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .mn-sheet .mn-cell[data-status="on"] { background: var(--on); }
+:root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .mn-sheet .mn-cell[data-status="off"] { background: var(--off); }
+:root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .mn-sheet .mn-cell:is([data-status="on"], [data-status="off"]) :is(.mn-cell-label, .status, .mn-fig, .mn-fig--empty, .mn-measure) { color: inherit; }
+/* Two filled cards side by side keep a hairline of page between them. */
+:root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .mn-sheet .mn-cell + .mn-cell:is([data-status="on"], [data-status="off"]) { border-left-color: var(--surface); }
 .mn-cell-label { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; }
 .mn-cell .status { margin-top: var(--s-1); font-size: var(--fs-body); }
 .mn-fig { margin-top: 2px; font-variant-numeric: tabular-nums; }
@@ -121,11 +148,15 @@
 .mn-notes dt { color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
 .mn-notes dd { margin: 2px 0 0; max-width: 62ch; white-space: pre-line; }
 .mn-notes dd.is-empty { color: var(--ink-2); }
+.mn-notes dd.mn-issue-gap { white-space: normal; }
+.mn-issue-gap .status { font-weight: 750; }
 /* The actions assigned in this meeting, under the function's action. */
 .mn-notes dd.mn-assigned { white-space: normal; }
 .mn-alist { display: grid; gap: var(--s-1); }
 .mn-alist-text { display: block; font-weight: 600; }
 .mn-alist-meta { display: block; color: var(--ink-2); font-size: var(--fs-small); }
+.mn-alist-mine { color: var(--ink); font-weight: 650; }
+.mn-action-kpi { color: var(--ink); font-weight: 600; }
 
 .mn-extras { margin-top: var(--s-4); }
 .mn-extras-title { font-size: var(--fs-small); font-weight: 700; }
@@ -141,6 +172,13 @@
 .mn-action-meta { margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
 .mn-action-fn { color: var(--ink); font-weight: 650; }
 .mn-action-meta .ist { font-size: var(--fs-small); }
+/* An action's own status, as the Action register shows it: neutral, because status
+   colors mean on or off goal. Open is a hollow ring, In progress half filled, both in
+   ink; Closed stays green with its filled dot. (The issue's own status keeps its colors.) */
+.mn-action-meta .ist--open, .mn-action-meta .ist--in-progress { color: var(--ink); }
+.mn-action-meta .ist--open .ist-dot,
+.mn-action-meta .ist--in-progress .ist-dot { position: relative; box-sizing: border-box; overflow: hidden; border: 1.5px solid currentColor; background: none; }
+.mn-action-meta .ist--in-progress .ist-dot::after { content: ""; position: absolute; inset: 0 50% 0 0; background: currentColor; }
 .mn-action-status { color: var(--ink); font-weight: 650; }
 .mn-action-status.is-quiet { color: var(--ink-2); font-weight: 550; }
 
@@ -219,8 +257,7 @@
 
 @media (max-width: 759px) {
   .mn-title { font-size: 1.875rem; }
-  .mn-title-sep { display: none; }
-  .mn-title-date { display: block; }
+  .mn-head-sub { font-size: var(--fs-small); }
   .mn-summary { font-size: 1.75rem; }
 }
 @media (max-width: 599px) {
@@ -252,5 +289,14 @@ html.mn-printing .mn-sheet, html.mn-printing .mn-sheet::backdrop { transition: n
   .mn-print .section-title { break-after: avoid; }
   .mn-print .mn-fn, .mn-print .mn-action, .mn-print .mn-lines li { break-inside: avoid; }
   .mn-print .mn-summary { font-size: 18pt; }
+  .mn-print-when { margin-bottom: 4pt; font-weight: 650; }
+  /* Paper: the cards print as a wash with the status word in its color (no solid fills). */
+  .mn-print .mn-cell[data-status="off"] { background: var(--off-wash); }
+  .mn-print .mn-cell .status--on { color: var(--on); }
+  .mn-print .mn-cell .status--off { color: var(--off); }
   .mn-print .mn-cell[data-status="off"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* A done action (closed that day or later): "Done:" in the on-track color with its glyph. */
+.mn-done { color: var(--on); font-weight: 700; white-space: nowrap; }
+.mn-done .glyph { display: inline-block; width: 1em; height: 1em; margin-right: 0.3em; vertical-align: -0.15em; }

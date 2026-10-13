@@ -1,7 +1,8 @@
 // Shared markup helpers. One place for escaping, status glyphs and the
 // word + glyph status pattern, so every screen draws status the same way.
 
-import { statusWord, ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION } from './status.js?v=20261012-235706';
+import { statusWord, ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261013-151156';
+import { termName } from './format.js?v=20261013-151156';
 
 /** Escape text for HTML (data such as names and problem text is untrusted). */
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -13,6 +14,7 @@ export const GLYPH = {
   [NOT_ENTERED]: 'g-missing',
   [NO_GOAL]: 'g-nogoal',
   [NO_PRODUCTION]: 'g-idle',
+  [NOT_TRACKED]: 'g-untracked',
 };
 
 export function glyphMarkup(status, cls = 'glyph') {
@@ -36,9 +38,12 @@ export function issueStatusMarkup(status, tag = 'span') {
   return `<${tag} class="ist ist--${status}"><span class="ist-dot" aria-hidden="true"></span>${ISSUE_WORD[status]}</${tag}>`;
 }
 
-/** Small "what does this mean?" button for a glossary term. */
-export function termButton(term, definition) {
+/**
+ * Small "what does this mean?" button for a glossary term, named after the words beside it
+ * ("What does Total direct labor mean?", not "…DL…"); the popover still shows the term.
+ */
+export function termButton(term, definition, name = termName(term)) {
   return `<button class="term-btn" type="button" data-term="${esc(term)}" data-definition="${esc(definition)}"`
-    + ` aria-label="What does ${esc(term)} mean?" aria-haspopup="dialog" aria-expanded="false">`
+    + ` aria-label="What does ${esc(name)} mean?" aria-haspopup="dialog" aria-expanded="false">`
     + `<svg class="icon" aria-hidden="true" focusable="false"><use href="#g-info"></use></svg></button>`;
 }

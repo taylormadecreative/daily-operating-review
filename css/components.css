@@ -35,6 +35,18 @@
 .howto-glossary dt::after { content: ": "; }
 .howto-glossary dd { display: inline; margin: 0; color: var(--ink); }
 .popover-close { margin-top: var(--s-5); }
+/* Got it stays in view at the bottom of the panel while its content scrolls (How to read is taller
+   than a 1080p or 900px window). The bar runs edge to edge over the panel's padding. */
+.popover-foot {
+  position: sticky;
+  bottom: calc(-1 * var(--s-5));
+  z-index: 1;
+  margin: var(--s-4) calc(-1 * var(--s-5)) calc(-1 * var(--s-5));
+  padding: var(--s-3) var(--s-5) var(--s-5);
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
+}
+.popover-foot .popover-close { margin-top: 0; }
 .popover-note { margin-top: var(--s-4); padding-top: var(--s-3); border-top: 1px solid var(--rule); font-size: var(--fs-small); }
 
 /* Phones: How to read becomes a bottom sheet that scrolls inside itself. */
@@ -58,6 +70,12 @@
     .howto:popover-open { opacity: 1; transform: translateY(100%); }
   }
   .howto .popover-close { width: 100%; }
+  /* The sheet's sides are the page gutter, and its bottom keeps clear of the home indicator. */
+  .howto .popover-foot {
+    bottom: calc(-1 * (var(--s-5) + env(safe-area-inset-bottom, 0px)));
+    margin: var(--s-4) calc(-1 * var(--gutter)) calc(-1 * (var(--s-5) + env(safe-area-inset-bottom, 0px)));
+    padding: var(--s-3) var(--gutter) calc(var(--s-5) + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* Term definitions */
@@ -99,9 +117,24 @@
   .toast { transform: translateY(12px); opacity: 0; }
 }
 .toast.is-leaving { transform: translateY(12px); opacity: 0; transition-duration: 150ms; }
-.toast-text { flex: 1; font-weight: 550; line-height: 1.35; }
+/* Pretty wrapping keeps the last line from being one stranded word or date part ("Fri, Feb / 27"). */
+.toast-text { flex: 1; font-weight: 550; line-height: 1.35; text-wrap: pretty; }
 .toast-action { min-height: var(--tap); padding: 0 var(--s-4); color: var(--lx-mint-400); border-color: var(--lx-mint-400); }
 .toast-close { color: var(--n-0); border-color: transparent; }
+/* "Undo ⌘Z": the shortcut in a small chip, like the meeting's "Exit Esc". Touch screens have no keys to press. */
+.toast-kbd {
+  margin-left: 0.5em;
+  padding: 0.05em 0.35em;
+  border: 1px solid color-mix(in srgb, currentColor 55%, transparent);
+  border-radius: 3px;
+  font-size: max(0.8em, 11px);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+@media (hover: none), (pointer: coarse) {
+  .toast-kbd { display: none; }
+}
 .toast :focus-visible { outline-color: var(--lx-mint-400); }
 @media (hover: hover) and (pointer: fine) {
   .toast-action:hover { background: var(--lx-navy-900); }
@@ -182,3 +215,47 @@
 .data-table tbody th { font-weight: 600; }
 .data-table .num { text-align: right; }
 .data-table .status { font-size: var(--fs-small); }
+
+/* Day-by-day goal: one stepped line over the bars, in ink so it reads across them (no halo). */
+.chart-goal-step { fill: none; stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 4; stroke-linejoin: miter; }
+[data-theme="meeting"] .chart-goal-step { stroke: var(--d-text); stroke-width: 3; }
+/* The bar charts' key draws its goal in the same ink as the step. */
+.legend:has(.key--bar) .key--goal { border-top-color: var(--ink); }
+[data-theme="meeting"] .legend:has(.key--bar) .key--goal { border-top-color: var(--d-text); }
+/* A zero is a 4px stub in the Actual color (the key lists Actual and Off goal), so a clean day still shows a mark. */
+.chart-bar--zero { fill: var(--chart-bar); }
+/* "Goal 616" at the right end of a Detail or Meeting chart's goal line. */
+.chart-goal-label { fill: var(--chart-goal); font-family: var(--font-ui); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Narrow year charts: one solid tick per month (dashes would break into specks). */
+.chart-goal--solid { stroke-dasharray: none; stroke-width: 2; }
+/* Year charts: months still to come keep their goal at half strength (no jitter beside real results). */
+.chart-goal--future { opacity: 0.5; }
+
+/* ---------- Selects (Board setup, Enter numbers, Action register, Add action) ---------- */
+
+/* One drawn chevron, 14px in from the right edge, in place of the browser's arrow
+   (which sat about 6px from the border). Navy on light, light on the meeting's dark ground. */
+:root {
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2302274C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+[data-theme="meeting"] {
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23E8EEF4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+:is(.su-field, .ar-pick) select:not([multiple]),
+select:is(.day-select, .ma-select):not([multiple]) {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 40px;
+  background-image: var(--select-chevron);
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px 8px;
+  cursor: pointer;
+}
+/* The Action register drew its own chevron after the box; the shared one replaces it. */
+span.ar-pick::after { content: none; }
+
+/* The term definition opens right after its ⓘ button, wherever that sits (a nowrap name, a status
+   block's light text, a heading): it keeps its own type and wraps, never the look around it. */
+.term-pop { font: 400 var(--fs-body)/1.45 var(--font-ui); font-variant-numeric: normal; letter-spacing: normal; word-spacing: normal; text-align: start; text-indent: 0; text-transform: none; white-space: normal; text-wrap: wrap; cursor: auto; pointer-events: auto; }
+.term-pop .term-pop-title:focus { outline: none; } /* it takes focus only so a screen reader starts there */

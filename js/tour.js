@@ -4,10 +4,10 @@
 // view above it. Keyboard: focus moves into the card, ← → step, Esc skips, and
 // focus goes back where it was afterwards.
 
-import { pageHref } from './shell.js?v=20261012-235706';
-import { esc } from './ui.js?v=20261012-235706';
-import { getSettings, derive } from './customize.js?v=20261012-235706';
-import { dayStatus, OFF } from './status.js?v=20261012-235706';
+import { pageHref } from './shell.js?v=20261013-151156';
+import { esc } from './ui.js?v=20261013-151156';
+import { getSettings, derive } from './customize.js?v=20261013-151156';
+import { dayStatus, OFF } from './status.js?v=20261013-151156';
 
 const FLAG = { home: 'dor.tour.home.v1', dor: 'dor.tour.dor.v2' };
 export const ARRIVAL_KEY = 'dor.tour.arrival';
@@ -18,6 +18,10 @@ const act = (capital = false) => {
   const w = matchMedia('(hover: none)').matches ? 'tap' : 'click';
   return capital ? w[0].toUpperCase() + w.slice(1) : w;
 };
+/** How to find which KPI a red dot means: point at it with a mouse; on a touch screen, a tap opens the function's detail. */
+const pointWords = () => (matchMedia('(hover: none)').matches
+  ? 'Tap a function to see which KPI missed.'
+  : 'Point at a red dot to see which KPI missed.');
 
 export function tourSeen(kind) {
   try { return Boolean(localStorage.getItem(FLAG[kind])); } catch { return false; }
@@ -32,29 +36,32 @@ function homeSteps(month, day) {
   return [
     {
       title: 'Welcome',
-      text: "This is your plant's Daily Operating Review. Each morning every function enters its numbers and the board works out what's on track. Here's a one-minute tour.",
+      text: "This is your plant's Daily Operating Review. Each morning every function enters its numbers and the board works out what's on track. Here's a quick tour.",
     },
     { target: ['[data-home-summary]'], title: 'The one-line answer', text: "Start here. One line says how many functions hit their goal and which didn't." },
     { target: ['.h-date'], title: 'Pick a day', text: 'Pick any production day and the whole dashboard follows.' },
     {
       target: ['.h-kpis'],
       title: 'Key numbers',
-      text: `Each card shows the result and its goal. Red means it missed. For things like scrap or injuries, above goal is a miss. ${act(true)} one for that function's detail.`,
+      text: `Each card shows the result and its goal. Red means it missed. For things like scrap or injuries, above goal is a miss. ${act(true)} one for that function's detail and the KPAs that drive it.`,
     },
     {
       target: ['.panel--matrix'],
-      title: 'Every function by area',
-      text: 'Green dot = on track. Red dot with ! = off goal. Gray ring = not entered yet.',
+      // A card that has to sit over this wide panel goes on its left: the status dots are on the right.
+      side: 'left',
+      title: 'Every function at a glance',
+      text: `Each function's plant total and month so far. A green dot is on track, a red dot with ! is off goal, a gray ring is not entered yet. A function with several KPIs is off goal when any of them is. ${pointWords()}`,
     },
     {
       target: ['.panel--issues'],
+      side: 'left', // over this panel, the card keeps clear of Action, Owner and Status on its right
       title: 'Issues and actions',
-      text: "What's keeping each function from its goal and what's being done in the next 24 hours, with each issue's status.",
+      text: "What's keeping each function from its goal and what's being done in the next 24 hours, with each issue's status. A KPI that's off goal with no action says Needs an action.",
     },
     {
       target: ['.h-actions [data-enter]', '.h-mobilebar [data-enter]'],
       title: 'Enter numbers',
-      text: `Owners ${act()} Enter numbers, pick their name and type the numbers. It takes under two minutes on a phone and the board updates right away.`,
+      text: `Owners ${act()} Enter numbers, pick their name and type the numbers, from a phone or a computer. The board updates right away.`,
     },
     {
       target: ['.side [data-run-meeting]'],
@@ -65,11 +72,12 @@ function homeSteps(month, day) {
     },
     {
       done: true,
-      title: "That's it",
-      text: 'Reopen this tour anytime from How it works.',
-      note: 'In this preview, anything you enter saves on this device only.',
+      title: 'Your turn',
+      text: 'Enter a number and watch the dashboard change, or set the board up for your plant.',
+      note: 'Anything you enter saves on this device only. Reopen this tour anytime from How it works.',
       tryLabel: 'Try Enter numbers',
-      link: { href: pageHref(month, day, { view: 'dor' }), text: 'See the DOR board →', kind: 'dor' },
+      setupLabel: 'Set up your plant',
+      link: { href: pageHref(month, day, { view: 'dor' }), text: 'See the Daily Operating Review board →', kind: 'dor' },
     },
   ];
 }
@@ -83,10 +91,20 @@ function offGoalPhrase() {
   return `Off-goal cells turn ${color}.`;
 }
 
-/** The row the classic tour explains: the first department off goal that day, else the first. */
+/** The row the tour explains: the first function off goal that day, else the first; null when Board setup removed them all. */
 function tourRow(month, day) {
   const fn = month.functions.find((f) => dayStatus(month, f, day).status === OFF) ?? month.functions[0];
-  return `#fn-${fn.id}`;
+  return fn ? `#fn-${CSS.escape(fn.id)}` : null;
+}
+
+/** Where the second cell sits from the first: "next to it" or "below it" (on a phone when it can't be measured). */
+function besideOrBelow(a, b) {
+  if (a && b) {
+    const ra = a.getBoundingClientRect();
+    const rb = b.getBoundingClientRect();
+    return rb.top >= ra.bottom - 2 ? 'below it' : 'next to it';
+  }
+  return isPhone() ? 'below it' : 'next to it';
 }
 
 /** The column names as the board shows them ("Fri, Feb 27" or "Yesterday"; "February so far"). */
@@ -98,24 +116,28 @@ function boardV2Steps(month, day) {
   return [
     {
       title: 'Welcome',
-      text: 'This is your Daily Operating Review board: every function, its owner and its KPIs, in meeting order. Results and accountability on one screen.',
+      text: 'This is your Daily Operating Review board. Every function, its owner and its KPIs, in meeting order. Every goal connected, every KPI driven by KPAs, every action accountable.',
     },
-    { target: ['[data-summary-lead]'], title: 'The summary', text: "One sentence says how many functions hit their goal, which ones didn't, and which misses still need an action." },
-    {
+    { target: ['[data-summary-lead]'], title: 'The summary', text: "One sentence says how many functions hit their goal, which ones didn't, and which misses still need an action. Pick another day from the date at the top." },
+    ...(row ? [{
       target: [`${row} .kpirow`, row],
       title: 'One row per KPI',
-      text: `Each KPI shows its goal, the day's status and the month so far. Status is worked out from the number and its goal, never typed, so a miss can't show green. When the month is judged by a different measure, the month box names it. ${act(true)} any KPI for its detail, or pick another day from the date at the top.`,
+      text: `Each KPI shows its goal, the day's status and the month so far. Status is worked out from the number and its goal, never typed, so a miss can't show green. ${act(true)} any KPI for its trend and the KPAs, the daily activities, that drive it.`,
     },
     {
+      // Both cells in one spotlight.
       target: [`${row} .v2cell--trend`, row],
+      with: [`${row} .v2cell--ytd`],
       title: 'Daily trend and year to date',
       text: 'Every day this month against the daily goal, and every month this year against the monthly goal.',
     },
     {
-      target: [`${row} .v2cell--action`, row],
+      target: [`${row} .v2cell--issue`, row],
+      with: [`${row} .v2cell--action`],
       title: 'Issue and action',
-      text: "What's keeping the KPI from its goal, and what's being done in the next 24 hours. A KPI that's off goal with no action says Needs an action.",
-    },
+      // "next to it" in the full table, "below it" where the row stacks (phones, tablets).
+      text: ([issue, action]) => `Issue says what's keeping the KPI from its goal. Action, ${besideOrBelow(issue, action)}, says what's being done in the next 24 hours. A KPI that's off goal with no action says Needs an action, until someone adds one.`,
+    }] : []),
     {
       target: ['.topbar [data-enter]', '.mobile-bar [data-enter]'],
       title: 'Enter numbers',
@@ -123,7 +145,9 @@ function boardV2Steps(month, day) {
     },
     {
       target: ['.topbar [data-run-meeting]'],
-      phoneNote: 'Run meeting is on the computer or TV view of this board.',
+      // A phone has no Run meeting button in its bar: it's in the Menu.
+      fallback: '[data-topbar-more]',
+      fallbackNote: "It's in the Menu, top right.",
       title: 'Run meeting',
       text: 'One function at a time on the TV for the morning meeting. Record it, add actions as they come up, and the minutes are saved when it ends.',
     },
@@ -144,9 +168,11 @@ function boardV2Steps(month, day) {
     {
       done: true,
       title: 'Your turn',
-      text: 'Enter a number and watch the status change, or set the board up for your plant. Everything you try stays in this browser.',
+      text: 'Enter a number and watch the status change, or set the board up for your plant.',
+      note: 'Anything you enter saves on this device only. Reopen this tour anytime from Take the tour.',
       tryLabel: 'Try Enter numbers',
       setupLabel: 'Set up your plant',
+      link: { href: pageHref(month, day, { view: 'home' }), text: 'See the new dashboard →', kind: 'home' },
     },
   ];
 }
@@ -159,14 +185,15 @@ function dorSteps(month, day) {
   return [
     {
       title: 'Welcome',
-      text: 'This is the classic view of your DOR board: one row per department, in meeting order, like the printed board.',
+      text: 'This is the classic view of your DOR board: one row per function, in meeting order, like the printed board.',
     },
-    { target: ['[data-summary-lead]'], title: 'The summary', text: 'One sentence says how many departments hit their goal and which ones need talking about.' },
+    { target: ['[data-summary-lead]'], title: 'The summary', text: 'One sentence says how many functions hit their goal and which ones need talking about.' },
     { target: ['.datebar'], title: 'Pick a day', text: 'Step through production days and the whole board follows.' },
-    {
+    // With every function removed in Board setup there's no row to show: those steps are left out.
+    ...(row ? [{
       target: [row],
-      title: 'One row per department',
-      text: `Each row has the department, its owner and its daily question. The ${dayCol} column is the day's number against goal; ${monthCol} is the month. ${offGoalPhrase()}`,
+      title: 'One row per function',
+      text: `Each row has the function, its owner and its daily question. The ${dayCol} column is the day's number against goal; ${monthCol} is the month. ${offGoalPhrase()}`,
     },
     {
       target: [`${row} .cell--trend`],
@@ -179,9 +206,9 @@ function dorSteps(month, day) {
       target: [`${row} .cell--notes`],
       fallback: row,
       fallbackNote: 'This column is turned off in Customize.',
-      title: 'Problem → Next 24 hours',
+      title: 'Issue and action',
       text: "What went wrong and what's being done about it before tomorrow's meeting.",
-    },
+    }] : []),
     {
       target: ['.topbar [data-enter]', '.mobile-bar [data-enter]'],
       title: 'Enter numbers',
@@ -189,9 +216,10 @@ function dorSteps(month, day) {
     },
     {
       target: ['.topbar [data-run-meeting]'],
-      phoneNote: 'Run meeting is on the computer or TV view of this board.',
+      fallback: '[data-topbar-more]',
+      fallbackNote: "It's in the Menu, top right.",
       title: 'Run meeting',
-      text: 'Shows one department at a time on the TV for the morning meeting. Arrow keys or a clicker move through it.',
+      text: 'Shows one function at a time on the TV for the morning meeting. Arrow keys or a clicker move through it.',
     },
     {
       target: ['.topbar [data-customize]'],
@@ -204,7 +232,7 @@ function dorSteps(month, day) {
       done: true,
       title: "That's it",
       text: 'Reopen this tour anytime from Take the tour.',
-      note: 'In this preview, anything you enter saves on this device only.',
+      note: 'In this demo, anything you enter saves on this device only.',
       tryLabel: 'Try Enter numbers',
       link: { href: pageHref(month, day, { view: 'home' }), text: 'See the new dashboard →', kind: 'home' },
     },
@@ -224,17 +252,47 @@ function visible(el) {
   return getComputedStyle(el).visibility !== 'hidden';
 }
 
-/** The element a step points at now, plus any note about where it went. */
+/**
+ * The element a step points at now, any cells shown with it (`with`: one
+ * spotlight around them all), and any note about where it went.
+ */
 function resolve(step) {
   for (const sel of step.target ?? []) {
     const el = [...document.querySelectorAll(sel)].find(visible);
-    if (el) return { el, note: '' };
+    if (el) {
+      // The extra cells only join their own row's cell (not the whole-row fallback).
+      const also = sel === step.target[0]
+        ? (step.with ?? []).map((w) => [...document.querySelectorAll(w)].find(visible)).filter(Boolean)
+        : [];
+      return { el, also, note: '' };
+    }
   }
   if (step.fallback) {
     const el = [...document.querySelectorAll(step.fallback)].find(visible);
-    if (el) return { el, note: step.fallbackNote ?? '' };
+    if (el) return { el, also: [], note: step.fallbackNote ?? '' };
   }
-  return { el: null, note: step.target ? (step.phoneNote ?? '') : '' };
+  return { el: null, also: [], note: step.target ? (step.phoneNote ?? '') : '' };
+}
+
+/** A step's words: some depend on the layout (where one cell sits from the other). */
+const stepText = (step, els) => (typeof step.text === 'function' ? step.text(els) : step.text);
+
+/** One box around every element in the spotlight. */
+function unionRect(els) {
+  const rects = els.map((el) => el.getBoundingClientRect());
+  const left = Math.min(...rects.map((r) => r.left));
+  const top = Math.min(...rects.map((r) => r.top));
+  const right = Math.max(...rects.map((r) => r.right));
+  const bottom = Math.max(...rects.map((r) => r.bottom));
+  return { left, top, right, bottom, width: right - left, height: bottom - top };
+}
+
+/** Mark what's in the spotlight (checks read it; nothing styles it). */
+function markTargets(t, el, also) {
+  for (const n of t.targets ?? []) n.removeAttribute('data-tour-target');
+  t.target = el;
+  t.targets = el ? [el, ...also] : [];
+  for (const n of t.targets) n.setAttribute('data-tour-target', '');
 }
 
 export function startTour(kind, { month, day, onEnd, onTry } = {}) {
@@ -280,35 +338,50 @@ export function endTour(how = 'skipped') {
   const t = tour;
   tour = null;
   if (how === 'done' || how === 'skipped') markSeen(t.kind, how);
+  // Skip means no tours: the other view doesn't start its own. It greets once
+  // instead (the done card's link does the same), saying where its tour is.
+  const other = t.kind === 'dor' ? 'home' : 'dor';
+  if (how === 'skipped' && !tourSeen(other)) {
+    markSeen(other, 'arrived');
+    try { sessionStorage.setItem(ARRIVAL_KEY, other); } catch { /* no greeting then */ }
+  }
   window.removeEventListener('resize', onResize);
   window.removeEventListener('scroll', onMove, { capture: true });
   document.removeEventListener('keydown', onCardKey, true);
   cancelAnimationFrame(t.raf);
   t.inerted.forEach((el) => { el.inert = false; });
-  t.target?.removeAttribute('data-tour-target');
+  for (const n of t.targets ?? []) n.removeAttribute('data-tour-target');
   t.block.remove(); t.spot.remove(); t.card.remove(); t.live.remove();
   document.documentElement.classList.remove('is-touring');
   if (how === 'restart' || how === 'interrupted') return;
+  // On a phone the tour scrolled the page to each part: the page goes back to its top
+  // (the home tour would otherwise end mid-page at Issues and actions). Said again once focus has
+  // settled: the home's own keep-clear scroll for a focused element (home.js) runs in the next frame,
+  // and on the tall page itself (#home) it would leave the page part way down.
+  const top = () => { if (isPhone()) window.scrollTo({ top: 0, behavior: 'instant' }); };
+  top();
   const back = t.returnTo && t.returnTo !== document.body && t.returnTo.isConnected ? t.returnTo : document.querySelector(t.kind === 'dor' ? '#board' : '#home');
   back?.focus({ preventScroll: true });
+  if (isPhone() && (back?.id === 'home' || back?.id === 'board')) requestAnimationFrame(() => requestAnimationFrame(top));
   t.onEnd?.(how);
 }
 
-function cardMarkup(step, i, n, note) {
+function cardMarkup(step, i, n, note, text) {
   const last = i === n - 1;
   return `
     <p class="tour-count">${i + 1} of ${n}</p>
     <h2 class="tour-title" id="tour-title" tabindex="-1">${esc(step.title)}</h2>
-    <p class="tour-text" id="tour-text">${esc(step.text)}${note ? ` <span class="tour-where">${esc(note)}</span>` : ''}</p>
+    <p class="tour-text" id="tour-text">${esc(text)}${note ? ` <span class="tour-where">${esc(note)}</span>` : ''}</p>
     ${step.note ? `<p class="tour-note">${esc(step.note)}</p>` : ''}
+    ${last ? `<div class="tour-cta">
+      <button class="btn btn--primary" type="button" data-tour-try>${esc(step.tryLabel)}</button>
+      ${step.setupLabel ? `<button class="btn btn--secondary" type="button" data-tour-setup>${esc(step.setupLabel)}</button>` : ''}
+    </div>` : ''}
     <div class="tour-actions">
       <button class="btn btn--text tour-skip" type="button" ${last ? 'data-tour-close>Close' : 'data-tour-skip>Skip tour'}</button>
       <span class="tour-gap"></span>
       ${i > 0 ? '<button class="btn btn--quiet" type="button" data-tour-back>Back</button>' : ''}
-      ${last && step.setupLabel ? `<button class="btn btn--secondary" type="button" data-tour-setup>${esc(step.setupLabel)}</button>` : ''}
-      ${last
-    ? `<button class="btn btn--primary" type="button" data-tour-try>${esc(step.tryLabel)}</button>`
-    : `<button class="btn btn--primary" type="button" data-tour-next>${i === 0 ? 'Start' : 'Next'}</button>`}
+      ${last ? '' : `<button class="btn btn--primary" type="button" data-tour-next>${i === 0 ? 'Start' : 'Next'}</button>`}
     </div>
     ${step.link ? `<p class="tour-link-row"><a class="tour-link" href="${esc(step.link.href)}" data-tour-link data-kind="${step.link.kind}">${esc(step.link.text)}</a></p>` : ''}`;
 }
@@ -317,17 +390,19 @@ function show(i, { focus = 'next' } = {}) {
   const t = tour;
   t.i = i;
   const step = t.steps[i];
-  const { el, note } = resolve(step);
+  const { el, also, note } = resolve(step);
   // The target is marked while it's in the spotlight (checks read it; nothing styles it).
-  t.target?.removeAttribute('data-tour-target');
-  t.target = el;
-  el?.setAttribute('data-tour-target', '');
-  t.card.innerHTML = cardMarkup(step, i, t.steps.length, note);
+  markTargets(t, el, also);
+  const text = stepText(step, t.targets);
+  t.card.innerHTML = cardMarkup(step, i, t.steps.length, note, text);
   t.card.dataset.step = String(i + 1);
   t.card.classList.toggle('is-centered', !el);
-  t.live.textContent = `Step ${i + 1} of ${t.steps.length}. ${step.title}. ${step.text}${note ? ` ${note}` : ''}`;
+  t.live.textContent = `Step ${i + 1} of ${t.steps.length}. ${step.title}. ${text}${note ? ` ${note}` : ''}`;
   place(); // lays the card out first, so its real height decides the scroll
-  if (el) bringIntoView(el, t.card.offsetHeight);
+  if (el) bringIntoView(t.targets, t.card.offsetHeight);
+  // A card with nothing to point at (welcome, the last card) dims the page from its top, so the
+  // navy header isn't left cut off where an earlier step scrolled to (a phone's last card).
+  else window.scrollTo({ top: 0, behavior: 'instant' });
   place();
   // Focus never falls out of the card when its buttons are rebuilt.
   const want = focus === 'title' ? t.card.querySelector('#tour-title')
@@ -336,9 +411,10 @@ function show(i, { focus = 'next' } = {}) {
   requestAnimationFrame(place);
 }
 
-/** Scroll the target into view: above the phone sheet, or near the middle on a desk. */
-function bringIntoView(el, cardHeight) {
-  const r = el.getBoundingClientRect();
+/** Scroll the spotlight into view: above the phone sheet, or near the middle on a desk. */
+function bringIntoView(els, cardHeight) {
+  const el = els[0];
+  const r = unionRect(els);
   const fixed = isFixed(el);
   if (fixed) return;
   const vh = window.innerHeight;
@@ -384,15 +460,19 @@ function onResize() {
   tour.raf = requestAnimationFrame(() => {
     if (!tour) return;
     const step = tour.steps[tour.i];
-    const { el } = resolve(step);
-    if (el !== tour.target) {
-      tour.target?.removeAttribute('data-tour-target');
-      tour.target = el;
-      el?.setAttribute('data-tour-target', '');
+    const { el, also } = resolve(step);
+    if (el !== tour.target || also.length !== tour.targets.length - 1 || also.some((n, j) => n !== tour.targets[j + 1])) {
+      markTargets(tour, el, also);
       tour.card.classList.toggle('is-centered', !el);
     }
+    // Words that depend on the layout follow it ("next to it" becomes "below it").
+    if (typeof step.text === 'function') {
+      const p = tour.card.querySelector('#tour-text');
+      const text = stepText(step, tour.targets);
+      if (p && p.firstChild?.nodeType === Node.TEXT_NODE && p.firstChild.textContent !== text) p.firstChild.textContent = text;
+    }
     place();
-    if (tour.target) bringIntoView(tour.target, tour.card.offsetHeight);
+    if (tour.target) bringIntoView(tour.targets, tour.card.offsetHeight);
     place();
   });
 }
@@ -405,6 +485,7 @@ function place() {
   const vw = document.documentElement.clientWidth;
   const vh = window.innerHeight;
   const el = t.target && t.target.isConnected ? t.target : null;
+  const els = el ? t.targets.filter((n) => n.isConnected) : [];
   const phone = isPhone();
   card.classList.toggle('is-sheet', phone);
   card.classList.remove('is-top');
@@ -421,7 +502,7 @@ function place() {
     return;
   }
   spot.classList.remove('is-none');
-  const r = el.getBoundingClientRect();
+  const r = unionRect(els);
   const box = {
     left: Math.max(4, r.left - PAD),
     top: Math.max(4, r.top - PAD),
@@ -449,7 +530,11 @@ function place() {
   else if (box.top >= ch + gap + 16) { top = box.top - gap - ch; left = box.left; }
   else if (vw - box.right >= cw + gap + 16) { left = box.right + gap; top = box.top; }
   else if (box.left >= cw + gap + 16) { left = box.left - gap - cw; top = box.top; }
-  else { left = vw - cw - 24; top = vh - ch - 24; } // a target as big as the screen: the card sits in its corner
+  else if (box.right - box.left > vw * 0.6 && t.steps[t.i]?.side === 'left') {
+    // No room around a wide cut-out: the card sits over its side whose key columns it doesn't hide
+    // (the grid's dots and the issues' Status are on the right, so the card goes bottom left).
+    left = 16; top = vh - ch - 24;
+  } else { left = vw - cw - 24; top = vh - ch - 24; } // a target as big as the screen: the card sits in its corner
   // Whatever the branch, the card stays fully on screen.
   card.style.left = `${Math.round(clampX(left))}px`;
   card.style.top = `${Math.round(clampY(top))}px`;

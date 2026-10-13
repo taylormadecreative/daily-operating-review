@@ -38,10 +38,42 @@
   font: inherit;
   font-size: var(--fs-body);
 }
-.su-field input::placeholder { color: var(--ink-2); opacity: 1; }
+/* The daily question: a box that grows with its words, two lines at least (script sizes it where field-sizing isn't supported). */
+.su-field textarea {
+  display: block;
+  width: 100%;
+  min-width: 0; /* a long unbroken word wraps; it never widens the sheet */
+  max-width: 100%;
+  min-height: calc(2lh + 2 * var(--s-2) + 2px);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  resize: none;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  field-sizing: content;
+}
+.su-field input::placeholder,
+.su-field textarea::placeholder { color: var(--ink-2); opacity: 1; }
 .su-field input:focus-visible,
+.su-field textarea:focus-visible,
 .su-field select:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
-.su-field input[aria-invalid="true"] { border-color: var(--error); }
+/* "128 of 140": quiet, from 120 characters on. */
+.su-count { color: var(--ink-2); font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
+.su-count[hidden] { display: none; }
+/* Over 140: "167 of 140. Shorten it so the board shows it whole." (the board keeps its question meanwhile). */
+.su-count.is-over { color: var(--error); font-weight: 600; }
+.su-field input[aria-invalid="true"],
+.su-field textarea[aria-invalid="true"] { border-color: var(--error); }
+/* A name box at its cap (js/setup.js updateCap): quiet at the cap, red when a paste or typing was cut. */
+.su-limit[hidden] { display: none; }
+.su-limit.is-cut { color: var(--error); font-weight: 600; }
+#su-plant-note .su-limit.is-cut { display: block; margin-top: 2px; }
 .su-error { color: var(--error); font-size: var(--fs-caption); font-weight: 600; }
 .su-error[hidden] { display: none; }
 .su-suffix { position: relative; }
@@ -87,10 +119,15 @@
 .su-owner { display: flex; align-items: flex-start; gap: var(--s-4); }
 .su-avatar { width: 64px; height: 64px; }
 .su-avatar.avatar--initials { font-size: 1.625rem; }
+/* No real name yet ("Owner name"): a neutral person glyph on a quiet ground, never initials that read like a status. */
+.avatar--none { background: var(--surface-quiet); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--rule); }
+.avatar--none .i { width: 55%; height: 55%; }
 .su-owner-fields { display: grid; flex: 1; gap: var(--s-2); min-width: 0; }
-.su-photo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
+/* position: relative keeps the hidden file box beside its label (inside the scrolling panel), so focusing it never scrolls the sheet away. */
+.su-photo { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
 .su-photo-btn { cursor: pointer; }
-.su-photo input:focus-visible + * , .su-photo-btn:has(+ input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+/* The file box is visually hidden: its focus ring shows on the "Add a photo" label (only there). */
+.su-photo-btn:has(+ input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
 
 .su-kpi { display: grid; gap: var(--s-2); margin: 0; padding: var(--s-3); border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface-quiet); }
 .su-kpi-legend { padding: 0 var(--s-1); color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; }
@@ -105,13 +142,26 @@
 .su-hidden li { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-2) var(--s-3); border: 1px dashed var(--rule); border-radius: var(--radius); }
 .su-section--reset .btn { margin-top: var(--s-2); }
 
+/* Phones: one frame, not three. The open function keeps a quiet outline, and each KPI is a section
+   under its legend (no box of its own), so the boxes inside get the width. */
+@media (max-width: 759px) {
+  .su-fn.is-open { border-color: var(--rule); }
+  .su-kpi { padding-inline: 0; border: 0; border-radius: 0; background: none; }
+  .su-kpi-legend { padding: 0; }
+  /* A hairline between KPIs takes the boxes' place (a shadow, so a fieldset legend never cuts it). */
+  .su-kpi + .su-kpi { padding-top: var(--s-4); box-shadow: inset 0 1px 0 var(--rule); }
+}
+
 @media (max-width: 599px) {
   .su-body { padding: var(--s-3) var(--gutter) var(--s-7); }
   .su-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .su-grid .su-field,
   .su-grid .su-field--wide { grid-column: 1 / -1; }
   .su-grid .su-field:has(select) { grid-column: span 1; }
-  .su-owner { flex-direction: column; }
+  /* The avatar stays beside the owner's name, smaller, so it never sits alone above the label. */
+  .su-owner { gap: var(--s-3); }
+  .su-avatar { width: 44px; height: 44px; margin-top: 22px; }
+  .su-avatar.avatar--initials { font-size: 1.125rem; }
 }
 
 /* Enter numbers: KPIs added in Board setup */
@@ -141,3 +191,32 @@
 .group--text .group-name--text { display: block; margin-bottom: var(--s-3); font-size: var(--fs-lead); font-weight: 750; }
 .group--extra { margin-top: var(--s-5); margin-bottom: var(--s-5); }
 .field--xstatus { margin: var(--s-2) 0 var(--s-3); border: 0; padding: 0; }
+.field-kept { margin-left: var(--s-2); color: var(--ink-2); font-size: var(--fs-caption); font-weight: 550; }
+/* One flowing sentence: the off-goal word and glyph, then what to write (it wraps like text).
+   The word sits on the text's baseline; only the glyph drops to center on the letters. */
+.field-hint--action { display: block; margin-top: var(--s-2); color: var(--ink); font-size: var(--fs-small); line-height: 1.45; }
+.field-hint--action .status { display: inline; margin-right: 2px; font-weight: 700; }
+.field-hint--action .status .glyph { display: inline-block; margin-right: 0.3em; vertical-align: -0.2em; }
+.field-hint--action[hidden] { display: none; }
+.field--xstatus.is-disabled { opacity: 0.55; }
+
+/* Phones: whole words in function names; the row's controls make room. */
+@media (max-width: 599px) {
+  .su-fn-name { overflow-wrap: normal; font-size: 1.25rem; }
+  .su-fn-head { flex-wrap: wrap; }
+  .su-fn-toggle { flex: 1 1 calc(100% - 110px); }
+  .su-fn-edit-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .su-move { padding-left: 0; border-left: 0; }
+  .su-grid .su-field:has(select) { grid-column: 1 / -1; }
+}
+/* Narrow phones: the arrows stay in the head row (one row per function, not two),
+   drawn at 40px with a 44px hit area around each. */
+@media (max-width: 480px) {
+  .su-fn-head { flex-wrap: nowrap; gap: var(--s-2); padding-right: var(--s-2); }
+  .su-fn-icon { width: 28px; height: 28px; }
+  .su-fn-toggle { flex: 1 1 auto; padding-inline: var(--s-1); }
+  .su-move { gap: 4px; }
+  .su-move .icon-btn { position: relative; width: 40px; height: 40px; }
+  /* From the padding box (inside the 1.5px border): 37px + 2 × 3.5px = a 44px hit area. */
+  .su-move .icon-btn::after { content: ""; position: absolute; inset: -3.5px; }
+}

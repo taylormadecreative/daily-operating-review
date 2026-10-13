@@ -6,6 +6,8 @@ export const OFF = 'off';
 export const NOT_ENTERED = 'not-entered';
 export const NO_GOAL = 'no-goal';
 export const NO_PRODUCTION = 'no-production';
+// A KPI added in Board setup, on a day before it was added: not judged, not counted.
+export const NOT_TRACKED = 'not-tracked';
 
 // One status language everywhere. OFF reads as the group label "Off goal" in
 // summaries and legends; next to a number it says which way it missed.
@@ -15,6 +17,7 @@ export const STATUS_WORD = {
   [NOT_ENTERED]: 'Not entered',
   [NO_GOAL]: 'No goal set',
   [NO_PRODUCTION]: 'No production scheduled',
+  [NOT_TRACKED]: 'Not tracked yet',
 };
 
 /** The word for one measure: "Below goal" when higher is better, "Above goal" when lower is. */
@@ -35,7 +38,9 @@ function seriesRow(fn, areaId, day) {
  */
 export function meetsGoal(actual, goal, better) {
   if (!isNum(actual) || !isNum(goal)) return null;
-  return better === 'lower' ? actual <= goal : actual >= goal;
+  // A hair of tolerance: a month average like 1.3299999999999998 meets a 1.33 goal (it reads 1.33).
+  const eps = 1e-9 * Math.max(1, Math.abs(goal));
+  return better === 'lower' ? actual <= goal + eps : actual >= goal - eps;
 }
 
 /**
@@ -56,6 +61,10 @@ export function compareToGoal(actual, goal, better) {
  * Returns true, false, or null (unknown: callers treat unknown as scheduled).
  */
 export function isProductionDay(month, day) {
+  // The workbook's calendar, stored once by store.js before Board setup changes any goal
+  // (an Operations daily goal of 0 there must not stop production). Only without it: the live goals.
+  const cal = month.productionDays;
+  if (cal && Object.hasOwn(cal, day)) return cal[day];
   // Board setup can hide a function from the board; its plan still says which days run.
   const find = (id) => month.functions.find((f) => f.id === id) ?? month.hiddenFunctions?.find((f) => f.id === id);
   const ops = seriesRow(find('operations'), 'plant', day);
@@ -71,6 +80,7 @@ export function isProductionDay(month, day) {
  */
 export function dayStatus(month, fn, day, areaId = 'plant') {
   const row = seriesRow(fn, areaId, day);
+  if (row?.beforeStart) return { status: NOT_TRACKED, actual: null, goal: null, day };
   const actual = row?.actual ?? null;
   const goal = row?.goal ?? null;
   const compared = compareToGoal(actual, goal, fn.kpiDaily.better);
@@ -100,6 +110,7 @@ export function monthStatus(month, fn, day) {
   const asOfDay = lastProductionDay(month, day);
   if (asOfDay === null) return { status: NO_PRODUCTION, actual: null, goal: null, asOfDay: null };
   const row = (fn.monthToDate ?? []).find((r) => r.day === asOfDay) ?? null;
+  if (row?.beforeStart) return { status: NOT_TRACKED, actual: null, goal: null, asOfDay };
   const actual = row?.actual ?? null;
   const goal = row?.goal ?? null;
   return { status: compareToGoal(actual, goal, fn.kpiMonthly.better), actual, goal, asOfDay };
@@ -134,6 +145,7 @@ export function boardSummary(month, day) {
     const t = { total: 0, [ON]: 0, [OFF]: 0, [NOT_ENTERED]: 0, [NO_GOAL]: 0, [NO_PRODUCTION]: 0, attention: [], missing: [], noGoal: [] };
     for (const fn of month.functions) {
       const s = pick(fn).status;
+      if (s === NOT_TRACKED) continue; // added after this day: not part of the count
       t.total += 1;
       t[s] += 1;
       if (s === OFF) t.attention.push(fn);

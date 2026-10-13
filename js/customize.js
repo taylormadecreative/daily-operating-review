@@ -10,9 +10,9 @@
 
 import {
   readableShade, contrast, mix, cvdDelta, normalDelta, CVD_TARGET, CVD_FLOOR, NEAR_IDENTICAL, isHex, luminance,
-} from './color.js?v=20261012-235706';
-import { esc } from './ui.js?v=20261012-235706';
-import { toast } from './toast.js?v=20261012-235706';
+} from './color.js?v=20261013-151156';
+import { esc } from './ui.js?v=20261013-151156';
+import { toast } from './toast.js?v=20261013-151156';
 
 const KEY = 'dor.customize.v2';
 // v1 settings carry over, except strength: v2's default is the client's solid blocks.
@@ -80,8 +80,20 @@ function load() {
   }
 }
 
+let warnedStorage = false;
+/**
+ * Keep the settings on this device. Returns false when the browser refused
+ * (a private window, storage off): the look still applies for this visit, and
+ * the first refusal says so once.
+ */
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch { /* private window: still applies for this visit */ }
+  let ok = true;
+  try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch { ok = false; }
+  if (!ok && !warnedStorage) {
+    warnedStorage = true;
+    toast("This browser isn't saving, so it will clear when the page reloads.");
+  }
+  return ok;
 }
 
 export const getSettings = () => ({ ...settings });
@@ -181,6 +193,7 @@ export function applyCustomize() {
     czHeaderRule: d.headerLight ? 'on' : 'off',
   };
   Object.assign(document.documentElement.dataset, attrs);
+  window.dispatchEvent(new CustomEvent('dor:customized'));
   // A small cache the page's first script reads, so the saved look paints before the app loads.
   try { localStorage.setItem('dor.customize.paint.v1', JSON.stringify({ attrs, css: style.textContent })); } catch { /* blocked: defaults on first paint */ }
 }
@@ -303,7 +316,7 @@ function sheetMarkup() {
             <label><input type="radio" name="cz-size" value="standard"><span>Standard</span></label>
             <label><input type="radio" name="cz-size" value="large"><span>Large</span></label>
           </div>
-          <p class="cz-hint">Bigger type for reading the TV across the room.</p>
+          <p class="cz-hint">Bigger type for reading the TV across the room. Phones keep standard type.</p>
         </fieldset>
 
         <fieldset class="cz-group">
@@ -437,13 +450,21 @@ export function initCustomize(h = {}) {
       settings = { ...DEFAULTS };
       blockedNote.off = '';
       blockedNote.on = '';
-      save();
+      const warnedBefore = warnedStorage;
+      const kept = save();
       applyCustomize();
       syncSheet();
       dialog.querySelector('#cz-title').focus();
-      toast('The board is back to its default look.', {
+      toast(`The board is back to its default look.${!kept && !warnedBefore ? " This browser isn't saving, so it will clear when the page reloads." : ''}`, {
         actionLabel: 'Undo',
-        onAction: () => { settings = before; save(); applyCustomize(); syncSheet(); },
+        // Back to the Reset button that was pressed (the toast settles focus if the sheet closed meanwhile).
+        onAction: () => {
+          settings = before;
+          save();
+          applyCustomize();
+          syncSheet();
+          if (dialog.open) dialog.querySelector('[data-cz-reset]')?.focus({ preventScroll: true });
+        },
       });
     }
   });
@@ -481,7 +502,8 @@ export function openCustomize() {
   syncSheet();
   // On a phone the sheet covers the lower half: bring an off-goal row into view above it.
   if (matchMedia('(max-width: 599px)').matches) {
-    const row = document.querySelector('.app .row:has(.cell--day[data-status="off"])') ?? document.querySelector('.app .row');
+    const row = document.querySelector('.board2 .kpirow:has(.v2cell--status[data-status="off"]), .app .row:has(.cell--day[data-status="off"])')
+      ?? document.querySelector('.board2 .kpirow, .app .row');
     if (row) window.scrollTo({ top: Math.max(0, window.scrollY + row.getBoundingClientRect().top - 8), behavior: 'instant' });
   }
   requestAnimationFrame(() => dialog.querySelector('#cz-title')?.focus({ preventScroll: true }));

@@ -144,6 +144,7 @@ table { border-collapse: collapse; }
 .status--on { color: var(--on); }
 .status--off { color: var(--off); }
 .status--not-entered,
+.status--not-tracked,
 .status--no-production,
 .status--no-goal { color: var(--neutral); font-weight: 550; }
 

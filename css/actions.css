@@ -16,6 +16,8 @@
   font-variant-numeric: tabular-nums;
 }
 .ar-part { white-space: nowrap; }
+/* A wrapped count line breaks after its dot, never before it. */
+.ar-count .ar-dotsep { white-space: normal; }
 .ar-over {
   display: inline-flex;
   align-items: center;
@@ -25,6 +27,16 @@
   white-space: nowrap;
 }
 .ar-over .glyph { width: 1.15em; height: 1.15em; flex: none; }
+/* In the head's count line the parts are plain inline text, so each glyph sits
+   on the words' baseline ("2 need an action · 1 open"), not a little above it. */
+.ar-count .ar-over, .ar-count .ar-clear { display: inline; }
+.ar-count .glyph { display: inline-block; width: 1.15em; height: 1.15em; margin-right: 0.3em; vertical-align: -0.2em; }
+/* Nothing left on the needs list while something is off goal: the payoff, in the on-track color. */
+.ar-clear { color: var(--on); font-weight: 700; }
+/* A closed action that still counts for the day: "Done:" with the on-track glyph. */
+.ar-done { color: var(--on); font-weight: 700; white-space: nowrap; }
+.ar-done .glyph { display: inline-block; width: 1.1em; height: 1.1em; margin-right: 0.3em; vertical-align: -0.2em; }
+.ar-alist li.is-done .ar-alist-text { font-weight: 550; }
 
 /* ---------- Body and footer ---------- */
 .ar-body {
@@ -36,6 +48,9 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--s-4) var(--s-6) calc(var(--s-7) + 4.5rem); /* the end clears a toast */
+  /* Focus scrolled into view keeps 12px from the title bar and the footer, which sit outside
+     this scroll area (js/actions.js keepInBody does the same for a control already half in view). */
+  scroll-padding-block: 12px;
   container-type: inline-size;
 }
 .ar-foot {
@@ -65,7 +80,10 @@
 }
 .ar-add-btn { min-height: 48px; }
 .ar-add-btn .icon { width: 18px; height: 18px; }
-.ar-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s-3) var(--s-4); }
+/* Hidden while the Add form is open (the form's own Save and Cancel take over). */
+.ar-add-btn[hidden] { display: none; }
+/* The filters keep their place on the right when the Add button steps aside. */
+.ar-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s-3) var(--s-4); margin-left: auto; }
 .ar-filter { min-width: 0; margin: 0; padding: 0; border: 0; }
 .ar-label {
   display: block;
@@ -80,19 +98,6 @@
 
 /* ---------- Selects (function filter, form, status) ---------- */
 .ar-pick { position: relative; display: inline-flex; align-items: center; max-width: 100%; }
-.ar-pick::after {
-  content: "";
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  margin-top: -6px;
-  border-right: 2px solid var(--ink);
-  border-bottom: 2px solid var(--ink);
-  transform: rotate(45deg);
-  pointer-events: none;
-}
 .ar-pick select {
   -webkit-appearance: none;
   appearance: none;
@@ -113,10 +118,10 @@
 .ar-pick select[aria-invalid="true"] { border-color: var(--error); }
 .ar-filter--fn .ar-pick select { min-width: 12rem; }
 
-/* Status: the word, a dot and its color, never color alone (same marks as problem status). */
+/* Status: the word and a mark of its own shape. Status colors mean on or off goal,
+   so a freshly assigned action is not red: Open (hollow ring) and In progress (half
+   filled) are neutral ink; Closed is the on-track green with its glyph (filled dot). */
 .ar-pick--status { color: var(--ink); }
-.ar-pick--status[data-status="open"] { color: var(--off); }
-.ar-pick--status[data-status="in-progress"] { color: var(--progress); }
 .ar-pick--status[data-status="closed"] { color: var(--on); }
 .ar-pick--status select { min-width: 10.5rem; padding-left: 2.1rem; color: inherit; font-weight: 700; }
 .ar-pick--status select option { color: var(--lx-navy-900); font-weight: 600; }
@@ -124,13 +129,17 @@
   position: absolute;
   left: 15px;
   top: 50%;
-  width: 0.65em;
-  height: 0.65em;
-  margin-top: -0.325em;
+  box-sizing: border-box;
+  width: 0.7em;
+  height: 0.7em;
+  margin-top: -0.35em;
+  border: 2px solid currentColor;
   border-radius: 50%;
-  background: currentColor;
+  overflow: hidden;
   pointer-events: none;
 }
+.ar-pick--status[data-status="in-progress"] .ar-dot::after { content: ""; position: absolute; inset: 0 50% 0 0; background: currentColor; }
+.ar-pick--status[data-status="closed"] .ar-dot { background: currentColor; }
 
 @media (hover: hover) and (pointer: fine) {
   .ar-pick select:hover { border-color: var(--ink); }
@@ -170,6 +179,39 @@
 .ar-empty-tools { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-3); margin-top: var(--s-3); }
 .ar-empty-tools .icon { width: 18px; height: 18px; }
 .ar-quiet { margin-top: var(--s-3); color: var(--ink-2); font-size: var(--fs-small); }
+.ar-quiet + .ar-quiet { margin-top: var(--s-1); }
+.ar-quiet--needs { color: var(--ink); }
+.ar-quiet--needs .status { font-weight: 750; }
+.ar-needs-dd .status { font-weight: 750; }
+/* Off goal, no issue written: the board's red line (word + glyph + color), never the owner's "No new issues". */
+.ar-gap-dd { white-space: normal; }
+.ar-gap-dd .status { font-weight: 750; }
+
+/* ---------- Needs an action (top of the sheet) ---------- */
+.ar-section--needs { padding-top: 0; padding-bottom: var(--s-4); }
+.ar-section--needs[hidden] { display: none; }
+.ar-needs-title { display: flex; align-items: center; gap: var(--s-2); }
+.ar-needs-title .status { font-size: inherit; font-weight: 750; }
+.ar-needs-n { color: var(--ink-2); font-weight: 650; font-variant-numeric: tabular-nums; }
+.ar-needs-sub { margin-top: 0; }
+.ar-nlist { margin-inline: calc(-1 * var(--s-3)); border-top: 2px solid var(--off); }
+.ar-nrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-4);
+  padding: var(--s-3);
+  border-bottom: 1px solid var(--rule);
+  background: var(--off-wash);
+}
+.ar-nrow-main { flex: 1 1 16rem; min-width: 0; }
+.ar-nrow-name { font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.ar-nrow-meta { display: flex; flex-wrap: wrap; align-items: center; margin-top: 2px; color: var(--ink-mid); font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
+.ar-nrow-when { margin-right: 0.35em; color: var(--ink-2); font-weight: 600; }
+.ar-nrow-meta .status { font-size: inherit; font-weight: 700; }
+.ar-nrow-add { flex: none; }
+.ar-nrow-add .icon { width: 18px; height: 18px; }
 
 /* From the board: ledger rows, not shadowed cards. */
 .ar-blist { border-top: 2px solid var(--rule-strong); }
@@ -284,6 +326,9 @@
 
 /* ---------- Phone ---------- */
 @media (max-width: 759px) {
+  /* The head's counts stack, one per line, with no dots between them. */
+  .ar-count { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .ar-count .ar-dotsep { display: none; }
   .ar-body { padding: var(--s-3) var(--gutter) calc(var(--s-7) + 4.5rem); }
   .ar-foot { padding: var(--s-2) var(--gutter) calc(var(--s-2) + env(safe-area-inset-bottom, 0px)); }
 }
@@ -297,3 +342,15 @@
   .ar-form-actions .btn { flex: 1; }
   .ar-item-side { align-items: flex-end; }
 }
+
+/* ---------- The board's Action cell (board.js actionCell; this sheet is loaded on the board) ---------- */
+/* "Needs an action" and its Add action button on one line where they fit; the
+   button wraps under the words in a narrow cell. It stays 44px tall at every
+   size, the 1080p TV pass included. */
+.v2-needs-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
+.v2-needs-row .v2-needs { min-width: 0; }
+.board2 .v2-needs-row .v2-add { flex: none; margin-top: 0; min-height: var(--tap); }
+/* A closed action that counts for the day: "Done: …" with the on-track glyph. */
+.v2-done { display: inline; font-size: inherit; font-weight: 700; }
+.v2-done .glyph { display: inline-block; margin-right: 0.3em; vertical-align: -0.2em; }
+.v2-assigned--done .v2-assigned-text { font-weight: 550; }

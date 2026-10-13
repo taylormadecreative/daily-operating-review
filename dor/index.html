@@ -6,7 +6,7 @@
   <script>(function(){var q=new URLSearchParams(location.search);if(!q.has('view')){q.set('view','dor');history.replaceState(null,'','./?'+q.toString()+location.hash);}})();</script>
   <meta name="robots" content="noindex, nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>DOR Board</title>
+  <title>Daily Operating Review board · LinkedXL OS</title>
   <meta name="description" content="Every KPI against its goal, every miss with an owner and a next-24-hour action, on one screen. Try the demo with a real plant's February numbers.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="LinkedXL OS">
@@ -19,39 +19,47 @@
   <meta property="og:image:alt" content="DOR board preview">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://taylormadecreative.github.io/daily-operating-review/og-image-dor.jpg">
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="assets/brand/linkedxl-os-logo.svg" type="image/svg+xml">
   <script>
     // Home (dashboard) by default; ?view=dor shows the ledger board. Set before first paint.
     document.documentElement.dataset.view = new URLSearchParams(location.search).get('view') === 'dor' ? 'dor' : 'home';
     // DOR board layout: the client's v2 (10/12) by default; ?layout=classic keeps the v1 ledger for rollback.
     document.documentElement.dataset.layout = new URLSearchParams(location.search).get('layout') === 'classic' ? 'classic' : 'v2';
-    // Customize (classic board): paint the saved look before first paint. js/customize.js keeps this cache.
+    // Customize: paint the saved look before first paint. js/customize.js keeps this cache. Only its own
+    // switches (the data-cz-* keys, each one of its known words) and its --cz-* colors (hex values) are
+    // read from it; anything else in the cache is ignored, so it can't set the view, the layout or other CSS.
     try {
       var cz = JSON.parse(localStorage.getItem('dor.customize.paint.v1') || 'null');
-      if (cz) {
-        for (var k in cz.attrs) document.documentElement.dataset[k] = cz.attrs[k];
-        if (cz.css) { var st = document.createElement('style'); st.id = 'cz-vars'; st.textContent = cz.css; document.head.appendChild(st); }
+      if (cz && typeof cz === 'object') {
+        var czOk = { czPlace: 'cell row words', czStrength: 'solid soft strong', czSize: 'standard large', czTrend: 'on off', czNotes: 'on off', czQuestion: 'on off', czHeader: 'light dark', czHeaderRule: 'on off' };
+        var czAttrs = cz.attrs && typeof cz.attrs === 'object' ? cz.attrs : {};
+        Object.keys(czOk).forEach(function (k) {
+          var v = Object.prototype.hasOwnProperty.call(czAttrs, k) ? czAttrs[k] : null;
+          if (typeof v === 'string' && czOk[k].split(' ').indexOf(v) >= 0) document.documentElement.dataset[k] = v;
+        });
+        var czDecl = typeof cz.css === 'string' ? cz.css.match(/--cz-[a-z0-9-]{1,24}:\s*#[0-9a-fA-F]{3,8}(?![0-9a-zA-Z])/g) : null;
+        if (czDecl) { var st = document.createElement('style'); st.id = 'cz-vars'; st.textContent = ':root[data-view="dor"] {\n  ' + czDecl.join(';\n  ') + ';\n}'; document.head.appendChild(st); }
       }
     } catch (e) { /* storage blocked: defaults */ }
   </script>
   <link rel="preload" href="assets/fonts/BigShouldersDisplay-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/Archivo-var.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/fonts.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/tokens.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/base.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/board.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/board-v2.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/components.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/detail.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/enter.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/meeting.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/home.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/customize.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/tour.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/actions.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/recorder.css?v=20261012-235706">
-  <link rel="stylesheet" href="css/setup.css?v=20261012-235706">
-  <script type="module" src="js/app.js?v=20261012-235706"></script>
+  <link rel="stylesheet" href="css/fonts.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/tokens.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/base.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/board.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/board-v2.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/components.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/detail.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/enter.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/meeting.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/home.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/customize.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/tour.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/actions.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/recorder.css?v=20261013-151156">
+  <link rel="stylesheet" href="css/setup.css?v=20261013-151156">
+  <script type="module" src="js/app.js?v=20261013-151156"></script>
 </head>
 <body>
   <svg class="sprite" aria-hidden="true" focusable="false">
@@ -63,6 +71,9 @@
     </symbol>
     <symbol id="g-missing" viewBox="0 0 20 20">
       <circle cx="10" cy="10" r="6.6" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+    <symbol id="g-untracked" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="6.6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2.6 2.6"/>
     </symbol>
     <symbol id="g-nogoal" viewBox="0 0 20 20">
       <path d="M10 3.2 16.8 10 10 16.8 3.2 10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -96,7 +107,8 @@
     <aside class="side" aria-label="Plant navigation">
       <div class="side-brand">
         <svg class="i side-brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1M12 18h1M7 18h1"/></svg>
-        <span class="side-brand-text"><span class="side-brand-name" data-plant-name>Conneaut plant</span><span class="side-brand-sub">Daily Management System</span></span>
+        <span class="side-lx"><svg class="side-badge" viewBox="0 0 153.85 127.21" aria-hidden="true" focusable="false"><use href="#lx-badge"></use></svg><span class="sr-only">Powered by LinkedXL OS</span></span>
+        <span class="side-brand-text"><span class="side-brand-name" data-plant-name>Conneaut plant</span><span class="side-brand-sub">Daily Operating Review</span></span>
         <button class="side-menu-btn" type="button" data-open-drawer aria-label="Open menu" aria-haspopup="dialog">
           <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
@@ -122,8 +134,9 @@
     <div class="h-wrap">
       <header class="h-header">
         <div class="h-titles">
-          <h1 class="h-title" data-home-title>Conneaut DOR Dashboard</h1>
+          <h1 class="h-title" data-home-title>Conneaut plant · <span class="nowrap">Daily Operating Review</span></h1>
           <p class="h-sub h-summary" data-home-summary aria-live="polite"></p>
+          <p class="h-sub h-needs" data-home-needs hidden></p>
         </div>
         <nav class="h-date" aria-label="Production day">
           <button class="h-date-btn" type="button" data-home-prev aria-label="Previous day">
@@ -135,8 +148,9 @@
               <time data-home-date datetime=""></time>
             </button>
             <span class="sr-only" id="date-pick-hint">Choose a production day</span>
-            <!-- Native picker, limited to the month's data. On touch screens it sits over the button so a tap opens it directly. -->
-            <input class="h-date-input" type="date" data-date-input tabindex="-1" aria-label="Production day">
+            <!-- Native picker, limited to the month's data. On touch screens it sits over the button so a tap opens it directly.
+                 Hidden from screen readers: the button above is the one "Production day" control they hear. -->
+            <input class="h-date-input" type="date" data-date-input tabindex="-1" aria-hidden="true">
           </span>
           <button class="h-date-btn" type="button" data-home-next aria-label="Next day">
             <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
@@ -174,7 +188,7 @@
         <div class="h-row h-row--2" data-row2></div>
         <div class="h-row h-row--3" data-row3></div>
         <footer class="h-foot">
-          <p>Prototype by Taylormade Creative for LinkedXL. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
+          <p>Demo built by Taylormade Creative for LinkedXL. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
         </footer>
       </main>
     </div>
@@ -207,7 +221,7 @@
             </button>
             <span class="sr-only" id="board-date-hint">Choose a production day</span>
             <!-- Native picker, limited to the month's data. On touch screens it sits over the button so a tap opens it directly. -->
-            <input class="date-input" type="date" data-board-date-input tabindex="-1" aria-label="Production day">
+            <input class="date-input" type="date" data-board-date-input tabindex="-1" aria-hidden="true">
           </span>
           <button class="icon-btn" type="button" data-next aria-label="Next day">
             <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-next"></use></svg>
@@ -241,8 +255,11 @@
           <button class="btn btn--text howto-btn" type="button" popovertarget="how-to-read">
             <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-info"></use></svg>How to read this board
           </button>
-          <button class="btn btn--text howto-btn" type="button" data-start-tour>Take the tour</button>
-          <button class="btn btn--text howto-btn" type="button" data-open-setup>Set up this board</button>
+          <!-- Take the tour and Board setup wrap as a pair, so neither is left alone on a line. -->
+          <span class="howto-pair">
+            <button class="btn btn--text howto-btn" type="button" data-start-tour>Take the tour</button>
+            <button class="btn btn--text howto-btn" type="button" data-open-setup>Board setup</button>
+          </span>
           <p class="your-row" data-your-row hidden></p>
         </div>
         <p class="date-note" data-date-note role="status" hidden></p>
@@ -251,7 +268,7 @@
 
       <div class="board">
         <div class="board-head" aria-hidden="true">
-          <span class="head head--fn">Department</span>
+          <span class="head head--fn">Function</span>
           <span class="head head--day" data-head-day></span>
           <span class="head head--month" data-head-month></span>
           <span class="head head--trend">Trend, day by day
@@ -259,7 +276,7 @@
           </span>
           <span class="head head--notes">Problem → Next 24 hours</span>
         </div>
-        <ol class="rows" data-rows aria-label="Departments in meeting order"></ol>
+        <ol class="rows" data-rows aria-label="Functions in meeting order"></ol>
       </div>
 
       <div class="board2">
@@ -276,20 +293,22 @@
         </div>
         <ol class="rows2" data-rows2 aria-label="Functions in meeting order"></ol>
         <div class="board2-foot">
-          <p class="b2-brand">LinkedXL OS<span aria-hidden="true">&nbsp;·&nbsp;</span><span class="b2-tagline">Every Goal Connected<span aria-hidden="true"> · </span>Every KPI Driven by KPAs<span aria-hidden="true"> · </span>Every Action Accountable</span></p>
+          <p class="b2-brand">LinkedXL OS<span class="b2-sep" aria-hidden="true">&nbsp;·</span> <span class="b2-tagline">Every Goal Connected<span aria-hidden="true">&nbsp;·</span> Every KPI Driven by KPAs<span aria-hidden="true">&nbsp;·</span> Every Action Accountable</span></p>
           <ul class="b2-key" aria-label="Key">
             <li><svg class="glyph b2-key-on" aria-hidden="true" focusable="false"><use href="#g-on"></use></svg>On track</li>
             <li><svg class="glyph b2-key-off" aria-hidden="true" focusable="false"><use href="#g-off"></use></svg>Off goal</li>
             <li><svg class="glyph b2-key-na" aria-hidden="true" focusable="false"><use href="#g-missing"></use></svg>Not entered</li>
-            <li><span class="key key--actual" aria-hidden="true"></span>Actual</li>
-            <li><span class="key key--goal" aria-hidden="true"></span>Goal</li>
+            <li class="b2-key-chart"><span class="key key--actual" aria-hidden="true"></span>Actual</li>
+            <li class="b2-key-chart"><span class="key key--goal" aria-hidden="true"></span>Goal</li>
           </ul>
           <p class="b2-updated" data-last-updated></p>
+          <!-- On a TV the source line under the board is hidden (the board ends at this strip); the reset moves here. -->
+          <button class="b2-reset" type="button" data-reset>Start the demo over</button>
         </div>
       </div>
 
       <footer class="board-foot">
-        <p>Prototype by Taylormade Creative for LinkedXL. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
+        <p>Demo built by Taylormade Creative for LinkedXL. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
         <button class="btn btn--quiet" type="button" data-reset>Start the demo over</button>
       </footer>
     </main>
@@ -299,19 +318,29 @@
     </div>
   </div>
 
-  <div class="popover howto" id="how-to-read" popover aria-labelledby="howto-title">
-    <h2 class="popover-title" id="howto-title">How to read this board</h2>
-    <p class="popover-lead">Status is calculated from the numbers. Meeting the goal = On track.</p>
+  <!-- A dialog (js/app.js wireHowTo): focus goes to its title when it opens; it sits under its button's line, never over it. -->
+  <div class="popover howto" id="how-to-read" popover role="dialog" aria-labelledby="howto-title">
+    <h2 class="popover-title" id="howto-title" tabindex="-1">How to read this board</h2>
+    <p class="popover-lead">Status is calculated from the numbers. A number that meets its goal is On track.</p>
     <ul class="howto-states" data-states></ul>
     <p class="popover-note">Each row tracks a daily measure and a separate monthly measure, so a row can be off goal for the day and on track for the month.</p>
     <h3 class="popover-sub">Words on the board</h3>
-    <dl class="howto-glossary" data-glossary></dl>
-    <button class="btn btn--secondary popover-close" type="button" popovertarget="how-to-read" popovertargetaction="hide">Got it</button>
+    <dl class="howto-glossary" data-glossary>
+      <div><dt>KPI</dt><dd>A result the plant tracks against a goal.</dd></div>
+      <div><dt>KPAs</dt><dd>The activities that drive a KPI.</dd></div>
+      <div><dt>Done</dt><dd>An action that was closed. It still counts for the day it was closed.</dd></div>
+      <div><dt>Nothing recorded</dt><dd>No issue or action was written for that day.</dd></div>
+      <div><dt>None needed</dt><dd>On goal, so no action is required.</dd></div>
+    </dl>
+    <div class="popover-foot">
+      <button class="btn btn--secondary popover-close" type="button" popovertarget="how-to-read" popovertargetaction="hide">Got it</button>
+    </div>
   </div>
 
-  <div class="popover term-pop" id="term-pop" popover role="dialog" aria-labelledby="term-pop-title">
-    <p class="term-pop-title" id="term-pop-title" data-term-title></p>
-    <p class="term-pop-text" data-term-text></p>
+  <!-- Opens right after its ⓘ button (js/app.js wireTerms), so a screen reader reaches it next; focus goes to its title. -->
+  <div class="popover term-pop" id="term-pop" popover role="dialog" aria-labelledby="term-pop-title" aria-describedby="term-pop-text">
+    <p class="term-pop-title" id="term-pop-title" tabindex="-1" data-term-title></p>
+    <p class="term-pop-text" id="term-pop-text" data-term-text></p>
   </div>
 
   <div class="hmenu" id="export-menu" popover role="menu" aria-label="Export">
@@ -323,7 +352,7 @@
 
   <dialog class="drawer" id="drawer" aria-label="Menu">
     <div class="drawer-head">
-      <span class="side-brand-text"><span class="side-brand-name" data-plant-name>Conneaut plant</span><span class="side-brand-sub">Daily Management System</span></span>
+      <span class="side-brand-text"><span class="side-brand-name" data-plant-name>Conneaut plant</span><span class="side-brand-sub">Daily Operating Review</span></span>
       <button class="drawer-close" type="button" data-close-drawer aria-label="Close menu">
         <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
@@ -344,11 +373,13 @@
 
   <div class="hmenu dor-menu" id="dor-menu" popover role="menu" aria-label="Menu">
     <a class="menu-item" role="menuitem" href="./" data-nav-home>Home dashboard</a>
+    <button class="menu-item" type="button" role="menuitem" data-run-meeting>Run meeting</button>
     <button class="menu-item" type="button" role="menuitem" data-open-actions>Action register</button>
     <button class="menu-item" type="button" role="menuitem" data-open-minutes>Meeting minutes</button>
     <button class="menu-item" type="button" role="menuitem" data-open-setup>Board setup</button>
     <button class="menu-item" type="button" role="menuitem" data-customize>Customize this board</button>
     <button class="menu-item" type="button" role="menuitem" data-start-tour>Take the tour</button>
+    <button class="menu-item" type="button" role="menuitem" data-reset>Start the demo over</button>
   </div>
   <dialog class="cz-sheet" id="customize" aria-labelledby="cz-title"></dialog>
 
@@ -392,7 +423,7 @@
         <button class="btn btn--text captions-toggle" type="button" data-captions-toggle hidden>Hide captions</button>
       </div>
       <button class="btn btn--primary meeting-nav" type="button" data-next-slide>
-        Next<svg class="icon" aria-hidden="true" focusable="false"><use href="#g-next"></use></svg>
+        <span data-next-label>Next</span><svg class="icon" data-next-icon aria-hidden="true" focusable="false"><use href="#g-next"></use></svg>
       </button>
     </footer>
   </section>

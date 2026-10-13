@@ -18,7 +18,7 @@ export function plainLabel(kpi) {
   return PLAIN_LABEL[kpi.boardLabel] ?? kpi.boardLabel;
 }
 
-/** { term, definition } from the plant file's glossary for a measure, or null. */
+/** { term, definition, name } from the plant file's glossary for a measure, or null (name: the words shown). */
 export function glossaryTerm(month, kpi) {
   const g = month.glossary ?? {};
   const label = kpi.boardLabel;
@@ -26,7 +26,16 @@ export function glossaryTerm(month, kpi) {
     : label === 'Total DL' ? 'DL'
       : label.startsWith('Earned hours') ? 'Earned hours'
         : null;
-  return key && g[key] ? { term: key, definition: g[key] } : null;
+  return key && g[key] ? { term: key, definition: g[key], name: plainLabel(kpi) } : null;
+}
+
+/**
+ * The words a glossary term's info button sits beside ("DL" is shown as "Total direct labor"),
+ * so the button is named after what the screen shows: "What does Total direct labor mean?".
+ */
+export function termName(term) {
+  if (term === 'DL') return PLAIN_LABEL['Total DL'];
+  return PLAIN_LABEL[term] ?? term;
 }
 
 /** Glossary definition for a label, if the plant's file has one. */
@@ -56,12 +65,37 @@ function nf(decimals) {
   return formatters.get(decimals);
 }
 
+/** A number as it's read: percent for a fraction (0.985 -> 98.5). */
+const shownScale = (v, unit) => (unit === 'fraction' ? v * 100 : v);
+
+/**
+ * The places a unit usually shows, the most any of the values needs: percent 1 or 2 (1.19%, 98.0%);
+ * hours whole from 100 up (615.6 reads 616), up to 2 below (a 1.5-hour goal); counts, people, parts,
+ * numbers and rates up to 2 (a Cpk of 1.33).
+ */
 function decimalsFor(unit, values) {
   const nums = values.filter(isNum);
   if (unit === 'fraction') return Math.min(2, Math.max(1, ...nums.map((v) => decimalsNeeded(v * 100, 2))));
-  if (unit === 'hours') return 0;
-  if (unit === 'rate') return Math.min(2, Math.max(0, ...nums.map((v) => decimalsNeeded(v, 2))));
-  return Math.min(1, Math.max(0, ...nums.map((v) => decimalsNeeded(v, 1))));
+  if (unit === 'hours') return Math.max(0, ...nums.map((v) => (Math.abs(v) >= 100 ? 0 : decimalsNeeded(v, 2))));
+  return Math.max(0, ...nums.map((v) => decimalsNeeded(v, 2)));
+}
+
+/** True when v (as read) has no more than d places. */
+const exactAt = (v, unit, d) => {
+  const scaled = shownScale(v, unit) * 10 ** d;
+  return Math.abs(Math.round(scaled) - scaled) < 1e-6;
+};
+
+/**
+ * A goal's own places: never fewer than it has, up to 3 ("Goal: ≥ 1.33", "≤ 1.5 hours", "98.5%"),
+ * and never fewer than its unit shows. A goal with more than 3 (a running month pace, 4,421.0526
+ * hours) shows the unit's usual places; formatPair adds places if that rounding would mislead.
+ */
+function goalDecimals(unit, goal) {
+  const usual = decimalsFor(unit, [goal]);
+  if (!isNum(goal)) return usual;
+  for (let d = 0; d <= 3; d += 1) if (exactAt(goal, unit, d)) return Math.max(usual, d);
+  return usual;
 }
 
 function formatWith(v, unit, decimals) {
@@ -69,9 +103,23 @@ function formatWith(v, unit, decimals) {
   return unit === 'fraction' ? `${nf(decimals).format(v * 100)}%` : nf(decimals).format(v);
 }
 
+/** A goal (or any number shown on its own) with every place it has, up to 3: "1.33", "1.5", "98.5%". */
 export function formatValue(v, unit) {
-  return formatWith(v, unit, decimalsFor(unit, [v]));
+  return formatWith(v, unit, goalDecimals(unit, v));
 }
+
+/** The number a formatted figure shows ("16,980" -> 16980, "98.5%" -> 98.5). */
+const shownNumber = (s) => Number(String(s).replace(/[,%]/g, ''));
+/** Does "a of g" read as meeting the goal, comparing the two printed numbers as a person would? */
+const readsMet = (a, g, better) => (better === 'lower' ? shownNumber(a) <= shownNumber(g) : shownNumber(a) >= shownNumber(g));
+// Same rule as status.js meetsGoal, including its hair of tolerance for float noise.
+const meets = (actual, goal, better) => {
+  const eps = 1e-9 * Math.max(1, Math.abs(goal));
+  return better === 'lower' ? actual <= goal + eps : actual >= goal - eps;
+};
+
+/** The most places an actual takes to show why it met or missed its goal (1.3299 vs 1.33). */
+const MAX_DECIMALS = 6;
 
 /**
  * Actual vs goal as words.
@@ -81,16 +129,29 @@ export function formatValue(v, unit) {
  */
 export function formatPair(actual, goal, kpi) {
   const { unit, better } = kpi;
-  let decimals = decimalsFor(unit, [actual, goal]);
-  let a = formatWith(actual, unit, decimals);
-  let g = formatWith(goal, unit, decimals);
-  // Never let rounding make a missed goal look met (e.g. 615.6 vs 616 hours).
-  while (a !== null && g !== null && a === g && actual !== goal && decimals < 3) {
-    decimals += 1;
-    a = formatWith(actual, unit, decimals);
-    g = formatWith(goal, unit, decimals);
-  }
-  const useOf = better === 'higher' && OF_UNITS.has(unit);
+  // The goal keeps its own places: "82.5 of 89 people", not "of 89.0"; "1.31 of 1.33", not "of 1.3"
+  // (a percent goal keeps its one place, "98.0%", as everywhere else).
+  const own = goalDecimals(unit, goal);
+  const goalExact = isNum(goal) && exactAt(goal, unit, own);
+  // The actual shows at least the goal's places, so the two read on one scale ("1.6 vs 1.5 goal").
+  const start = Math.max(decimalsFor(unit, [actual, goal]), isNum(goal) ? own : 0);
+  // A goal rounded to its unit's places (a running pace) takes the actual's extra places with it.
+  const at = (d) => ({ a: formatWith(actual, unit, d), g: formatWith(goal, unit, goalExact ? own : Math.max(own, d)) });
+  // Never let rounding make a missed goal look met, or a met one missed: the actual takes more places
+  // until the printed numbers say what the status says ("615.6 of 616 hours", "1.3299 of 1.33"), and
+  // until it no longer prints the same as a goal it differs from.
+  const clear = (d) => {
+    const { a, g } = at(d);
+    if (a === null || g === null || actual === goal) return true;
+    return formatWith(actual, unit, d) !== formatWith(goal, unit, d) && readsMet(a, g, better) === meets(actual, goal, better);
+  };
+  let decimals = start;
+  while (!clear(decimals) && decimals < MAX_DECIMALS) decimals += 1;
+  // Nothing short of the float noise tells them apart: the usual places, not a row of zeros.
+  if (!clear(decimals)) decimals = start;
+  const { a, g } = at(decimals);
+  // "of 0 parts" says nothing: a goal of 0 reads "14,736 vs 0 goal" (the goal line reads "Goal: ≥ 0").
+  const useOf = better === 'higher' && OF_UNITS.has(unit) && goal !== 0;
   const word = UNIT_WORD[unit] ? ` ${UNIT_WORD[unit]}` : '';
 
   const parts = { goal: g, useOf, word: word.trim() };
@@ -104,27 +165,77 @@ export function formatPair(actual, goal, kpi) {
   return { actual: a, rest, phrase: `${a} ${rest}`, ...parts };
 }
 
-/** "Goal 16,980" / "Goal 1.13%" / "No goal set" for form fields. */
+/**
+ * "Goal ≥ 16,980" / "Goal ≤ 1.13%" / "Goal 0" / "No goal set" for form fields: the direction as the
+ * board shows it (≥ when higher is better, ≤ when lower is, nothing on a lower-is-better goal of 0).
+ */
 export function formatGoal(goal, kpi, note) {
   if (note === 'placeholder') return 'Goal not set';
   if (!isNum(goal)) return 'No goal set';
-  const g = formatWith(goal, kpi.unit, decimalsFor(kpi.unit, [goal]));
-  return `Goal ${g}`;
+  const g = formatWith(goal, kpi.unit, goalDecimals(kpi.unit, goal));
+  return `Goal ${goalSign(goal, kpi)}${g}`;
 }
 
-/** Axis ticks: compact from 1,000 up (0 / 8K / 16K), percent for fractions. */
+/** "≥ " or "≤ " before a goal (none on a lower-is-better goal of 0: "≤ 0" says nothing more than "0"). */
+export function goalSign(goal, kpi) {
+  if (kpi.better === 'lower') return goal === 0 ? '' : '≤\u00a0';
+  return '≥\u00a0';
+}
+
+/** Compact steps for axis ticks, largest first. */
+const TICK_STEPS = [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+
+/** Axis ticks: compact from 1,000 up (0 / 8K / 16K, 2.5M, 1B), percent for fractions. */
 export function formatTick(v, unit, decimals) {
   if (unit === 'fraction') return `${nf(decimals ?? decimalsNeeded(v * 100, 1)).format(v * 100)}%`;
-  if (Math.abs(v) >= 1000) return `${nf(decimals ?? decimalsNeeded(v / 1000, 1)).format(v / 1000)}K`;
+  const step = TICK_STEPS.find(([n]) => Math.abs(v) >= n);
+  if (step) return `${nf(decimals ?? decimalsNeeded(v / step[0], 1)).format(v / step[0])}${step[1]}`;
   return nf(decimals ?? decimalsNeeded(v, 2)).format(v);
 }
 
-/** Labels for a set of ticks. Percent ticks share one precision ("0.9%, 1.0%, 1.1%"). */
+/** The smallest gap between two different ticks (0 when there is only one value). */
+function tickStep(ticks) {
+  const sorted = [...new Set(ticks)].sort((a, b) => a - b);
+  let step = 0;
+  for (let i = 1; i < sorted.length; i += 1) {
+    const gap = sorted[i] - sorted[i - 1];
+    if (gap > 0 && (!step || gap < step)) step = gap;
+  }
+  return step;
+}
+
+/** True when two labels print the same (close ticks rounded together). */
+const repeats = (labels) => new Set(labels).size < labels.length;
+
+/**
+ * Labels for a set of ticks, all at one shared precision. Percent: "0.9%, 1.0%, 1.1%".
+ * From 1,000 up, one divisor picked from the largest tick and the decimals from the step
+ * ("1.18K, 1.20K, 1.22K, 1.24K"; "0, 5K, 10K"; "1.18B, 1.24B"), so close ticks never print
+ * the same label. If they still would, the full numbers ("1,180, 1,240").
+ */
 export function formatTicks(ticks, unit) {
-  if (unit !== 'fraction') return ticks.map((v) => formatTick(v, unit));
-  // Up to two decimals, so close ticks never print the same label (1.05% vs 1.1%).
-  const d = Math.max(0, ...ticks.map((v) => decimalsNeeded(v * 100, 2)));
-  return ticks.map((v) => formatTick(v, unit, d));
+  const nums = ticks.filter(isNum);
+  if (unit === 'fraction') {
+    // Up to two decimals, so close ticks never print the same label (1.05% vs 1.1%).
+    const d = Math.max(0, ...nums.map((v) => decimalsNeeded(v * 100, 2)));
+    return ticks.map((v) => formatTick(v, unit, d));
+  }
+  // The baseline reads "0" at any precision.
+  const full = () => {
+    const d = Math.max(0, ...nums.map((v) => decimalsNeeded(v, 2)));
+    return ticks.map((v) => (!isNum(v) ? '' : v === 0 ? '0' : nf(d).format(v)));
+  };
+  const largest = Math.max(0, ...nums.map((v) => Math.abs(v)));
+  const compact = TICK_STEPS.find(([n]) => largest >= n);
+  if (!compact) return full();
+  const [div, suffix] = compact;
+  const step = tickStep(nums);
+  const d = step ? decimalsNeeded(step / div, 3) : Math.max(0, ...nums.map((v) => decimalsNeeded(v / div, 3)));
+  const labels = ticks.map((v) => (!isNum(v) ? '' : v === 0 ? '0' : `${nf(d).format(v / div)}${suffix}`));
+  if (repeats(labels)) return full();
+  // A compact label longer than the number itself ("12.001K" for 12,001) says less: the full numbers.
+  const plain = full();
+  return labels.some((l, i) => l.length > plain[i].length) ? plain : labels;
 }
 
 /* ---------- Form input ---------- */
@@ -171,7 +282,7 @@ export function parseInput(text, kpi, goal = null) {
   if (n < 0) return { ok: false, error: 'Use 0 or more.' };
   if (!isPercent(kpi)) return { ok: true, value: n };
 
-  if (n > 100) return { ok: false, error: "Can't be over 100%." };
+  if (n > 1000) return { ok: false, error: "Can't be over 1,000%." };
   const value = Number((n / 100).toFixed(8));
   const out = { ok: true, value };
   // Likely slip: a fraction typed into a percent box. Only ask when the

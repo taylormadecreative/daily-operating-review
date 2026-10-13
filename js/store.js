@@ -5,7 +5,7 @@
 // localStorage overlay of what people entered on this device. getMonth()
 // returns a fresh merged copy; nothing outside this file touches storage.
 
-const DATA_URL = new URL('../data/conneaut-2026-02.json?v=20261012-235706', import.meta.url);
+const DATA_URL = new URL('../data/conneaut-2026-02.json?v=20261013-151156', import.meta.url);
 const OVERLAY_KEY = 'dor.overlay.v1';
 const SETUP_KEY = 'dor.setup.v1';
 export const AREA_IDS = ['plant', 'mold', 'bond', 'prime', 'compounding'];
@@ -24,20 +24,65 @@ export async function load() {
 
 /* ---------- Storage (all access guarded) ---------- */
 
+/** One saved entry, each field the right type (a damaged one is dropped, never thrown). */
+function cleanEntry(e) {
+  if (!isObj(e) || typeof e.functionId !== 'string' || !Number.isInteger(e.day)) return null;
+  const nums = (o) => {
+    const out = {};
+    if (isObj(o)) for (const [k, v] of Object.entries(o)) if (isNum(v) || v === null) out[k] = v;
+    return out;
+  };
+  const text = (v) => (typeof v === 'string' ? v : null);
+  const out = {
+    functionId: e.functionId,
+    day: e.day,
+    values: nums(e.values),
+    issue: text(e.issue),
+    action: text(e.action),
+    issueStatus: ISSUE_STATUS.includes(e.issueStatus) ? e.issueStatus : null,
+    enteredBy: text(e.enteredBy),
+    enteredAt: text(e.enteredAt),
+  };
+  if ('month' in e && (isNum(e.month) || e.month === null)) out.month = e.month;
+  if (isObj(e.extra)) out.extra = nums(e.extra);
+  if (isObj(e.extraNotes)) {
+    out.extraNotes = {};
+    for (const [k, n] of Object.entries(e.extraNotes)) {
+      if (isObj(n)) out.extraNotes[k] = { issue: text(n.issue), action: text(n.action), status: ISSUE_STATUS.includes(n.status) ? n.status : null };
+    }
+  }
+  return out;
+}
+
 function readOverlay() {
   try {
-    const raw = localStorage.getItem(OVERLAY_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    if (parsed && typeof parsed === 'object' && parsed.entries && typeof parsed.entries === 'object') return parsed;
+    // After a refused write, this visit's copy is the truth (see writeOverlay).
+    const raw = overlayMem ? null : localStorage.getItem(OVERLAY_KEY);
+    const parsed = overlayMem ?? (raw ? JSON.parse(raw) : null);
+    if (parsed && typeof parsed === 'object' && parsed.entries && typeof parsed.entries === 'object') {
+      const entries = {};
+      for (const [key, e] of Object.entries(parsed.entries)) {
+        const clean = cleanEntry(e);
+        if (clean) entries[key] = clean;
+      }
+      return { version: 1, entries };
+    }
   } catch { /* blocked or corrupt: fall through to empty */ }
   return { version: 1, entries: {} };
 }
 
+// When this browser won't save (private window, storage off), numbers entered
+// still show for this visit from this copy, like Board setup's setupMem.
+let overlayMem = null;
+
+/** Returns false when the browser refused: the change then lives in this visit's copy only. */
 function writeOverlay(overlay) {
   try {
     localStorage.setItem(OVERLAY_KEY, JSON.stringify(overlay));
+    overlayMem = null;
     return true;
   } catch {
+    overlayMem = structuredClone(overlay);
     return false;
   }
 }
@@ -70,8 +115,9 @@ function applyOverlay(month, overlay) {
   const boardDay = Number(month.boardDate.slice(8, 10));
   const all = [...month.functions, ...(month.hiddenFunctions ?? [])];
   for (const fn of all) {
-    // The workbook keeps one day's text: the board date.
-    fn.notesByDay = {
+    // The workbook keeps one day's text: the board date. A function added in
+    // Board setup isn't in the workbook, so it has no note until someone enters one.
+    fn.notesByDay = fn.custom ? {} : {
       [boardDay]: {
         problem: joinText(fn.issue, fn.issueExtra),
         action: joinText(fn.action, fn.actionExtra),
@@ -84,24 +130,39 @@ function applyOverlay(month, overlay) {
   for (const entry of Object.values(overlay.entries)) {
     const fn = all.find((f) => f.id === entry.functionId);
     if (!fn || !Number.isInteger(entry.day)) continue;
+    // A save keeps the whole form, so "Entered by" goes on the function's own KPI only when
+    // something of it differs from the workbook (a save that only filled in a KPI added in
+    // Board setup leaves the main row as it was; applyExtraEntries marks that KPI's row).
+    let changed = false;
     for (const areaId of AREA_IDS) {
       if (!(areaId in (entry.values ?? {}))) continue;
       const row = (fn.daily[areaId] ?? []).find((r) => r.day === entry.day);
-      if (row) row.actual = entry.values[areaId];
+      if (!row) continue;
+      if (!sameNumber(row.actual, entry.values[areaId])) changed = true;
+      row.actual = entry.values[areaId];
     }
     if ('month' in entry) {
       const row = (fn.monthToDate ?? []).find((r) => r.day === entry.day);
+      if (row && !sameNumber(row.actual, entry.month)) changed = true;
       if (row) row.actual = entry.month;
     }
+    const before = fn.notesByDay[entry.day] ?? { problem: null, action: null, status: null };
+    const status = ISSUE_STATUS.includes(entry.issueStatus) ? entry.issueStatus : null;
+    if (!sameText(before.problem, entry.issue) || !sameText(before.action, entry.action) || (before.status ?? null) !== status) changed = true;
     fn.notesByDay[entry.day] = {
       problem: entry.issue ?? null,
       action: entry.action ?? null,
-      status: ISSUE_STATUS.includes(entry.issueStatus) ? entry.issueStatus : null,
+      status,
       source: 'entered',
     };
-    fn.entries[entry.day] = { enteredBy: entry.enteredBy, enteredAt: entry.enteredAt };
+    fn.entries[entry.day] = { enteredBy: entry.enteredBy, enteredAt: entry.enteredAt, changed };
   }
 }
+
+/** Two stored numbers the same (missing and null are both "no number"). */
+const sameNumber = (a, b) => (isNum(a) && isNum(b) ? Math.abs(a - b) < 1e-9 : (a ?? null) === (b ?? null));
+/** Two notes the same, whatever their spacing ("" and null are both "no note"). */
+const sameText = (a, b) => String(a ?? '').replace(/\s+/g, ' ').trim() === String(b ?? '').replace(/\s+/g, ' ').trim();
 
 /* ---------- Board setup (this device): plant, functions, owners, KPIs ---------- */
 
@@ -120,19 +181,46 @@ const emptySetup = () => ({ version: 1, plant: null, functions: {}, added: [], k
 const isObj = (v) => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
 const okId = (id) => typeof id === 'string' && id.length > 0 && id.length < 60 && !id.includes('--') && !id.includes('|');
 
+const str = (v, max = 200) => (typeof v === 'string' ? v.slice(0, max) : undefined);
+const num = (v) => (isNum(v) ? Number(v.toFixed(8)) : undefined);
+
+/**
+ * Board setup's caps, the same as the boxes' maxlength in js/setup.js, so what's typed is what
+ * the board shows (never a name cut mid-word here).
+ */
+export const NAME_MAX = { plant: 60, fn: 60, owner: 80, kpi: 80 };
+
+/** One function's setup: only known fields, each the right type. */
+function cleanFunctionSetup(f) {
+  const out = {
+    name: str(f.name, NAME_MAX.fn),
+    owner: str(f.owner, NAME_MAX.owner),
+    question: str(f.question, 200),
+    photo: typeof f.photo === 'string' && f.photo.startsWith('data:image/') ? f.photo : undefined,
+    kpiLabel: str(f.kpiLabel, NAME_MAX.kpi),
+    monthLabel: str(f.monthLabel, NAME_MAX.kpi),
+    dayGoal: num(f.dayGoal),
+    monthGoal: num(f.monthGoal),
+    hidden: f.hidden === true ? true : undefined,
+    icon: str(f.icon, 30),
+  };
+  for (const k of Object.keys(out)) if (out[k] === undefined) delete out[k];
+  return out;
+}
+
 /** Every field checked, so a damaged record can never stop the board from loading. */
 function normalizeSetup(raw) {
   const s = emptySetup();
   if (!isObj(raw) || raw.version !== 1) return s;
-  if (typeof raw.plant === 'string' && raw.plant.trim()) s.plant = raw.plant.trim().slice(0, 60);
+  if (typeof raw.plant === 'string' && raw.plant.trim()) s.plant = raw.plant.trim().slice(0, NAME_MAX.plant);
   if (isObj(raw.functions)) {
-    for (const [id, f] of Object.entries(raw.functions)) if (okId(id) && isObj(f)) s.functions[id] = { ...f };
+    for (const [id, f] of Object.entries(raw.functions)) if (okId(id) && isObj(f)) s.functions[id] = cleanFunctionSetup(f);
   }
   if (Array.isArray(raw.added)) {
     s.added = raw.added.filter((a) => isObj(a) && okId(a.id)).map((a) => ({
       id: a.id,
-      name: typeof a.name === 'string' ? a.name : 'New function',
-      owner: typeof a.owner === 'string' ? a.owner : 'Owner name',
+      name: typeof a.name === 'string' ? a.name.slice(0, NAME_MAX.fn) : 'New function',
+      owner: typeof a.owner === 'string' ? a.owner.slice(0, NAME_MAX.owner) : 'Owner name',
       question: typeof a.question === 'string' ? a.question : '',
     }));
   }
@@ -141,10 +229,11 @@ function normalizeSetup(raw) {
       if (!okId(id) || !Array.isArray(list)) continue;
       s.kpis[id] = list.filter((k) => isObj(k) && okId(k.id)).map((k) => ({
         id: k.id,
-        name: typeof k.name === 'string' && k.name.trim() ? k.name : 'KPI',
+        // Capped like every other name (a 95-character KPI name made a 7-line cell on the TV).
+        name: typeof k.name === 'string' && k.name.trim() ? k.name.slice(0, NAME_MAX.kpi) : 'KPI',
         unit: UNITS.some((u) => u.id === k.unit) ? k.unit : 'count',
         better: k.better === 'lower' ? 'lower' : 'higher',
-        goal: isNum(k.goal) ? k.goal : null,
+        goal: isNum(k.goal) ? Number(k.goal.toFixed(8)) : null,
         ...(k.rollup === 'total' || k.rollup === 'average' ? { rollup: k.rollup } : {}),
         ...(isNum(k.monthGoal) ? { monthGoal: k.monthGoal } : {}),
         ...(Number.isInteger(k.startDay) ? { startDay: k.startDay } : {}),
@@ -157,8 +246,12 @@ function normalizeSetup(raw) {
 
 // When this browser blocks storage, Board setup still works for the visit from this copy.
 let setupMem = null;
+// A write was refused (quota, storage off): the stored copy is now older than this
+// visit's, so this visit's copy is the truth until a write goes through (like the overlay).
+let setupWriteFailed = false;
 
 export function readSetup() {
+  if (setupWriteFailed && setupMem) return normalizeSetup(setupMem);
   try {
     const raw = localStorage.getItem(SETUP_KEY);
     return normalizeSetup(raw ? JSON.parse(raw) : setupMem);
@@ -171,8 +264,10 @@ export function writeSetup(setup) {
   setupMem = structuredClone(setup);
   try {
     localStorage.setItem(SETUP_KEY, JSON.stringify(setup));
+    setupWriteFailed = false;
     return true;
   } catch {
+    setupWriteFailed = true;
     return false;
   }
 }
@@ -185,6 +280,7 @@ export function hasSetup() {
 export function resetSetup() {
   const snapshot = readSetup();
   setupMem = null;
+  setupWriteFailed = false;
   try { localStorage.removeItem(SETUP_KEY); } catch { /* ignore */ }
   return snapshot;
 }
@@ -198,8 +294,9 @@ export function resetSetup() {
  */
 export function resetEverything() {
   const snapshot = { local: {}, session: {} };
-  for (const [name, area] of [['local', globalThis.localStorage], ['session', globalThis.sessionStorage]]) {
+  for (const name of ['local', 'session']) {
     try {
+      const area = name === 'local' ? globalThis.localStorage : globalThis.sessionStorage; // can throw when blocked
       for (let i = 0; i < area.length; i += 1) {
         const k = area.key(i);
         if (k?.startsWith('dor.') && k !== RESET_UNDO_KEY) snapshot[name][k] = area.getItem(k);
@@ -208,13 +305,16 @@ export function resetEverything() {
     } catch { /* blocked: nothing saved there to clear */ }
   }
   setupMem = null;
+  setupWriteFailed = false;
+  overlayMem = null; // this visit's numbers go too, even when the browser was refusing writes
   return snapshot;
 }
 
 export function restoreEverything(snapshot) {
   let ok = true;
-  for (const [name, area] of [['local', globalThis.localStorage], ['session', globalThis.sessionStorage]]) {
+  for (const name of ['local', 'session']) {
     try {
+      const area = name === 'local' ? globalThis.localStorage : globalThis.sessionStorage;
       for (const [k, v] of Object.entries(snapshot?.[name] ?? {})) if (typeof v === 'string') area.setItem(k, v);
     } catch { ok = false; }
   }
@@ -247,17 +347,27 @@ export function scalePrimaryValues(fnId, factor) {
   return changed ? writeOverlay(overlay) : true;
 }
 
-/** Production days from the workbook, worked out before any goal is changed. */
-function productionMap(month) {
+/**
+ * The plant's production calendar from the workbook, worked out once, before Board setup changes
+ * any goal: Operations' parts goal decides (> 0 runs, 0 doesn't), else the Plant earned-hours goal;
+ * null when neither has one. status.js isProductionDay reads it (month.productionDays), so a daily
+ * goal of 0 typed in Board setup never turns the month into "No production".
+ */
+function workbookCalendar(month) {
   const ops = month.functions.find((f) => f.id === 'operations');
   const plant = month.functions.find((f) => f.id === 'plant');
-  const map = {};
+  const cal = {};
   for (let d = 1; d <= month.daysInMonth; d += 1) {
     const o = ops?.daily?.plant?.find((r) => r.day === d);
     const p = plant?.daily?.plant?.find((r) => r.day === d);
-    map[d] = isNum(o?.goal) ? o.goal > 0 : isNum(p?.goal) ? p.goal > 0 : true;
+    cal[d] = isNum(o?.goal) ? o.goal > 0 : isNum(p?.goal) ? p.goal > 0 : null;
   }
-  return map;
+  return cal;
+}
+
+/** Production days for Board setup's goals and KPIs (a day the calendar doesn't know counts as scheduled). */
+function productionMap(calendar) {
+  return Object.fromEntries(Object.entries(calendar).map(([d, v]) => [d, v ?? true]));
 }
 
 /** A KPI row that isn't in the workbook: same shape as a function, with no numbers yet. */
@@ -317,13 +427,16 @@ function finishKpiRow(month, row, prod) {
     let goal;
     if (row.rollup === 'total') goal = n ? (goalN ? goalSum : null) : (isNum(dayGoal) ? allGoals : null);
     else goal = dayGoal;
+    if (r.beforeStart) return { day: r.day, actual: null, goal: null, beforeStart: true };
     return { day: r.day, actual, goal };
   });
   const dailyGoal = row.daily.plant.find((r) => isNum(r.goal))?.goal ?? null;
   const monthGoal = isNum(row.monthGoal) ? row.monthGoal
     : !isNum(dailyGoal) ? null
       : row.rollup === 'total' ? dailyGoal * prodDays : dailyGoal;
-  row.monthly = row.monthly.map((m) => ({ ...m, goal: monthGoal }));
+  // Months before this one: the KPI didn't exist yet, so no goal there.
+  const thisMonth = Number(month.month.slice(5, 7)) - 1;
+  row.monthly = row.monthly.map((m, i) => ({ ...m, goal: i >= thisMonth ? monthGoal : null }));
 }
 
 /** A month-to-date goal that climbs through the month (a running pace), not one number. */
@@ -378,7 +491,9 @@ function applySetup(month, setup, prod) {
         } else {
           for (const r of mtd) r.goal = f.monthGoal;
         }
-        for (const r of fn.monthly ?? []) r.goal = f.monthGoal;
+        // From this month on: months already closed keep the goal they were judged against.
+        const from = Number(month.month.slice(5, 7)) - 1;
+        (fn.monthly ?? []).forEach((r, i) => { if (i >= from) r.goal = f.monthGoal; });
       }
     }
     const extra = (setup.kpis?.[fn.id] ?? []).filter((k) => k?.id && k.id !== fn.firstKpiId);
@@ -401,14 +516,18 @@ function applyExtraEntries(month, overlay, prod) {
   for (const entry of Object.values(overlay.entries)) {
     const fn = all.find((f) => f.id === entry.functionId);
     if (!fn || !Number.isInteger(entry.day)) continue;
+    // An added KPI's row says who entered it when the save gave it a number or a note.
+    const stamp = (row) => { row.entries[entry.day] = { enteredBy: entry.enteredBy, enteredAt: entry.enteredAt, changed: true }; };
     for (const [kpiId, value] of Object.entries(entry.extra ?? {})) {
       const row = fn.extraKpis?.find((k) => k.kpiId === kpiId);
       const r = row?.daily.plant.find((x) => x.day === entry.day);
       if (r) r.actual = isNum(value) ? value : null;
+      if (r && isNum(value)) stamp(row);
     }
     for (const [kpiId, n] of Object.entries(entry.extraNotes ?? {})) {
       const row = fn.extraKpis?.find((k) => k.kpiId === kpiId);
       if (row) row.notesByDay[entry.day] = { problem: n?.issue ?? null, action: n?.action ?? null, status: ISSUE_STATUS.includes(n?.status) ? n.status : null, source: 'entered' };
+      if (row && [n?.issue, n?.action].some((t) => typeof t === 'string' && t.trim())) stamp(row);
     }
   }
   for (const fn of all) {
@@ -427,7 +546,8 @@ export function getMonth() {
   try {
     const month = structuredClone(base);
     applyDataQuality(month);
-    const prod = productionMap(month);
+    month.productionDays = workbookCalendar(month);
+    const prod = productionMap(month.productionDays);
     applySetup(month, readSetup(), prod);
     applyOverlay(month, overlay);
     applyExtraEntries(month, overlay, prod);
@@ -437,7 +557,8 @@ export function getMonth() {
     console.warn('Board setup skipped:', err);
     const month = structuredClone(base);
     applyDataQuality(month);
-    applyOverlay(month, overlay);
+    month.productionDays = workbookCalendar(month);
+    try { applyOverlay(month, overlay); } catch { applyOverlay(month, { version: 1, entries: {} }); }
     month.setupFailed = true;
     return month;
   }
@@ -470,7 +591,8 @@ export function notesFor(fn, day) {
 export const noteParagraphs = (text) => (text ?? '').split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean);
 
 /** "No new issues to report" is the absence of a problem, so it takes no status. */
-const NO_ISSUE = /^\s*no (new )?(issues?|problems?)( to report)?\.?\s*$/i;
+/** "No new issues to report", "No issue reported": the absence of a problem. One rule for the board, Enter numbers and the register. */
+export const NO_ISSUE = /^\s*no (new )?(issues?|problems?)( to report| reported)?\.?\s*$/i;
 /** Is there a real problem for this day (one that can be Open, In progress or Closed)? */
 export const hasProblem = (n) => n.source !== null && noteParagraphs(n.problem).some((t) => !NO_ISSUE.test(t));
 
@@ -560,6 +682,7 @@ export function restoreEntry(functionId, day, previous) {
 export function resetDemo() {
   const snapshot = readOverlay();
   let ok = true;
+  overlayMem = null; // else a refused write's copy would keep the numbers on screen
   try { localStorage.removeItem(OVERLAY_KEY); } catch { ok = false; }
   return { ok, snapshot };
 }

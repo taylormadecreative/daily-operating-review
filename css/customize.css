@@ -40,8 +40,11 @@
   :root[data-view="dor"][data-cz-trend="off"][data-cz-notes="off"] .row { grid-template-areas: "fn fn" "day month"; }
 }
 
-/* Large text: the board's type and spacing are in rem, so one root size scales them together. */
-:root[data-view="dor"][data-cz-size="large"] { font-size: 118.75%; }
+/* Large text: the board's type and spacing are in rem, so one root size scales them together.
+   Phones keep standard type (their layout is already sized for reading at arm's length). */
+@media (min-width: 760px) {
+  :root[data-view="dor"][data-cz-size="large"] { font-size: 118.75%; }
+}
 /* …and the masthead takes its two-row layout so the bigger brand never squeezes. */
 @media (min-width: 1340px) {
   :root[data-view="dor"][data-cz-size="large"] .topbar-inner { flex-wrap: wrap; row-gap: var(--s-2); }
@@ -78,6 +81,15 @@
 :root[data-view="dor"][data-cz-header="light"] .topbar-home:hover { background: rgb(1 20 37 / 0.08); }
 
 /* ---------- Masthead: Customize, and the phone menu ---------- */
+
+/* The date's ‹ › at the month's first and last day: aria-disabled (js/app.js), so they
+   keep focus. They look like the disabled ones and don't press. */
+:is([data-prev], [data-next]).icon-btn[aria-disabled="true"] { opacity: 0.35; cursor: not-allowed; }
+:is([data-prev], [data-next]).icon-btn[aria-disabled="true"]:active { transform: none; }
+@media (hover: hover) and (pointer: fine) {
+  :is([data-prev], [data-next]).icon-btn[aria-disabled="true"]:hover { border-color: var(--ink-2); }
+}
+:is([data-home-prev], [data-home-next])[aria-disabled="true"] { color: #b4bfcc; cursor: not-allowed; }
 
 .topbar-more { display: none; }
 .dor-menu { min-width: 230px; }
@@ -135,7 +147,7 @@
 .cz-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-4) 0; }
 .cz-title { font-family: var(--font-ui); font-size: 1.375rem; font-weight: 750; line-height: 1.15; outline: none; }
 .cz-lead { padding: var(--s-1) var(--s-4) var(--s-3); color: var(--ink-2); font-size: var(--fs-small); border-bottom: 1px solid var(--rule); }
-.cz-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--s-2) var(--s-4) var(--s-4); }
+.cz-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--s-2) var(--s-4) var(--s-4); scroll-padding-block: var(--s-3); }
 .cz-group { margin: 0; padding: var(--s-4) 0 var(--s-3); border: 0; border-bottom: 1px solid var(--rule-quiet); min-width: 0; }
 .cz-group:last-child { border-bottom: 0; }
 .cz-legend { padding: 0; margin-bottom: var(--s-2); font-weight: 700; }
@@ -180,7 +192,7 @@
 .cz-custom-label { position: relative; display: grid; gap: 2px; min-width: 0; cursor: pointer; }
 .cz-custom-label input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .cz-pick-empty { white-space: nowrap; }
-.cz-opt .cz-color { position: relative; z-index: 1; width: 36px; height: 36px; margin: 0; padding: 2px; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); cursor: pointer; }
+.cz-opt .cz-color { position: relative; z-index: 1; width: var(--tap); height: var(--tap); margin: 0; padding: 3px; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); cursor: pointer; }
 .cz-pick-empty { display: none; color: var(--ink-2); font-size: var(--fs-small); font-weight: 600; }
 /* No custom color yet: "Pick a color" and a dashed tile, never a look-alike of a preset. */
 .cz-opt--custom.is-empty { border-style: dashed; }
@@ -210,6 +222,8 @@
 .cz-warn { margin-top: var(--s-2); padding: var(--s-2) var(--s-3); border-left: 3px solid var(--ink-2); background: var(--surface-quiet); color: var(--ink); font-size: var(--fs-small); }
 .cz-hint { color: var(--ink-2); font-size: var(--fs-small); }
 .cz-group > .cz-hint { margin-top: var(--s-1); }
+/* Text size's switch sits under its heading like every other group's options (the form's segmented control brings its own top margin). */
+.cz-group > .segmented { margin-top: 0; }
 
 /* "Where the red shows": a tiny row drawing of each choice. */
 .cz-opt--place { grid-template-columns: auto minmax(0, 1fr) auto; }
@@ -236,6 +250,25 @@
   .cz-sheet:not([open]) { transform: translateY(100%); }
   @starting-style { .cz-sheet[open] { transform: translateY(100%); } }
 }
+/* Phone: half a screen is little room, so only the title and the footer stay put.
+   The intro, the Board setup line, the preview and the options scroll as one
+   (the board above the sheet is the full-size preview). On taller phones the
+   compact preview sticks under the title once the intro has scrolled away. */
+@media (max-width: 599px) {
+  /* Focus scrolls clear of the title above and the footer below. */
+  .cz-panel { --cz-head-h: 56px; --cz-foot-h: 69px; overflow-y: auto; overscroll-behavior: contain; scroll-padding: calc(var(--cz-head-h) + 8px) 0 calc(var(--cz-foot-h) + 8px); }
+  .cz-head { position: sticky; top: 0; z-index: 2; min-height: var(--cz-head-h); background: var(--surface); }
+  .cz-body { flex: 0 0 auto; min-height: auto; overflow: visible; }
+  .cz-foot { position: sticky; bottom: 0; z-index: 2; margin-top: auto; }
+  .cz-preview { padding: 6px var(--s-4) var(--s-2); }
+  .cz-preview-label { margin-bottom: 2px; }
+  .cz-mini-fn { font-size: 1.125rem; }
+  .cz-mini-cell { padding: 6px 8px; }
+}
+@media (max-width: 599px) and (min-height: 740px) {
+  .cz-panel { --cz-preview-h: 74px; scroll-padding-top: calc(var(--cz-head-h) + var(--cz-preview-h) + 8px); }
+  .cz-preview { position: sticky; top: var(--cz-head-h); z-index: 1; }
+}
 @media (prefers-reduced-motion: reduce) {
   .cz-sheet, .cz-sheet:not([open]) { transform: none; transition: none; }
 }
@@ -245,5 +278,6 @@
 :root[data-cz-strength="solid"]:not([data-cz-place="words"]) .cz-mini-cell--on { background: var(--on); color: var(--n-0); }
 :root[data-cz-strength="solid"]:not([data-cz-place="words"]) .cz-mini-cell .status-glyph,
 :root[data-cz-strength="solid"]:not([data-cz-place="words"]) .cz-mini-cell svg { color: inherit; }
-.cz-setup { margin: var(--s-2) 0 0; color: var(--ink-2); font-size: var(--fs-small); }
-.cz-setup-link { min-height: var(--tap); padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+.cz-setup { margin: 0; padding: var(--s-2) var(--s-4) var(--s-3); border-bottom: 1px solid var(--rule); color: var(--ink-2); font-size: var(--fs-small); line-height: 1.5; }
+/* An inline link in a sentence (exempt from the 44px target size): it stays on its line. */
+.cz-setup-link { display: inline; min-height: 0; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; vertical-align: baseline; cursor: pointer; }

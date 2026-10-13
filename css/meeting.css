@@ -40,6 +40,8 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
 .meeting-progress-line span { position: absolute; inset: 0; background: var(--lx-mint-400); transform-origin: left center; transform: scaleX(0); transition: transform 200ms var(--ease-out); }
 .meeting-timer { font-size: max(0.8em, 13px); font-weight: 650; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .kbd { margin-left: 0.4em; padding: 0.05em 0.35em; border: 1px solid var(--rule-strong); border-radius: 3px; font-size: max(0.8em, 11px); color: var(--ink-2); }
+/* A touch screen has no Esc key to point to. */
+@media (hover: none) { .meeting-exit .kbd { display: none; } }
 
 .meeting-stage { min-height: 0; }
 /* The slide, then live captions under it while recording. */
@@ -49,6 +51,10 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
 .meeting-hint { font-size: max(0.55em, 12px); color: var(--ink-2); text-align: center; }
 .meeting-mid { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 1.2em; min-width: 0; }
 .meeting-nav { min-width: 7.5em; }
+/* Previous on the first slide: looks off, stays in the tab order, does nothing. */
+.meeting-nav[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+.meeting-nav[aria-disabled="true"]:active { transform: none; }
+.meeting-nav [data-next-icon][hidden] { display: none; }
 
 /* ---------- Slide 0: summary and roadmap ---------- */
 
@@ -67,7 +73,27 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
   line-height: 0.9;
   letter-spacing: 0.005em;
 }
+/* "No production scheduled" has a descender (the "p"): room for it, so it never cuts into the line below.
+   The weekday count ("3 of 8 on track") has none and keeps its tight spacing. */
+.m-headline--words { padding-bottom: 0.16em; }
+/* Every function removed in Board setup: one line in place of the count. */
+.m-empty { max-width: 24em; margin-top: 0.3em; font-size: 2.2em; font-weight: 750; line-height: 1.2; text-wrap: balance; }
 .m-sub { margin-top: 0.4em; font-size: 1em; color: var(--ink-2); }
+/* What still needs an action: the off glyph and red lead, then the KPIs (or the all-clear in green). */
+.m-needs {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45em;
+  max-width: 52em;
+  margin-top: 0.5em;
+  font-size: 1.1em;
+  font-weight: 650;
+  line-height: 1.3;
+}
+.m-needs .glyph { width: 1.05em; height: 1.05em; flex: none; align-self: center; color: var(--off); }
+.m-needs-lead { color: var(--off); font-weight: 750; }
+.m-needs--clear .glyph, .m-needs--clear .m-needs-lead { color: var(--on); }
+.m-needs + .m-sub { margin-top: 0.3em; }
 .m-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -105,7 +131,12 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
   height: 100%;
 }
 .m-col { display: flex; flex-direction: column; gap: 0.7em; min-height: 0; }
-.m-col--right { padding-top: 0.2em; }
+.m-col--right { padding-top: 0.2em; overflow: hidden; }
+/* The chart takes the column; KPIs added in Board setup sit under it at their own height. */
+/* It never shrinks below its key, its 9em plot and its caption: a long list of measures then
+   overflows the column and folds ("2 more measures on the board") instead of drawing over the chart. */
+.m-col--right > .m-chart { flex: 1 0 auto; }
+.m-col--right > .m-extras { flex: none; }
 .m-col--left { overflow: hidden; }
 .m-col--left .m-notes { flex: 1 1 auto; overflow: hidden; }
 .m-name {
@@ -119,7 +150,11 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
 /* Name, owner and question on the left; Add action on the right. */
 .m-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0 1em; }
 .m-head-text { min-width: 0; }
-.m-add { margin-top: 0.1em; }
+.m-add-wrap { display: grid; justify-items: end; gap: 0.3em; margin-top: 0.1em; }
+/* "Draft kept for People.": a typed action waiting under its Add action button
+   (beside it when the button sits beside a "Needs an action"). */
+.m-draft { max-width: 14em; color: var(--ink-2); font-size: max(0.6em, 13px); font-weight: 600; line-height: 1.3; text-align: right; }
+.m-draft--beside { align-self: center; text-align: left; }
 .m-owner { margin-top: 0.35em; font-size: 0.9em; font-weight: 650; }
 .m-question { margin-top: 0.1em; font-size: 0.9em; color: var(--ink-2); max-width: 34em; }
 
@@ -212,11 +247,20 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
 }
 .m-action-meta { margin-top: 0.1em; font-size: max(0.75em, 13px); font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .m-dot { white-space: pre; }
-.m-from { color: var(--ink); font-weight: 700; }
+.m-from { color: var(--ink); font-weight: 700; white-space: nowrap; }
 .m-over { color: var(--off); font-weight: 700; white-space: nowrap; }
 .m-over .glyph { display: inline-block; width: 1.1em; height: 1.1em; margin-right: 0.25em; vertical-align: -0.2em; }
 .m-actions-more { padding-top: 0.2em; font-size: max(0.7em, 12px); color: var(--ink-2); }
 .m-actions-more[hidden] { display: none; }
+/* "Needs an action": the off glyph and the words in red, on the slide's main KPI. */
+.m-action-needs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4em 0.9em; margin-top: 0.2em; }
+/* Add action beside the red line it answers. */
+.m-add--needs { flex: none; }
+.m-needs-status { font-size: 1.1em; font-weight: 750; }
+/* Off goal, something recorded, no problem written: the issue stays muted and this red line says it's owed. */
+.m-issue-gap { margin-top: 0.25em; }
+.m-gap-status { font-weight: 750; }
+.m-issue-gap--extra { display: block; margin-top: 0.2em; color: var(--ink); }
 
 /* Short screens (720p): the fixed 44px controls cost more, so the display
    type gives back a little room for the issue and the action. */
@@ -233,7 +277,7 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
   /* Stacked slides scroll, so each part keeps its natural height. */
   .m-fn { align-content: start; }
   .m-col { min-height: auto; }
-  .m-col--left, .m-col--left .m-notes { flex: none; overflow: visible; }
+  .m-col--left, .m-col--left .m-notes, .m-col--right { flex: none; overflow: visible; }
   .m-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -247,10 +291,13 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
 /* Goal dashes need more weight at 15 ft: 3px, 8px dashes. */
 .meeting .chart-goal { stroke-width: 3; stroke-dasharray: 8 5; }
 .meeting .key--goal { border-top-width: 3px; }
+/* Off goal in the key is what the chart draws: a red bar, the Actual swatch's shape. */
+.meeting .key--bar.m-key-off { margin-left: 8px; background: var(--chart-off); }
 
 /* ---------- Extra measures (Board setup) under the main figures ---------- */
 
-.m-extras { border-top: 1px solid var(--rule); }
+.m-extras { padding-top: 0.45em; border-top: 1px solid var(--rule-strong); }
+.m-extras-title { margin-bottom: 0.15em; }
 .m-extra {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -259,17 +306,81 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
 .m-extra[hidden] { display: none; }
 .m-extra + .m-extra { border-top: 1px solid var(--rule); }
 .m-extra-name { grid-column: 1 / -1; font-size: max(0.75em, 13px); font-weight: 650; }
+/* Landscape: the name sits beside its two statuses, the notes under them, so an added KPI costs two short lines. */
+@media (min-aspect-ratio: 4/3) {
+  .m-extra { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1fr); align-items: baseline; }
+  .m-extra-name { grid-column: auto; padding-right: 0.6em; }
+}
+/* Column heads over the list ("Fri, Feb 27" · "February so far"), on the same grid as each measure's two cells. */
+.m-extra-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-top: 0.1em; }
+.m-extra-head-name { display: none; }
+.m-extra-head[hidden] { display: none; }
+.m-extra-col { min-width: 0; padding-right: 0.48em; }
+.m-extra-col + .m-extra-col { padding: 0 0 0 0.64em; }
+.m-extra-col > span { display: block; font-size: max(0.9em, 13px); font-weight: 650; line-height: 1.25; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-aspect-ratio: 4/3) {
+  .m-extra-head { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1fr); }
+  .m-extra-head-name { display: block; }
+  /* A KPI name that would wrap past two lines in its own column: every name gets the full width
+     over the two columns instead (set in script, for the whole list so the columns line up). */
+  .m-extras.is-stacked .m-extra, .m-extras.is-stacked .m-extra-head { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .m-extras.is-stacked .m-extra-name { grid-column: 1 / -1; padding-right: 0; }
+  .m-extras.is-stacked .m-extra-head-name { display: none; }
+}
+.m-extra-notes { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .m-extra-cell { min-width: 0; padding-right: 0.6em; font-size: max(0.8em, 13px); line-height: 1.3; }
 .m-extra-cell + .m-extra-cell { padding: 0 0 0 0.8em; border-left: 1px solid var(--rule); }
 .m-extra-status { font-size: 1em; vertical-align: -0.1em; }
 .m-extra-fig { margin-left: 0.2em; font-variant-numeric: tabular-nums; }
+/* "Tracked from Fri, Feb 20" (before a KPI added in Board setup started): its own line under the status. */
+.m-extra-fig--from { display: block; margin-left: 0; color: var(--ink-2); }
 .m-extra-measure { color: var(--ink-2); }
 .m-extra-more { padding-top: 0.25em; font-size: max(0.7em, 12px); color: var(--ink-2); }
+/* Each extra measure's issue and action, in the same two columns as its figures. */
+.m-extra-note {
+  min-width: 0;
+  margin-top: 0.2em;
+  padding-right: 0.6em;
+  font-size: max(0.75em, 13px);
+  line-height: 1.3;
+}
+.m-extra-note + .m-extra-note { padding: 0 0 0 0.8em; border-left: 1px solid var(--rule); }
+.m-extra-note--wide { grid-column: 1 / -1; padding-right: 0; }
+.m-extra-note.is-empty { color: var(--ink-2); }
+.m-extra-tag { display: block; color: var(--ink-2); font-size: 0.85em; font-weight: 650; }
+.m-extra-note--wide .m-extra-tag { display: inline; margin-right: 0.5em; }
+.m-extra-note .m-needs-status { font-size: 1em; }
+/* Its own Add action beside the red line; the button and its draft note keep the slide's sizes. */
+.m-extra-note .m-action-needs { gap: 0.3em 0.7em; margin-top: 0.15em; }
+.meeting .m-extra-note .m-add { font-size: max(0.8em, 15px); }
+/* The column is narrow: the draft note takes its own line under the button row, the cell's full width. */
+.m-extra-note .m-draft { flex-basis: 100%; max-width: none; margin-top: -0.1em; font-size: max(0.8em, 13px); }
+.m-extra-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: pre-line;
+}
+.m-extra-note > .m-extra-text:not(:last-child) { margin-bottom: 0.2em; }
+.m-extra-actions { display: grid; gap: 0.2em; }
+.m-extra-meta { display: block; color: var(--ink-2); font-size: 0.9em; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* When extra measures crowd the notes, the display type gives back room. */
 .m-fn.is-compact .m-name { font-size: 2.5em; }
 .m-fn.is-compact .m-num { font-size: 2.5em; }
 .m-fn.is-compact .m-col { gap: 0.45em; }
+/* Still too tall: a long name (stepped down in script) ends on an ellipsis after two lines,
+   and the daily question keeps two lines, before the issue and the action give way. */
+.m-name.is-clamped, .m-fn.is-tight .m-question {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.m-name.is-clamped { padding-block: 0.06em; }
 
 /* ---------- Recorder: actions count, Record / Stop, the recording indicator ---------- */
 
@@ -326,6 +437,24 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
 .captions-interim { color: var(--ink-2); }
 .captions-toggle[hidden] { display: none; }
 
+/* The first recording's notice: its own line between the slide and the captions
+   (the slide re-fits above it), so it covers nothing. */
+.meeting-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 1em;
+  margin-top: 0.5em;
+  padding: 0.2em 0.4em 0.2em 0.8em;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--surface-quiet);
+}
+.meeting-notice[hidden] { display: none; }
+.meeting-notice-text { flex: 1 1 24em; font-size: max(0.6em, 14px); line-height: 1.35; }
+.meeting-notice-ok { min-height: 44px; font-size: max(0.6em, 14px); }
+
 /* Toasts sit above the meeting and stand off its dark ground. */
 html.is-meeting .toasts { z-index: 110; bottom: var(--meeting-toast-bottom, calc(var(--mobilebar-h) + var(--s-5))); }
 html.is-meeting .toast { background: var(--d-raise); border: 1px solid var(--d-rule-strong); }
@@ -347,3 +476,7 @@ html.is-meeting .toast { background: var(--d-raise); border: 1px solid var(--d-r
   .meeting-mid { order: -1; flex: 1 0 100%; }
   .meeting-mid:has(.captions-toggle[hidden]) { display: none; }
 }
+
+/* A done action (closed that day or later): "Done:" in the on-track color with its glyph, word + glyph + color. */
+.m-done { color: var(--on); font-weight: 700; white-space: nowrap; }
+.m-done .glyph { display: inline-block; width: 1em; height: 1em; margin-right: 0.3em; vertical-align: -0.15em; }

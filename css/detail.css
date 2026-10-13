@@ -36,7 +36,10 @@
   .sheet, .sheet:not([open]) { transform: none; }
 }
 
-.sheet-panel { height: 100%; overflow-y: auto; overscroll-behavior: contain; }
+/* A box scrolled to lands clear of the sticky title bar (its height is measured into
+   --sheet-head-h by js/detail.js fitSheetHead; the fallback is the usual one-line head).
+   These sheets have no sticky footer, so the bottom needs no padding. */
+.sheet-panel { height: 100%; overflow-y: auto; overscroll-behavior: contain; scroll-padding-top: calc(var(--sheet-head-h, 72px) + 8px); }
 
 .sheet-head {
   position: sticky;
@@ -73,14 +76,26 @@
 .kpis {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(4, auto);
   border-bottom: 1px solid var(--rule);
 }
-.kpi { padding: var(--s-4) var(--s-4) var(--s-4) 0; }
+/* Each card shares the row's lines (label, status, figure, measure), so the two
+   figures line up even when one card's status or measure name wraps. The
+   figure comes before the measure name, as on the board's blocks. */
+.kpi {
+  display: grid;
+  grid-row: span 4;
+  grid-template-rows: subgrid;
+  align-content: start;
+  align-items: start;
+  row-gap: 0;
+  padding: var(--s-4) var(--s-4) var(--s-4) 0;
+}
 .kpi + .kpi { padding-left: var(--s-4); border-left: 1px solid var(--rule); }
 .kpi[data-status="off"] { background: var(--off-wash); padding-left: var(--s-4); }
 .kpi-label { margin-bottom: var(--s-1); color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
-/* Each card names its own measure: the month's is often a different KPI from the day's. */
-.kpi-measure { margin-bottom: var(--s-2); color: var(--ink); font-size: var(--fs-lead); font-weight: 750; line-height: 1.2; }
+/* Each card names its own measure, under its figure: the month's is often a different KPI from the day's. */
+.kpi-measure { margin-top: var(--s-2); color: var(--ink); font-size: var(--fs-lead); font-weight: 750; line-height: 1.2; }
 .kpi .status { font-size: 1.125rem; font-weight: 700; }
 .kpi-figure { margin-top: var(--s-2); line-height: 1.1; }
 .kpi-num {
@@ -133,6 +148,13 @@
 .full-notes dt { color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
 .full-notes dd { margin: var(--s-1) 0 0; font-size: 1.0625rem; line-height: 1.45; white-space: pre-line; max-width: 62ch; }
 .full-notes dd.is-empty { color: var(--ink-2); }
+/* Off goal with no action yet: the board's "Needs an action", word + glyph + red. */
+.full-notes .note-needs .status { font-size: 1.0625rem; font-weight: 750; }
+/* Off goal, something recorded, no issue written: this red line is the answer, on its own
+   (the same size and weight as "Needs an action" under the next question). */
+.full-notes dd.issue-gap { display: flex; align-items: flex-start; width: fit-content; margin-top: var(--s-1); font-size: 1.0625rem; font-weight: 750; line-height: 1.35; white-space: normal; }
+.full-notes dd.issue-gap .glyph { margin-top: 0.1em; }
+.table-empty { margin-top: var(--s-2); color: var(--ink-2); font-size: var(--fs-small); }
 
 /* Open actions from the Action register, under the day's action. */
 .reg { margin-top: var(--s-4); padding-top: var(--s-3); border-top: 1px solid var(--rule-quiet); }
@@ -144,9 +166,19 @@
 .reg-text { font-size: 1.0625rem; line-height: 1.45; }
 .reg-meta { display: flex; flex-wrap: wrap; align-items: center; column-gap: 0.25em; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
 .reg-meta .ist { font-size: var(--fs-small); }
+/* An action's own status is neutral (status colors mean on or off goal): Open is a
+   hollow ring, In progress half filled. Problem status keeps its colors elsewhere. */
+.reg-meta .ist--open, .reg-meta .ist--in-progress { color: var(--ink); }
+.reg-meta .ist--open .ist-dot,
+.reg-meta .ist--in-progress .ist-dot { position: relative; box-sizing: border-box; overflow: hidden; border: 1.5px solid currentColor; background: none; }
+.reg-meta .ist--in-progress .ist-dot::after { content: ""; position: absolute; inset: 0 50% 0 0; background: currentColor; }
 .reg-over { display: inline-flex; align-items: center; gap: 0.3em; color: var(--off); font-weight: 650; }
 .reg-over .glyph { width: 1em; height: 1em; }
 .reg-empty { margin-top: var(--s-1); color: var(--ink-2); font-size: var(--fs-small); }
+/* Closed on this day or later: still this KPI's action for the day, and done. */
+.reg-list--done { margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px dashed var(--rule-quiet); }
+.reg-done { color: var(--on); font-weight: 700; white-space: nowrap; }
+.reg-done .glyph { display: inline-block; width: 1em; height: 1em; margin-right: 0.3em; vertical-align: -0.15em; }
 
 .kbi-list { display: grid; gap: var(--s-2); margin-top: var(--s-2); counter-reset: none; }
 .kbi-list li { display: grid; grid-template-columns: 5.5em 1fr; gap: var(--s-3); align-items: baseline; }
@@ -160,6 +192,10 @@
 /* No area numbers for the day: one quiet line instead of a table. */
 .areas-empty { padding-top: var(--s-5); color: var(--ink-2); font-size: var(--fs-small); }
 .escalate .btn { gap: var(--s-2); }
+.escalate-note { margin-top: var(--s-1); color: var(--ink-2); font-size: var(--fs-small); }
+/* A KPI with no numbers yet: the board's line and its "Enter the first one". */
+.detail-fresh { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin-top: var(--s-2); }
+.detail-fresh .table-empty { margin-top: 0; font-size: 1rem; }
 
 @media (max-width: 759px) {
   .sheet { width: 100vw; border-left: 0; }
@@ -180,3 +216,7 @@
   .area-table tr.is-total th, .area-table tr.is-total td { border: 0; }
   .section-head { flex-wrap: wrap; }
 }
+
+/* Off goal in the day-by-day key is what the chart draws: a plain red bar, the Actual swatch's shape (only the
+   selected day carries the "!"), as in the meeting. */
+.sheet .key--bar.m-key-off { margin-left: 8px; background: var(--chart-off); }
