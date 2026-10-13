@@ -78,8 +78,10 @@
 .kpi { padding: var(--s-4) var(--s-4) var(--s-4) 0; }
 .kpi + .kpi { padding-left: var(--s-4); border-left: 1px solid var(--rule); }
 .kpi[data-status="off"] { background: var(--off-wash); padding-left: var(--s-4); }
-.kpi-label { margin-bottom: var(--s-2); color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
-.kpi .status { font-size: var(--fs-lead); font-weight: 700; }
+.kpi-label { margin-bottom: var(--s-1); color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
+/* Each card names its own measure: the month's is often a different KPI from the day's. */
+.kpi-measure { margin-bottom: var(--s-2); color: var(--ink); font-size: var(--fs-lead); font-weight: 750; line-height: 1.2; }
+.kpi .status { font-size: 1.125rem; font-weight: 700; }
 .kpi-figure { margin-top: var(--s-2); line-height: 1.1; }
 .kpi-num {
   display: block;
@@ -95,6 +97,7 @@
 .sheet-section { padding-top: var(--s-6); }
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); }
 .section-title { font-size: var(--fs-lead); font-weight: 700; line-height: 1.2; }
+.section-measure { color: var(--ink-2); font-weight: 650; }
 .section-sub {
   display: flex;
   flex-wrap: wrap;
@@ -131,6 +134,20 @@
 .full-notes dd { margin: var(--s-1) 0 0; font-size: 1.0625rem; line-height: 1.45; white-space: pre-line; max-width: 62ch; }
 .full-notes dd.is-empty { color: var(--ink-2); }
 
+/* Open actions from the Action register, under the day's action. */
+.reg { margin-top: var(--s-4); padding-top: var(--s-3); border-top: 1px solid var(--rule-quiet); }
+.reg-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); }
+.reg-title { color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
+.reg-add { padding: 0 var(--s-4); font-size: var(--fs-small); }
+.reg-list { display: grid; gap: var(--s-3); margin-top: var(--s-2); }
+.reg-item { max-width: 62ch; }
+.reg-text { font-size: 1.0625rem; line-height: 1.45; }
+.reg-meta { display: flex; flex-wrap: wrap; align-items: center; column-gap: 0.25em; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
+.reg-meta .ist { font-size: var(--fs-small); }
+.reg-over { display: inline-flex; align-items: center; gap: 0.3em; color: var(--off); font-weight: 650; }
+.reg-over .glyph { width: 1em; height: 1em; }
+.reg-empty { margin-top: var(--s-1); color: var(--ink-2); font-size: var(--fs-small); }
+
 .kbi-list { display: grid; gap: var(--s-2); margin-top: var(--s-2); counter-reset: none; }
 .kbi-list li { display: grid; grid-template-columns: 5.5em 1fr; gap: var(--s-3); align-items: baseline; }
 .kbi-level { color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
@@ -140,7 +157,8 @@
 .escalate { padding-top: var(--s-6); }
 .escalate--top { padding-top: var(--s-4); }
 .chart-caption { margin-top: var(--s-1); color: var(--ink-2); font-size: var(--fs-small); }
-.areas-empty { margin-bottom: 0; color: var(--ink); }
+/* No area numbers for the day: one quiet line instead of a table. */
+.areas-empty { padding-top: var(--s-5); color: var(--ink-2); font-size: var(--fs-small); }
 .escalate .btn { gap: var(--s-2); }
 
 @media (max-width: 759px) {
@@ -153,6 +171,7 @@
   .kpis { grid-template-columns: 1fr 1fr; }
   .kpi-num { font-size: 2.75rem; }
   .kpi .status { font-size: var(--fs-body); }
+  .kpi-measure { font-size: 1.0625rem; }
   .area-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .area-table tr { display: grid; grid-template-columns: 1fr auto; column-gap: var(--s-3); padding: var(--s-2) 0; border-bottom: 1px solid var(--rule-quiet); }
   .area-table th, .area-table td { padding: 0; border: 0; }

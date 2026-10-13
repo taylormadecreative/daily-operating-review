@@ -1,0 +1,299 @@
+/* Action register: a right-side sheet (full screen on a phone).
+   The dialog reuses .sheet from detail.css (slide-in, backdrop, reduced motion),
+   .sheet-head / .sheet-title / .sheet-close, .segmented from enter.css, and the
+   shared .btn / .ist / .problem-status classes. Everything new is scoped to .ar. */
+
+.ar-panel { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+
+/* ---------- Head ---------- */
+.ar .ar-head { position: static; flex: none; align-items: flex-start; }
+.ar-head-text { min-width: 0; }
+.ar-count {
+  margin-top: var(--s-2);
+  color: var(--ink-2);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.ar-part { white-space: nowrap; }
+.ar-over {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  color: var(--off);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ar-over .glyph { width: 1.15em; height: 1.15em; flex: none; }
+
+/* ---------- Body and footer ---------- */
+.ar-body {
+  /* Contains its absolutely placed bits (.sr-only text), so nothing escapes the
+     scroll area and makes the dialog itself scroll. */
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-4) var(--s-6) calc(var(--s-7) + 4.5rem); /* the end clears a toast */
+  container-type: inline-size;
+}
+.ar-foot {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-4);
+  padding: var(--s-3) var(--s-6) calc(var(--s-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
+}
+.ar-foot-note { color: var(--ink-2); font-size: var(--fs-small); }
+/* A toast shown while the sheet is open sits above its footer. */
+.ar .toasts { bottom: calc(var(--ar-foot-h, 70px) + var(--s-3)); }
+
+/* ---------- Toolbar: Add action + filters ---------- */
+.ar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-3) var(--s-5);
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--rule);
+}
+.ar-add-btn { min-height: 48px; }
+.ar-add-btn .icon { width: 18px; height: 18px; }
+.ar-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s-3) var(--s-4); }
+.ar-filter { min-width: 0; margin: 0; padding: 0; border: 0; }
+.ar-label {
+  display: block;
+  margin-bottom: var(--s-1);
+  padding: 0;
+  color: var(--ink-2);
+  font-size: var(--fs-small);
+  font-weight: 650;
+}
+.ar-seg { margin-top: 0; }
+.ar-seg span { padding: 0 var(--s-4); }
+
+/* ---------- Selects (function filter, form, status) ---------- */
+.ar-pick { position: relative; display: inline-flex; align-items: center; max-width: 100%; }
+.ar-pick::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -6px;
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.ar-pick select {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  min-height: 48px; /* matches the segmented control and the text boxes */
+  padding: 0 2.5rem 0 var(--s-3);
+  border: 2px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--fs-body);
+  font-weight: 650;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.ar-pick select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-color: var(--ink); }
+.ar-pick select[aria-invalid="true"] { border-color: var(--error); }
+.ar-filter--fn .ar-pick select { min-width: 12rem; }
+
+/* Status: the word, a dot and its color, never color alone (same marks as problem status). */
+.ar-pick--status { color: var(--ink); }
+.ar-pick--status[data-status="open"] { color: var(--off); }
+.ar-pick--status[data-status="in-progress"] { color: var(--progress); }
+.ar-pick--status[data-status="closed"] { color: var(--on); }
+.ar-pick--status select { min-width: 10.5rem; padding-left: 2.1rem; color: inherit; font-weight: 700; }
+.ar-pick--status select option { color: var(--lx-navy-900); font-weight: 600; }
+.ar-dot {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  width: 0.65em;
+  height: 0.65em;
+  margin-top: -0.325em;
+  border-radius: 50%;
+  background: currentColor;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ar-pick select:hover { border-color: var(--ink); }
+}
+
+/* ---------- Sections ---------- */
+.ar-section { padding-top: var(--s-6); }
+.ar-section-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); min-height: var(--tap); }
+.ar-section .section-title { outline: none; }
+.ar-toggle { flex: none; }
+
+/* "From the board, Fri, Feb 27 (4)": the heading is the toggle; folded until opened. */
+.ar-section--board { margin-top: var(--s-6); border-top: 2px solid var(--rule-strong); padding-top: var(--s-2); }
+.ar-board-title { flex: 1; min-width: 0; }
+.ar-disclosure {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  min-height: var(--tap);
+  margin: 0;
+  padding: var(--s-1) 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ar-disclosure:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
+.ar-chev { width: 18px; height: 18px; flex: none; transition: transform 160ms var(--ease-out); }
+.ar-disclosure[aria-expanded="true"] .ar-chev { transform: rotate(90deg); }
+.ar-board-body[hidden] { display: none; }
+.ar-board-body > .section-sub { margin-bottom: var(--s-3); }
+@media (prefers-reduced-motion: reduce) { .ar-chev { transition: none; } }
+.ar-empty { margin-top: var(--s-2); max-width: 60ch; }
+.ar-empty-tools { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-3); margin-top: var(--s-3); }
+.ar-empty-tools .icon { width: 18px; height: 18px; }
+.ar-quiet { margin-top: var(--s-3); color: var(--ink-2); font-size: var(--fs-small); }
+
+/* From the board: ledger rows, not shadowed cards. */
+.ar-blist { border-top: 2px solid var(--rule-strong); }
+.ar-bcard { display: grid; gap: var(--s-3); padding: var(--s-4) var(--s-3); border-bottom: 1px solid var(--rule); }
+.ar-bcard-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-3); }
+.ar-fn { font-size: var(--fs-body); font-weight: 750; letter-spacing: 0.05em; text-transform: uppercase; }
+.ar-owner { color: var(--ink-2); font-size: var(--fs-small); font-weight: 600; }
+.ar-measure { display: grid; gap: var(--s-3); }
+.ar-measure + .ar-measure { padding-top: var(--s-3); border-top: 1px dashed var(--rule); }
+.ar-measure-name { color: var(--ink-mid); font-size: var(--fs-small); font-weight: 700; }
+.ar-notes { display: grid; gap: var(--s-3); }
+.ar-notes dt { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; }
+.ar-notes dd { margin: 2px 0 0; max-width: 60ch; line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
+.ar-notes dd.is-empty { color: var(--ink-2); }
+.ar-bcard .problem-status { margin-top: 0; font-size: var(--fs-small); }
+/* The function's open assigned actions, under its action from the board. */
+.ar-notes dd.ar-assigned { margin-top: var(--s-2); white-space: normal; }
+.ar-alist { display: grid; gap: var(--s-2); }
+.ar-alist li { padding-top: var(--s-2); border-top: 1px solid var(--rule); }
+.ar-notes dd:not(.ar-assigned) + dd.ar-assigned .ar-alist li:first-child { border-top-style: dashed; }
+.ar-notes dt + dd.ar-assigned .ar-alist li:first-child { padding-top: 0; border-top: 0; }
+.ar-alist-text { font-weight: 600; white-space: pre-line; overflow-wrap: anywhere; }
+.ar-alist-meta { display: flex; flex-wrap: wrap; align-items: center; margin-top: 2px; color: var(--ink-mid); font-size: var(--fs-small); }
+.ar-alist-meta .ar-over { font-weight: 700; }
+.ar-bcard-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
+
+/* Assigned actions */
+/* Both ledgers bleed a little past the text column, so every rule (and the
+   overdue wash) is the same width while the words line up with the headings. */
+.ar-list, .ar-blist { margin-inline: calc(-1 * var(--s-3)); }
+.ar-list { border-top: 2px solid var(--rule-strong); }
+.ar-item {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-3);
+  border-bottom: 1px solid var(--rule);
+  /* Scrolled to after a save: clear of the toast that sits over the end of the list. */
+  scroll-margin: var(--s-4) 0 calc(var(--s-7) + 4.5rem);
+}
+/* One line of counts with plain dots (section-sub is a spaced flex row elsewhere). */
+.ar-list-sub { display: block; }
+.ar-meta-kpi { font-weight: 600; }
+.ar-item:focus { outline: none; }
+.ar-item:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; border-radius: 2px; }
+.ar-item.is-overdue { background: var(--off-wash); }
+.ar-item.is-editing { padding: var(--s-3); }
+.ar-text { max-width: 60ch; font-size: 1.0625rem; font-weight: 600; line-height: 1.4; white-space: pre-line; overflow-wrap: anywhere; }
+.ar-item.is-closed .ar-text { color: var(--ink-2); font-weight: 550; }
+.ar-meta { margin-top: var(--s-1); color: var(--ink-mid); font-size: var(--fs-small); line-height: 1.4; }
+.ar-meta-fn { font-weight: 650; }
+.ar-meta--when { display: flex; flex-wrap: wrap; align-items: center; column-gap: 0; min-height: var(--tap); margin-top: 0; }
+.ar-dotsep { white-space: pre; }
+.ar-due.is-none, .ar-src-text { color: var(--ink-2); }
+.ar-src { min-height: var(--tap); font-size: inherit; font-weight: 600; color: var(--ink); white-space: normal; text-align: left; }
+.ar-item-side { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--s-2) var(--s-3); }
+.ar-status .ar-label { margin-bottom: 2px; }
+.ar-item-tools { display: flex; gap: var(--s-1); }
+.ar-item-tools .btn { padding: 0 var(--s-3); }
+
+/* ---------- Forms (Add and Edit) ---------- */
+.ar-form {
+  margin-top: var(--s-4);
+  padding: var(--s-4);
+  border: 2px solid var(--rule-strong);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.ar-form[hidden] { display: none; }
+.ar-form--edit { margin-top: 0; }
+.ar-form-title { font-size: var(--fs-lead); font-weight: 700; line-height: 1.2; }
+.ar-fields { display: grid; gap: var(--s-4); margin-top: var(--s-3); }
+.ar-field { min-width: 0; }
+.ar-field .ar-pick { display: flex; }
+.ar-input, .ar-textarea {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--s-3);
+  border: 2px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--fs-body);
+}
+.ar-textarea { min-height: 6em; padding: var(--s-2) var(--s-3); line-height: 1.45; resize: vertical; }
+.ar-input:focus-visible, .ar-textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--ink); }
+.ar-input[aria-invalid="true"], .ar-textarea[aria-invalid="true"] { border-color: var(--error); }
+.ar-date { font-variant-numeric: tabular-nums; }
+.ar-date::-webkit-date-and-time-value { text-align: left; }
+.ar-hint { margin-top: var(--s-1); color: var(--ink-2); font-size: var(--fs-caption); }
+.ar-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35em;
+  margin-top: var(--s-1);
+  color: var(--error);
+  font-weight: 650;
+}
+.ar-error[hidden] { display: none; }
+.ar-error .glyph { width: 1.1em; height: 1.1em; flex: none; margin-top: 0.15em; }
+.ar-form-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-4); }
+
+/* ---------- Wider sheet (desktop, tablet) ---------- */
+@container (min-width: 540px) {
+  .ar-notes { grid-template-columns: 1fr 1fr; column-gap: var(--s-5); }
+  .ar-item { grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--s-5); align-items: start; }
+  .ar-item-side { flex-direction: column; align-items: flex-end; justify-content: flex-start; }
+  .ar-item-tools { margin-right: calc(-1 * var(--s-3)); }
+  .ar-fields { grid-template-columns: 1fr 1fr; column-gap: var(--s-4); }
+  .ar-field--wide { grid-column: 1 / -1; }
+}
+
+/* ---------- Phone ---------- */
+@media (max-width: 759px) {
+  .ar-body { padding: var(--s-3) var(--gutter) calc(var(--s-7) + 4.5rem); }
+  .ar-foot { padding: var(--s-2) var(--gutter) calc(var(--s-2) + env(safe-area-inset-bottom, 0px)); }
+}
+@container (max-width: 539px) {
+  .ar-add-btn { flex: 1 1 100%; }
+  .ar-filters { flex: 1 1 100%; flex-wrap: nowrap; }
+  .ar-filter--fn { flex: 1; }
+  .ar-filter--fn .ar-pick { display: flex; }
+  .ar-filter--fn .ar-pick select { min-width: 0; }
+  .ar-form { padding: var(--s-3); }
+  .ar-form-actions .btn { flex: 1; }
+  .ar-item-side { align-items: flex-end; }
+}

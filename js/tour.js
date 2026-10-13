@@ -4,12 +4,12 @@
 // view above it. Keyboard: focus moves into the card, ← → step, Esc skips, and
 // focus goes back where it was afterwards.
 
-import { pageHref } from './shell.js';
-import { esc } from './ui.js';
-import { getSettings, derive } from './customize.js';
-import { dayStatus, OFF } from './status.js';
+import { pageHref } from './shell.js?v=20261012-235706';
+import { esc } from './ui.js?v=20261012-235706';
+import { getSettings, derive } from './customize.js?v=20261012-235706';
+import { dayStatus, OFF } from './status.js?v=20261012-235706';
 
-const FLAG = { home: 'dor.tour.home.v1', dor: 'dor.tour.dor.v1' };
+const FLAG = { home: 'dor.tour.home.v1', dor: 'dor.tour.dor.v2' };
 export const ARRIVAL_KEY = 'dor.tour.arrival';
 const PAD = 6; // cut-out padding around the target
 const isPhone = () => matchMedia('(max-width: 599px)').matches;
@@ -32,44 +32,44 @@ function homeSteps(month, day) {
   return [
     {
       title: 'Welcome',
-      text: "This is your plant's Daily Operating Review. Each morning every department enters its numbers and the board works out what's on track. Here's a one-minute tour.",
+      text: "This is your plant's Daily Operating Review. Each morning every function enters its numbers and the board works out what's on track. Here's a one-minute tour.",
     },
-    { target: ['[data-home-summary]'], title: 'The one-line answer', text: "Start here. One line says how many departments hit their goal and which didn't." },
+    { target: ['[data-home-summary]'], title: 'The one-line answer', text: "Start here. One line says how many functions hit their goal and which didn't." },
     { target: ['.h-date'], title: 'Pick a day', text: 'Pick any production day and the whole dashboard follows.' },
     {
       target: ['.h-kpis'],
       title: 'Key numbers',
-      text: `Each card shows the result and its goal. Red means it missed. For things like scrap or injuries, above goal is a miss. ${act(true)} one for that department's detail.`,
+      text: `Each card shows the result and its goal. Red means it missed. For things like scrap or injuries, above goal is a miss. ${act(true)} one for that function's detail.`,
     },
     {
       target: ['.panel--matrix'],
-      title: 'Every department by area',
+      title: 'Every function by area',
       text: 'Green dot = on track. Red dot with ! = off goal. Gray ring = not entered yet.',
     },
     {
       target: ['.panel--issues'],
       title: 'Issues and actions',
-      text: "What went wrong and what's being done in the next 24 hours, with each problem's status.",
+      text: "What's keeping each function from its goal and what's being done in the next 24 hours, with each issue's status.",
     },
     {
       target: ['.h-actions [data-enter]', '.h-mobilebar [data-enter]'],
-      title: 'Update Daily',
-      text: `Owners ${act()} Update Daily, pick their name and type the numbers. It takes under two minutes on a phone and the board updates right away.`,
+      title: 'Enter numbers',
+      text: `Owners ${act()} Enter numbers, pick their name and type the numbers. It takes under two minutes on a phone and the board updates right away.`,
     },
     {
       target: ['.side [data-run-meeting]'],
       fallback: '.side-menu-btn',
       fallbackNote: 'On a phone it\'s in the menu, top right.',
-      title: 'Meeting mode',
-      text: 'Running the morning meeting? Meeting mode shows one department at a time on the TV. Arrow keys or a clicker move through it.',
+      title: 'Run meeting',
+      text: 'Running the morning meeting? Run meeting shows one function at a time on the TV. Arrow keys or a clicker move through it.',
     },
     {
       done: true,
       title: "That's it",
       text: 'Reopen this tour anytime from How it works.',
       note: 'In this preview, anything you enter saves on this device only.',
-      tryLabel: 'Try Update Daily',
-      link: { href: pageHref(month, day, { view: 'dor' }), text: 'See the classic board →', kind: 'dor' },
+      tryLabel: 'Try Enter numbers',
+      link: { href: pageHref(month, day, { view: 'dor' }), text: 'See the DOR board →', kind: 'dor' },
     },
   ];
 }
@@ -92,7 +92,67 @@ function tourRow(month, day) {
 /** The column names as the board shows them ("Fri, Feb 27" or "Yesterday"; "February so far"). */
 const headText = (sel, fallback) => document.querySelector(sel)?.textContent.trim() || fallback;
 
+/** The DOR board v2 tour (the client's layout): one row per KPI, grouped by function. */
+function boardV2Steps(month, day) {
+  const row = tourRow(month, day);
+  return [
+    {
+      title: 'Welcome',
+      text: 'This is your Daily Operating Review board: every function, its owner and its KPIs, in meeting order. Results and accountability on one screen.',
+    },
+    { target: ['[data-summary-lead]'], title: 'The summary', text: "One sentence says how many functions hit their goal, which ones didn't, and which misses still need an action." },
+    {
+      target: [`${row} .kpirow`, row],
+      title: 'One row per KPI',
+      text: `Each KPI shows its goal, the day's status and the month so far. Status is worked out from the number and its goal, never typed, so a miss can't show green. When the month is judged by a different measure, the month box names it. ${act(true)} any KPI for its detail, or pick another day from the date at the top.`,
+    },
+    {
+      target: [`${row} .v2cell--trend`, row],
+      title: 'Daily trend and year to date',
+      text: 'Every day this month against the daily goal, and every month this year against the monthly goal.',
+    },
+    {
+      target: [`${row} .v2cell--action`, row],
+      title: 'Issue and action',
+      text: "What's keeping the KPI from its goal, and what's being done in the next 24 hours. A KPI that's off goal with no action says Needs an action.",
+    },
+    {
+      target: ['.topbar [data-enter]', '.mobile-bar [data-enter]'],
+      title: 'Enter numbers',
+      text: `Owners ${act()} Enter numbers, pick their name and type the day's numbers. The board updates right away.`,
+    },
+    {
+      target: ['.topbar [data-run-meeting]'],
+      phoneNote: 'Run meeting is on the computer or TV view of this board.',
+      title: 'Run meeting',
+      text: 'One function at a time on the TV for the morning meeting. Record it, add actions as they come up, and the minutes are saved when it ends.',
+    },
+    {
+      target: ['.topbar [data-open-actions]'],
+      fallback: '[data-topbar-more]',
+      fallbackNote: "It's in the Menu, top right.",
+      title: 'Action register',
+      text: 'Every corrective action in one place, with its owner, due date and status, including the ones added during meetings.',
+    },
+    {
+      target: ['.summary [data-open-setup]'],
+      fallback: '[data-topbar-more]',
+      fallbackNote: "It's in the Menu, top right.",
+      title: 'Board setup',
+      text: 'Rename the plant, add or remove functions, change owners, and add KPIs with their goals and units. No developer needed.',
+    },
+    {
+      done: true,
+      title: 'Your turn',
+      text: 'Enter a number and watch the status change, or set the board up for your plant. Everything you try stays in this browser.',
+      tryLabel: 'Try Enter numbers',
+      setupLabel: 'Set up your plant',
+    },
+  ];
+}
+
 function dorSteps(month, day) {
+  if (document.documentElement.dataset.layout === 'v2') return boardV2Steps(month, day);
   const row = tourRow(month, day);
   const dayCol = headText('[data-head-day]', 'day');
   const monthCol = headText('[data-head-month]', 'month so far');
@@ -245,6 +305,7 @@ function cardMarkup(step, i, n, note) {
       <button class="btn btn--text tour-skip" type="button" ${last ? 'data-tour-close>Close' : 'data-tour-skip>Skip tour'}</button>
       <span class="tour-gap"></span>
       ${i > 0 ? '<button class="btn btn--quiet" type="button" data-tour-back>Back</button>' : ''}
+      ${last && step.setupLabel ? `<button class="btn btn--secondary" type="button" data-tour-setup>${esc(step.setupLabel)}</button>` : ''}
       ${last
     ? `<button class="btn btn--primary" type="button" data-tour-try>${esc(step.tryLabel)}</button>`
     : `<button class="btn btn--primary" type="button" data-tour-next>${i === 0 ? 'Start' : 'Next'}</button>`}
@@ -398,6 +459,11 @@ function onCardClick(e) {
   if (!tour) return;
   if (e.target.closest('[data-tour-skip]')) { endTour('skipped'); return; }
   if (e.target.closest('[data-tour-close]')) { endTour('done'); return; }
+  if (e.target.closest('[data-tour-setup]')) {
+    endTour('done');
+    document.querySelector('.summary [data-open-setup], [data-open-setup]')?.click();
+    return;
+  }
   if (e.target.closest('[data-tour-try]')) {
     const onTry = tour.onTry;
     endTour('done');

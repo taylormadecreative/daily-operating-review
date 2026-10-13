@@ -56,9 +56,11 @@ export function compareToGoal(actual, goal, better) {
  * Returns true, false, or null (unknown: callers treat unknown as scheduled).
  */
 export function isProductionDay(month, day) {
-  const ops = seriesRow(month.functions.find((f) => f.id === 'operations'), 'plant', day);
+  // Board setup can hide a function from the board; its plan still says which days run.
+  const find = (id) => month.functions.find((f) => f.id === id) ?? month.hiddenFunctions?.find((f) => f.id === id);
+  const ops = seriesRow(find('operations'), 'plant', day);
   if (ops && isNum(ops.goal)) return ops.goal > 0;
-  const plant = seriesRow(month.functions.find((f) => f.id === 'plant'), 'plant', day);
+  const plant = seriesRow(find('plant'), 'plant', day);
   if (plant && isNum(plant.goal)) return plant.goal > 0;
   return null;
 }
@@ -111,8 +113,9 @@ export function trackRecord(month, fn, day, areaId = 'plant') {
   const out = { met: 0, missed: 0, notEntered: 0, noGoal: 0, days: 0 };
   for (let d = 1; d <= day; d += 1) {
     if (isProductionDay(month, d) === false) continue;
-    out.days += 1;
     const row = seriesRow(fn, areaId, d);
+    if (row?.beforeStart) continue; // a KPI added in Board setup isn't judged before it existed
+    out.days += 1;
     const s = compareToGoal(row?.actual ?? null, row?.goal ?? null, fn.kpiDaily.better);
     if (s === ON) out.met += 1;
     else if (s === OFF) out.missed += 1;
@@ -139,10 +142,16 @@ export function boardSummary(month, day) {
     }
     return t;
   };
+  // A function with KPIs added in Board setup is off goal when any of its KPIs is.
+  const worst = (fn, judge) => {
+    const main = judge(fn);
+    if (main.status === OFF) return main;
+    return (fn.extraKpis ?? []).map(judge).find((k) => k.status === OFF) ?? main;
+  };
   return {
     productionDay: isProductionDay(month, day),
     monthStarted: lastProductionDay(month, day) !== null,
-    yesterday: tally((fn) => dayStatus(month, fn, day)),
-    month: tally((fn) => monthStatus(month, fn, day)),
+    yesterday: tally((fn) => worst(fn, (k) => dayStatus(month, k, day))),
+    month: tally((fn) => worst(fn, (k) => monthStatus(month, k, day))),
   };
 }

@@ -1,0 +1,256 @@
+/* Meeting recorder: the Add action form (on top of the meeting, in its dark
+   theme), the minutes sheet (light, the Detail sheet's shell from detail.css),
+   and the minutes printout. The record controls and captions live in
+   meeting.css with the rest of Meeting mode. */
+
+/* ---------- Add action ---------- */
+
+/* Lives inside #meeting, so it inherits the meeting theme and its em base. */
+.ma {
+  width: min(34em, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 10px;
+  background: var(--surface-quiet);
+  color: var(--ink);
+  font-size: max(16px, 0.72em);
+  overflow: auto;
+  opacity: 1;
+  transition: opacity 160ms var(--ease-out), overlay 160ms allow-discrete, display 160ms allow-discrete;
+}
+.ma:not([open]) { opacity: 0; transition-duration: 110ms; }
+@starting-style {
+  .ma[open] { opacity: 0; }
+}
+.ma::backdrop { background: rgb(1 20 37 / 0.72); }
+
+.ma-form { display: grid; gap: 1em; padding: 1.2em 1.4em 1.3em; }
+.ma-title { font-size: 1.4em; font-weight: 700; line-height: 1.15; }
+.ma-sub { margin-top: 0.3em; color: var(--ink-2); font-size: 0.9em; }
+.ma-field { display: grid; gap: 0.35em; min-width: 0; align-content: start; }
+.ma-label { font-weight: 650; }
+.ma-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.45em 0.6em;
+  border: 2px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1em;
+}
+.ma-textarea { min-height: 5.6em; line-height: 1.4; resize: vertical; }
+.ma-input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--ink); }
+.ma-input[aria-invalid="true"] { border-color: var(--off); }
+.ma-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 1em; }
+.ma-error, .ma-form-error { color: var(--off); font-size: 0.9em; font-weight: 650; }
+.ma-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.6em; }
+.ma .btn { min-height: 44px; font-size: 1em; }
+@media (max-width: 520px) {
+  .ma-form { padding: 1em; }
+  .ma-row { grid-template-columns: minmax(0, 1fr); }
+  .ma-actions .btn { flex: 1; }
+}
+
+/* ---------- Minutes sheet ---------- */
+
+.mn-title { font-size: 2.5rem; line-height: 0.92; }
+.mn-title-date { white-space: nowrap; }
+.mn-body { padding-top: var(--s-4); }
+.mn-back-row { margin-bottom: var(--s-3); }
+.mn-empty-text + .mn-back-row { margin-top: var(--s-4); }
+.mn-back { gap: var(--s-1); }
+
+.mn-meta { font-weight: 650; font-variant-numeric: tabular-nums; }
+.mn-honest { margin-top: var(--s-1); color: var(--ink-2); font-size: var(--fs-small); }
+.mn-tools { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-4); }
+.mn-section { padding-top: var(--s-6); }
+.mn-section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); }
+.mn-quiet { margin-top: var(--s-2); color: var(--ink-2); }
+
+.mn-summary {
+  margin-top: var(--s-2);
+  font-family: var(--font-display);
+  font-size: 2.125rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.005em;
+}
+.mn-summary-off { margin-top: var(--s-2); font-weight: 650; }
+
+/* By function: the board's order, a ledger of rules, no cards. */
+.mn-fns { margin-top: var(--s-3); border-top: 2px solid var(--rule-strong); }
+.mn-fn { padding: var(--s-4) 0 var(--s-5); }
+.mn-fn + .mn-fn { border-top: 1px solid var(--rule); }
+.mn-fn-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-1) var(--s-3); }
+.mn-fn-name {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: 0.012em;
+  text-transform: uppercase;
+}
+.mn-fn-num { font-family: var(--font-ui); font-size: var(--fs-small); font-weight: 650; letter-spacing: 0; color: var(--ink-2); }
+.mn-fn-owner { font-weight: 650; }
+
+.mn-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  margin-top: var(--s-3);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.mn-cell { min-width: 0; padding: var(--s-2) var(--s-3) var(--s-3) 0; }
+.mn-cell + .mn-cell { padding-left: var(--s-3); border-left: 1px solid var(--rule); }
+.mn-cell[data-status="off"] { padding-left: var(--s-3); background: var(--off-wash); }
+.mn-cell-label { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; }
+.mn-cell .status { margin-top: var(--s-1); font-size: var(--fs-body); }
+.mn-fig { margin-top: 2px; font-variant-numeric: tabular-nums; }
+.mn-fig-actual { font-size: 1.375rem; font-weight: 700; }
+.mn-fig--empty { color: var(--ink-2); }
+.mn-measure { margin-top: 2px; color: var(--ink-mid); font-size: var(--fs-caption); font-weight: 600; }
+.mn-note { font-weight: 400; }
+
+.mn-notes { display: grid; gap: var(--s-2); margin-top: var(--s-3); }
+.mn-notes dt { color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
+.mn-notes dd { margin: 2px 0 0; max-width: 62ch; white-space: pre-line; }
+.mn-notes dd.is-empty { color: var(--ink-2); }
+/* The actions assigned in this meeting, under the function's action. */
+.mn-notes dd.mn-assigned { white-space: normal; }
+.mn-alist { display: grid; gap: var(--s-1); }
+.mn-alist-text { display: block; font-weight: 600; }
+.mn-alist-meta { display: block; color: var(--ink-2); font-size: var(--fs-small); }
+
+.mn-extras { margin-top: var(--s-4); }
+.mn-extras-title { font-size: var(--fs-small); font-weight: 700; }
+.mn-extra { padding-top: var(--s-2); }
+.mn-extra-name { font-weight: 650; }
+.mn-pair--compact { margin-top: var(--s-1); }
+.mn-pair--compact .mn-fig-actual { font-size: 1.125rem; }
+
+/* Actions assigned in this meeting */
+.mn-actions { margin-top: var(--s-3); border-top: 1px solid var(--rule); }
+.mn-action { padding: var(--s-3) 0; border-bottom: 1px solid var(--rule); }
+.mn-action-text { font-weight: 600; white-space: pre-line; }
+.mn-action-meta { margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
+.mn-action-fn { color: var(--ink); font-weight: 650; }
+.mn-action-meta .ist { font-size: var(--fs-small); }
+.mn-action-status { color: var(--ink); font-weight: 650; }
+.mn-action-status.is-quiet { color: var(--ink-2); font-weight: 550; }
+
+/* Transcript, collapsed */
+.mn-transcript > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--tap);
+  cursor: pointer;
+  list-style: none;
+}
+.mn-transcript > summary::-webkit-details-marker { display: none; }
+.mn-transcript > summary::before {
+  content: "";
+  width: 0.5em;
+  height: 0.5em;
+  flex: none;
+  margin: 0 0.15em 0.15em 0.1em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 140ms var(--ease-out);
+}
+.mn-transcript[open] > summary::before { transform: rotate(45deg); }
+.mn-summary-title { display: inline; }
+.mn-count { color: var(--ink-2); font-size: var(--fs-small); font-weight: 600; }
+.mn-lines { margin-top: var(--s-2); }
+.mn-lines li {
+  display: grid;
+  grid-template-columns: 4em minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: var(--s-1) 0;
+  border-bottom: 1px solid var(--rule-quiet);
+}
+.mn-at { padding-top: 1px; color: var(--ink-2); font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
+
+/* The list of saved meetings */
+.mn-intro { color: var(--ink-2); font-size: var(--fs-small); }
+.mn-list { margin-top: var(--s-3); border-top: 2px solid var(--rule-strong); }
+.mn-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--s-3) var(--s-2) var(--s-3) 0;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mn-item-text { display: grid; gap: 4px; min-width: 0; }
+.mn-item-date {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.mn-item-meta { color: var(--ink-2); font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
+.mn-item-chevron { width: 20px; height: 20px; flex: none; color: var(--ink-2); }
+@media (hover: hover) and (pointer: fine) {
+  .mn-item:hover { background: var(--surface-quiet); }
+  .mn-item:hover .mn-item-chevron { color: var(--ink); }
+}
+
+.mn-empty { display: grid; justify-items: start; gap: var(--s-4); padding-top: var(--s-2); }
+.mn-empty-text { max-width: 34ch; font-size: var(--fs-lead); font-weight: 600; line-height: 1.35; }
+
+.mn-copy-area { position: fixed; top: 0; left: -9999px; opacity: 0; }
+
+@media (max-width: 759px) {
+  .mn-title { font-size: 1.875rem; }
+  .mn-title-sep { display: none; }
+  .mn-title-date { display: block; }
+  .mn-summary { font-size: 1.75rem; }
+}
+@media (max-width: 599px) {
+  /* Run meeting is a big-screen job; the board hides it on phones too. */
+  .mn-empty-run { display: none; }
+  .mn-tools .btn { flex: 1 1 auto; }
+}
+
+/* ---------- Print: only the minutes ---------- */
+
+.mn-print { display: none; }
+/* While printing, nothing on screen may linger in a transition (the sheet fades its display). */
+html.mn-printing .mn-sheet, html.mn-printing .mn-sheet::backdrop { transition: none !important; }
+@media print {
+  html.mn-printing body > :not(.mn-print):not(.sprite) { display: none !important; }
+  html.mn-printing, html.mn-printing body { background: #fff !important; }
+  html.mn-printing .mn-print { display: block; page: minutes; color: var(--ink); font-size: 10.5pt; }
+  @page minutes { size: portrait; margin: 14mm; }
+  .mn-print-kicker { color: var(--ink-2); font-size: 9.5pt; font-weight: 650; }
+  .mn-print-title {
+    margin: 2pt 0 6pt;
+    font-family: var(--font-display);
+    font-size: 26pt;
+    font-weight: 800;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .mn-print .mn-section { padding-top: 12pt; }
+  .mn-print .section-title { break-after: avoid; }
+  .mn-print .mn-fn, .mn-print .mn-action, .mn-print .mn-lines li { break-inside: avoid; }
+  .mn-print .mn-summary { font-size: 18pt; }
+  .mn-print .mn-cell[data-status="off"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

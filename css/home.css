@@ -124,6 +124,17 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 }
 .side-powered-text { font-size: 11.5px; font-weight: 650; }
 .side-badge { display: block; width: 74px; height: auto; }
+/* Short laptop screens: the full sidebar (pages, tools, functions) fits without
+   scrolling. Links stay 44px; only spacing, the subtitle and the badge panel tighten. */
+@media (min-width: 1280px) and (max-height: 1000px) {
+  .side { padding-top: 10px; }
+  .side-brand { padding-bottom: 10px; }
+  .side-brand-sub { font-size: 11px; white-space: nowrap; }
+  .side-group { margin-top: 6px; }
+  .side-bottom { gap: 4px; padding-top: 8px; }
+  .side-powered { grid-auto-flow: column; justify-content: center; align-items: center; gap: 10px; padding: 6px 8px; }
+  .side-powered .side-badge { width: 46px; }
+}
 
 /* ---------- Header ---------- */
 
@@ -286,7 +297,8 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 
 .h-kpis {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  /* One column per card: Board setup can hide a function, and its cards with it. */
+  grid-template-columns: repeat(var(--kpi-n, 8), minmax(0, 1fr));
   gap: 8px;
   margin-top: 8px;
 }
@@ -383,6 +395,9 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .mcell { text-align: center; }
 .mcell-in { display: inline-grid; place-items: center; width: 24px; height: 29px; vertical-align: middle; }
 .mx .mdot { width: 15px; height: 15px; }
+/* A function added in Board setup has a plant total only: one quiet line across the area columns. */
+.mx .mcell--untracked { color: var(--h-ink-2); font-size: 12px; font-style: normal; }
+.mcell-none { display: inline-block; line-height: 1.2; }
 .mx tbody th, .mx tbody td { height: 29px; }
 .mx .is-area { background: #eef4fb; }
 .mx .col-abbr, .mx .col-abbr-sr { display: none; }
@@ -462,6 +477,15 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .iss-bar--on { background: var(--h-green-dot); }
 .iss-bar--off { background: var(--h-red); }
 .iss .is-empty { color: var(--h-ink-2); }
+/* A function with several KPIs names each row's KPI under the function. */
+.iss-link--kpi { flex-direction: column; align-items: flex-start; justify-content: center; padding: 2px 0; }
+.iss-kpi { display: block; max-width: 11em; color: var(--h-ink-2); font-size: 11.5px; font-weight: 550; line-height: 1.25; white-space: normal; }
+/* Open actions from the Action register, when the note has no action of its own. */
+.iss-reg { display: grid; gap: 4px; padding: 2px 0; }
+.iss-reg-text { display: block; }
+.iss-reg-meta { display: block; color: var(--h-ink-2); font-size: 11.5px; }
+.iss-over { display: inline-flex; align-items: center; gap: 3px; color: var(--h-red); font-weight: 650; }
+.iss-over .mdot { width: 11px; height: 11px; }
 .iss-entered { margin-top: 2px; color: var(--h-ink-2); font-size: 11.5px; }
 .home-app .undo-link { margin-left: 4px; color: var(--h-blue); font-size: 11.5px; }
 /* Problem status on the dashboard (the base look is in components.css). */
@@ -491,6 +515,7 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 }
 .kbi-n { display: grid; place-items: center; width: 26px; height: 26px; flex: none; border-radius: 50%; background: #e7ecf3; font-size: 13px; font-weight: 700; }
 .kbi-question { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.3; }
+.kbi-question.is-empty { color: var(--h-ink-2); }
 .kbi-meta { display: grid; justify-items: end; flex: none; gap: 1px; text-align: right; }
 .kbi-dept { color: var(--h-ink-2); font-size: 11.75px; font-weight: 600; }
 .kbi-st { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 650; white-space: nowrap; }
@@ -642,7 +667,7 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   .kcard { min-height: 0; }
   .kc-value { font-size: 24px; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tiles > .tile:nth-child(-n+2) { grid-column: 1 / -1; }
+  .tiles > .tile--wide { grid-column: 1 / -1; }
   .tile .kc-value { white-space: normal; }
   .panel-aside { margin-left: 0; width: 100%; }
   .mx-legend { margin-left: 0; width: 100%; }

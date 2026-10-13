@@ -1,11 +1,11 @@
 // Export: download the selected day as CSV (built in the browser, no network),
 // or print / save as PDF with the print stylesheet in css/home.css.
 
-import { isoForDay, notesFor, AREA_IDS } from './store.js';
-import { dayStatus, monthStatus } from './status.js';
-import { plainLabel, formatDayLong } from './format.js';
-import { homeWord, areaName, oneLine, hasProblem } from './home.js';
-import { ISSUE_WORD } from './ui.js';
+import { isoForDay, notesFor, AREA_IDS, kpiRowsFor } from './store.js?v=20261012-235706';
+import { dayStatus, monthStatus } from './status.js?v=20261012-235706';
+import { plainLabel, formatDayLong } from './format.js?v=20261012-235706';
+import { homeWord, areaName, oneLine, hasProblem } from './home.js?v=20261012-235706';
+import { ISSUE_WORD } from './ui.js?v=20261012-235706';
 
 /** Plain numbers for spreadsheets: no thousands separators, at most two decimals, percents as "1.19%". */
 function csvNumber(v, unit) {
@@ -25,20 +25,22 @@ const cell = (v) => {
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-/** One row per department for the selected day. */
+/** One row per KPI for the selected day. */
 export function dayCsv(month, day) {
   const head = [
-    'Production day', 'Department', 'Owner',
+    'Production day', 'Function', 'Owner',
     'Daily measure', 'Plant total', 'Goal', 'Status',
     ...AREA_IDS.filter((a) => a !== 'plant').flatMap((a) => [areaName(a), `${areaName(a)} goal`]),
     'Monthly measure', 'Month so far', 'Month goal', 'Month status',
     'Problem', 'Next 24 hours', 'Problem status',
   ];
-  const rows = month.functions.map((fn) => {
+  // One row per KPI: each function's workbook KPI, then any added in Board setup.
+  const rows = month.functions.flatMap((f) => kpiRowsFor(f)).map((fn) => {
     const d = dayStatus(month, fn, day);
     const m = monthStatus(month, fn, day);
     const n = notesFor(fn, day);
     const areas = AREA_IDS.filter((a) => a !== 'plant').flatMap((a) => {
+      if (fn.custom) return ['', ''];
       const s = dayStatus(month, fn, day, a);
       return [
         typeof s.actual === 'number' ? csvNumber(s.actual, fn.kpiDaily.unit) : 'Not entered',

@@ -1,10 +1,10 @@
 // Dashboard shell: the navy sidebar (and its phone drawer), Settings and the
 // identity menu, the Export menu, the Area filter, and matrix cell tooltips.
 
-import { esc } from './ui.js';
-import { icon, DEPT_ICON } from './icons.js';
-import { isoForDay } from './store.js';
-import { getIdentity } from './identity.js';
+import { esc } from './ui.js?v=20261012-235706';
+import { icon, DEPT_ICON } from './icons.js?v=20261012-235706';
+import { isoForDay } from './store.js?v=20261012-235706';
+import { getIdentity } from './identity.js?v=20261012-235706';
 
 const narrow = () => matchMedia('(max-width: 760px)').matches;
 
@@ -16,7 +16,7 @@ let navView = 'home';
 export const setNavState = ({ area, view }) => { navArea = area ?? navArea; navView = view ?? navView; };
 
 /**
- * A link to a page or a department that keeps the current day and area:
+ * A link to a page or a function that keeps the current day and area:
  * "./?date=2026-02-27&area=mold" (+ "view=dor", + "#people").
  */
 export function pageHref(month, day, { view = navView, hash = '' } = {}) {
@@ -28,24 +28,41 @@ export function pageHref(month, day, { view = navView, hash = '' } = {}) {
 }
 
 /** Sidebar navigation. Rendered into the sidebar and into the phone drawer. */
-export function navMarkup(month, day, view) {
+export function navMarkup(month, day, view, where = 0) {
   const item = (cls, attrs, ic, label, current = false) => `
     <li><a class="side-link ${cls}" ${attrs} title="${esc(label)}"${current ? ' aria-current="page"' : ''}>${icon(ic)}<span class="side-text">${esc(label)}</span></a></li>`;
+  // Commands open a sheet over the page (app.js handles each data attribute on click).
+  const command = (attr, ic, label) => `
+    <li><button class="side-link" type="button" ${attr} title="${esc(label)}">${icon(ic)}<span class="side-text">${esc(label)}</span></button></li>`;
+  // Two sidebars share this markup (the sidebar and the phone drawer), so each gets its own label id.
+  const groupId = `side-group-label-${where}`;
   return `
     <ul class="side-list">
       ${item('', `href="${pageHref(month, day, { view: 'home' })}" data-nav="home"`, 'home', 'Home', view === 'home')}
       ${item('', `href="${pageHref(month, day, { view: 'dor' })}" data-nav="dor"`, 'board', 'DOR board', view === 'dor')}
-      <li><button class="side-link" type="button" data-run-meeting title="Meeting mode">${icon('presentation')}<span class="side-text">Meeting mode</span></button></li>
+      ${command('data-run-meeting', 'presentation', 'Run meeting')}
+      ${command('data-open-actions', 'clipboard', 'Action register')}
+      ${command('data-open-minutes', 'fileText', 'Meeting minutes')}
+      ${command('data-open-setup', 'layers', 'Board setup')}
     </ul>
-    <p class="side-group" id="side-group-label">Departments</p>
-    <ul class="side-list" aria-labelledby="side-group-label">
+    <p class="side-group" id="${groupId}">Functions</p>
+    <ul class="side-list" aria-labelledby="${groupId}">
       ${month.functions.map((fn) => item('side-link--dept', `href="${pageHref(month, day, { view, hash: fn.id })}" data-open-detail="${esc(fn.id)}"`, DEPT_ICON[fn.id] ?? 'building', fn.name)).join('')}
     </ul>`;
 }
 
+const navDrawn = new WeakMap(); // nav element -> the markup it shows
+
 export function renderNav(month, day, view) {
   setNavState({ view });
-  document.querySelectorAll('[data-side-nav]').forEach((n) => { n.innerHTML = navMarkup(month, day, view); });
+  // Redraw only what changed: a sheet opened from the sidebar (the Action register,
+  // Board setup) returns focus to its own button, so that button must stay the same element.
+  document.querySelectorAll('[data-side-nav]').forEach((n, i) => {
+    const html = navMarkup(month, day, view, i);
+    if (navDrawn.get(n) === html) return;
+    n.innerHTML = html;
+    navDrawn.set(n, html);
+  });
   // The DOR board's brand and its Home link go back to the dashboard on the same day and area.
   document.querySelectorAll('[data-nav-home]').forEach((a) => { a.href = pageHref(month, day, { view: 'home' }); });
 }
@@ -88,7 +105,7 @@ function settingsMarkup(month) {
     <p class="menu-title">Settings</p>
     <p class="menu-text">${who ? `Entering as <strong>${esc(who.name)}</strong> (${esc(month.functions.find((f) => f.id === who.functionId)?.name ?? '')})` : 'Nobody is entering on this device yet.'}</p>
     <button class="menu-item" type="button" data-switch-person>${icon('userSwitch')}<span>${who ? 'Switch person' : "Choose who's entering"}</span></button>
-    <button class="menu-item" type="button" data-reset>${icon('rotate')}<span>Reset demo data</span></button>`;
+    <button class="menu-item" type="button" data-reset>${icon('rotate')}<span>Start the demo over</span></button>`;
 }
 
 export function wireShell({ getMonth, onArea, onExport, onSwitchPerson }) {

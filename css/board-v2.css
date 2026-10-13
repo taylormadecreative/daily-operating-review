@@ -1,0 +1,520 @@
+/* DOR board v2 (the client's layout, 10/12): one group per function in meeting
+   order. Function and owner span the function's KPI rows; each KPI row has its
+   goal, the day's status and the month so far as solid status blocks, a daily
+   trend, the year by month, and Issue / Action. ?layout=classic keeps v1. */
+
+:root[data-layout="classic"] .v2-only,
+:root[data-layout="classic"] .board2,
+:root[data-layout="v2"] .board { display: none; }
+
+/* ---------- Date picker in the top bar (both layouts) ---------- */
+
+.date-pick { position: relative; display: flex; align-self: stretch; }
+.date-pick-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+.date-pick-btn .icon { width: 18px; height: 18px; flex: none; opacity: 0.85; }
+@media (hover: hover) and (pointer: fine) {
+  .date-pick-btn:hover { background: rgb(255 255 255 / 0.08); }
+}
+.date-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  border: 0;
+}
+@media (pointer: coarse) { .date-input { pointer-events: auto; opacity: 0.011; } }
+
+/* ---------- Grid ---------- */
+
+.board2 {
+  /* Minimums add up to 1,176px, so the full table fits a 1280 laptop (24px gutters). */
+  --c-fn: minmax(168px, 1.1fr);
+  --c-owner: minmax(88px, 0.5fr);
+  --c-kpi: minmax(120px, 0.8fr);
+  --c-status: minmax(136px, 0.8fr);
+  --c-mtd: minmax(136px, 0.8fr);
+  --c-trend: minmax(140px, 1.1fr);
+  --c-ytd: minmax(140px, 1.1fr);
+  --c-issue: minmax(124px, 1fr);
+  --c-action: minmax(124px, 1fr);
+  --v2-cols: var(--c-fn) var(--c-owner) var(--c-kpi) var(--c-status) var(--c-mtd) var(--c-trend) var(--c-ytd) var(--c-issue) var(--c-action);
+  --v2-kpi-cols: var(--c-kpi) var(--c-status) var(--c-mtd) var(--c-trend) var(--c-ytd) var(--c-issue) var(--c-action);
+  --gap: 2px;
+}
+
+.board2-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: var(--v2-cols);
+  gap: 0 var(--gap);
+  background: var(--bar-bg);
+  color: var(--bar-ink);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.h2c {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--s-2) var(--s-3);
+  text-align: center;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.h2c small { color: var(--bar-ink-2); font-size: var(--fs-caption); font-weight: 550; font-variant-numeric: tabular-nums; }
+.h2c--fn { text-align: left; padding-left: var(--s-4); }
+
+.rows2 { display: grid; gap: var(--gap); margin-top: var(--gap); }
+
+.fgroup {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--v2-cols);
+  grid-template-rows: repeat(var(--kpis, 1), auto);
+  gap: var(--gap);
+  scroll-margin-top: var(--s-6);
+}
+.fgroup + .fgroup { padding-top: var(--gap); border-top: 2px solid var(--rule-strong); }
+.v2cell--fn { grid-column: 1; grid-row: 1 / -1; }
+.v2cell--owner { grid-column: 2; grid-row: 1 / -1; }
+.kpirow {
+  grid-column: 3 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  gap: var(--gap);
+}
+
+.v2cell {
+  min-width: 0;
+  padding: var(--s-3);
+  background: var(--surface-quiet);
+}
+
+/* Each cell carries its own label for screen readers; it shows where the header row doesn't. */
+.v2-label {
+  margin-bottom: var(--s-1);
+  color: var(--ink-2);
+  font-size: var(--fs-caption);
+  font-weight: 650;
+}
+
+/* ---------- Function ---------- */
+
+.v2cell--fn {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+}
+.fn-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  margin-top: 2px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--surface);
+}
+.fn-icon .i { width: 20px; height: 20px; }
+.fn-text { min-width: 0; }
+.board2 .fn-name { font-size: 1.5rem; line-height: 0.92; }
+.board2 .fn-question { margin-top: var(--s-1); max-width: 30ch; font-size: var(--fs-caption); }
+/* The function name opens its Detail from anywhere in the function cell; each KPI
+   row opens that KPI's Detail from anywhere in the row. Charts, info and undo
+   buttons sit above those links so they keep working. */
+.v2cell--fn { position: relative; }
+.kpirow { position: relative; }
+.kpi-link { color: inherit; text-decoration-line: underline; text-decoration-color: var(--rule); text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+.kpi-link::after { content: ""; position: absolute; inset: 0; }
+.kpi-link:focus-visible { outline: none; }
+.kpirow { cursor: pointer; }
+.kpi-link::after { z-index: 1; }
+/* Above the row's link: hover on charts (a click on them opens Detail from app.js), info, undo, add. */
+.kpirow :is(.mini, .term-btn, .undo-link, .v2-pstatus, .v2-add, .v2-first) { position: relative; z-index: 2; }
+@media (hover: hover) and (pointer: fine) {
+  .v2cell--fn:hover { background: var(--n-100); }
+  .kpirow:hover .v2cell--kpi { background: var(--n-100); }
+  .kpirow:hover .kpi-link { text-decoration-color: currentColor; }
+}
+.v2cell--fn:has(.fn-link:focus-visible),
+.kpirow:has(.kpi-link:focus-visible) {
+  z-index: 2;
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.sheet-kpi { display: block; margin-top: var(--s-2); font-family: var(--font-ui); font-size: 1.125rem; font-weight: 650; letter-spacing: 0; line-height: 1.2; text-transform: none; }
+
+/* ---------- Owner ---------- */
+
+.v2cell--owner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: var(--s-4);
+  gap: var(--s-2);
+  text-align: center;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.avatar--initials {
+  background: var(--lx-steel-600);
+  color: var(--n-0);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.owner-name { font-size: var(--fs-caption); font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+
+/* ---------- KPI ---------- */
+
+.v2cell--kpi { display: flex; flex-direction: column; justify-content: flex-start; text-align: center; }
+.kpi-month { margin-top: var(--s-2); padding-top: var(--s-2); border-top: 1px solid var(--rule-quiet); color: var(--ink-mid); font-size: var(--fs-caption); line-height: 1.3; }
+.kpi-month span { color: var(--ink-2); font-weight: 650; }
+.kpi-name { font-size: var(--fs-small); font-weight: 700; line-height: 1.25; }
+.kpi-goal { margin-top: var(--s-1); color: var(--ink); font-size: var(--fs-small); font-weight: 550; font-variant-numeric: tabular-nums; }
+
+/* ---------- Status blocks (solid, as in the client's design) ---------- */
+
+.v2cell--block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: var(--s-3) var(--s-2);
+  text-align: center;
+  color: var(--ink-2);
+}
+.v2cell--block .v2-label { color: inherit; opacity: 0.9; }
+.block-status { justify-content: center; gap: 5px; font-size: 0.75rem; font-weight: 750; letter-spacing: 0.02em; line-height: 1.15; text-transform: uppercase; white-space: nowrap; }
+.block-status .glyph { width: 15px; height: 15px; flex: none; }
+.block-figure {
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 2.125rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.block-rest { margin-top: 2px; font-size: var(--fs-caption); font-weight: 600; font-variant-numeric: tabular-nums; }
+.block-measure { margin-top: 2px; font-size: 0.75rem; font-weight: 600; line-height: 1.25; text-wrap: balance; }
+
+.v2cell--block[data-status="on"] { background: var(--on); color: var(--n-0); }
+.v2cell--block[data-status="off"] { background: var(--off); color: var(--n-0); }
+.v2cell--block[data-status="on"] .status,
+.v2cell--block[data-status="off"] .status { color: inherit; }
+.v2cell--block[data-status="on"] .term-btn,
+.v2cell--block[data-status="off"] .term-btn { color: inherit; }
+.v2cell--block[data-status="on"] :focus-visible,
+.v2cell--block[data-status="off"] :focus-visible { outline-color: var(--n-0); }
+
+/* Customize: a softer look. Soft / Strong put the red as a wash (on-track words stay green);
+   "Just the words" drops the fills; "The whole row" washes the KPI row that's off for the day. */
+:root[data-cz-strength="soft"] .v2cell--block[data-status],
+:root[data-cz-strength="strong"] .v2cell--block[data-status],
+:root[data-cz-place="words"] .v2cell--block[data-status] { background: var(--surface-quiet); color: var(--ink); }
+:root[data-cz-strength="soft"] .v2cell--block[data-status="off"],
+:root[data-cz-strength="strong"] .v2cell--block[data-status="off"] { background: var(--off-wash); }
+:root[data-cz-place="words"] .v2cell--block[data-status="off"] { background: var(--surface-quiet); }
+:root[data-cz-strength="soft"] .v2cell--block .status--on,
+:root[data-cz-strength="strong"] .v2cell--block .status--on,
+:root[data-cz-place="words"] .v2cell--block .status--on { color: var(--on); }
+:root[data-cz-strength="soft"] .v2cell--block .status--off,
+:root[data-cz-strength="strong"] .v2cell--block .status--off,
+:root[data-cz-place="words"] .v2cell--block .status--off { color: var(--off); }
+:root[data-cz-place="row"] .kpirow:has(.v2cell--status[data-status="off"]) > .v2cell:not(.v2cell--block) { background: var(--off-wash); }
+:root[data-cz-question="off"] .board2 .fn-question { display: none; }
+/* Customize can hide the charts or Issue / Action: the columns and their headers go too. */
+:root[data-cz-trend="off"] .board2 :is(.v2cell--trend, .v2cell--ytd, .h2c--trend, .h2c--ytd),
+:root[data-cz-notes="off"] .board2 :is(.v2cell--issue, .v2cell--action, .h2c--issue, .h2c--action) { display: none; }
+:root[data-cz-trend="off"] .board2 {
+  --v2-cols: var(--c-fn) var(--c-owner) var(--c-kpi) var(--c-status) var(--c-mtd) var(--c-issue) var(--c-action);
+  --v2-kpi-cols: var(--c-kpi) var(--c-status) var(--c-mtd) var(--c-issue) var(--c-action);
+}
+:root[data-cz-notes="off"] .board2 {
+  --v2-cols: var(--c-fn) var(--c-owner) var(--c-kpi) var(--c-status) var(--c-mtd) var(--c-trend) var(--c-ytd);
+  --v2-kpi-cols: var(--c-kpi) var(--c-status) var(--c-mtd) var(--c-trend) var(--c-ytd);
+}
+:root[data-cz-trend="off"][data-cz-notes="off"] .board2 {
+  --v2-cols: var(--c-fn) var(--c-owner) var(--c-kpi) var(--c-status) var(--c-mtd);
+  --v2-kpi-cols: var(--c-kpi) var(--c-status) var(--c-mtd);
+}
+
+/* ---------- Charts ---------- */
+
+.v2cell--trend, .v2cell--ytd { padding: var(--s-2) var(--s-2) var(--s-1); background: var(--surface); }
+.board2 .mini { height: 88px; }
+.board2 .mini .chart-svg svg { overflow: visible; }
+.board2 .mini-caption { text-wrap: pretty; }
+.board2 .mini-caption { margin-top: 2px; color: var(--ink-2); font-size: 0.75rem; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.board2 .mini-empty { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.4; }
+.v2cell--fresh { display: flex; flex-direction: column; }
+.v2-first { position: relative; z-index: 3; min-height: var(--tap); padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+.board2 .chart-dot { stroke: none; }
+.board2 .chart-dot--on { fill: var(--on); }
+.board2 .chart-dot--off { fill: var(--chart-off); }
+.board2 .chart-dot--no-goal, .board2 .chart-dot--not-entered { fill: var(--neutral); }
+.board2 .chart-missing { stroke-width: 1.5; }
+.board2 .mini .chart-tip { font-size: var(--fs-caption); }
+
+/* ---------- Issue / Action ---------- */
+
+.v2cell--issue, .v2cell--action { background: var(--surface); }
+.v2-note {
+  font-size: var(--fs-small);
+  line-height: 1.35;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
+.v2-note.is-empty { color: var(--ink-2); }
+.v2cell--issue .v2-note:not(.is-empty) { font-weight: 600; }
+.v2-pstatus { font-size: var(--fs-caption); }
+.v2-pstatus .problem-status-label { font-size: var(--fs-caption); }
+.board2 .entered-by { font-size: 0.75rem; }
+
+/* ---------- Footer strip ---------- */
+
+.board2-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-5);
+  margin-top: var(--gap);
+  padding: var(--s-2) var(--s-4);
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--bar-bg);
+  color: var(--bar-ink);
+  font-size: var(--fs-caption);
+}
+.b2-brand { font-weight: 700; }
+.b2-tagline { color: var(--bar-ink-2); font-weight: 550; }
+.b2-key { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); list-style: none; padding: 0; margin: 0; }
+.b2-key li { display: inline-flex; align-items: center; gap: 6px; }
+.b2-key .glyph { width: 14px; height: 14px; }
+.b2-key-on { color: var(--lx-mint-400); }
+.b2-key-off { color: var(--lx-red-300); }
+.b2-key-na { color: var(--bar-ink-2); }
+.board2-foot .key--actual { border-top-color: var(--bar-ink); }
+.board2-foot .key--goal { margin-left: 0; border-top-color: var(--bar-ink-2); }
+.b2-updated { color: var(--bar-ink-2); }
+
+/* ---------- Wide: the header row names the columns ---------- */
+
+@media (min-width: 1240px) {
+  .board2 .v2-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
+/* ---------- Narrow laptop and tablet: the function and owner become a band over their KPI rows ---------- */
+
+@media (max-width: 1239px) {
+  .board2 {
+    --c-kpi: minmax(120px, 0.9fr);
+    --c-status: minmax(112px, 0.8fr);
+    --c-mtd: minmax(112px, 0.8fr);
+    --c-trend: minmax(140px, 1.15fr);
+    --c-ytd: minmax(140px, 1.15fr);
+    --c-issue: minmax(130px, 1fr);
+    --c-action: minmax(130px, 1.05fr);
+  }
+  .board2-head { display: none; }
+  .board2-foot { border-radius: var(--radius); }
+  .fgroup { grid-template-columns: var(--v2-kpi-cols); grid-template-rows: none; }
+  .v2cell--fn { grid-column: 1 / 4; grid-row: auto; align-items: center; }
+  .v2cell--owner { grid-column: 4 / -1; grid-row: auto; flex-direction: row; justify-content: flex-start; }
+  .avatar { width: 40px; height: 40px; }
+  .avatar--initials { font-size: 1.125rem; }
+  .owner-name { font-size: var(--fs-small); }
+  .kpirow { grid-column: 1 / -1; }
+  .board2 .v2-label { position: static; }
+  .v2cell--block .v2-label { font-size: 0.75rem; }
+}
+
+/* ---------- Tablet ---------- */
+
+@media (max-width: 1023px) {
+  .fgroup { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .v2cell--fn { grid-column: 1 / 5; }
+  .v2cell--owner { grid-column: 5 / -1; }
+  .kpirow {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-areas:
+      "kpi kpi status status mtd mtd"
+      "trend trend trend ytd ytd ytd"
+      "issue issue issue action action action";
+  }
+  .v2cell--kpi { grid-area: kpi; }
+  .v2cell--status { grid-area: status; }
+  .v2cell--mtd { grid-area: mtd; }
+  .v2cell--trend { grid-area: trend; }
+  .v2cell--ytd { grid-area: ytd; }
+  .v2cell--issue { grid-area: issue; }
+  .v2cell--action { grid-area: action; }
+}
+
+/* ---------- Phone ---------- */
+
+@media (max-width: 759px) {
+  .board2 { margin-inline: calc(var(--gutter) * -1 + 4px); }
+  .fgroup { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .v2cell--fn { grid-column: 1 / -1; }
+  .v2cell--owner { grid-column: 1 / -1; padding-top: var(--s-2); padding-bottom: var(--s-2); }
+  .kpirow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "kpi kpi"
+      "status mtd"
+      "trend trend"
+      "ytd ytd"
+      "issue issue"
+      "action action";
+  }
+  .v2cell--kpi { text-align: left; }
+  .board2 .fn-name { font-size: 2rem; }
+  .block-figure { font-size: 1.875rem; }
+  .b2-tagline { display: none; }
+}
+
+/* ---------- Top bar: Home as an icon (room for the Action register) ---------- */
+.topbar-home--icon { width: var(--tap); padding: 0; justify-content: center; }
+
+/* ---------- Issue and action: the action is accountable ---------- */
+
+.v2-assigned-list { display: grid; gap: var(--s-2); margin: var(--s-1) 0 0; padding: 0; list-style: none; }
+.v2-note + .v2-assigned-list { margin-top: var(--s-2); padding-top: var(--s-2); border-top: 1px solid var(--rule-quiet); }
+.v2-assigned { display: grid; gap: 2px; }
+.v2-assigned-text { font-size: var(--fs-small); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.v2-assigned-meta { color: var(--ink-2); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.v2-more { margin-top: var(--s-1); color: var(--ink-2); font-size: 0.75rem; }
+.v2-needs .status { font-size: var(--fs-small); font-weight: 750; }
+.v2cell--needs { background: var(--off-wash); }
+.v2-add { margin-top: var(--s-2); min-height: 36px; padding: 0 var(--s-3); font-size: var(--fs-small); }
+.v2-add.btn--text { min-height: var(--tap); padding: 0; }
+.board2 .entered-by { margin-top: var(--s-2); }
+.board2 .entered-by .nowrap { white-space: nowrap; }
+
+/* Notes under the summary */
+.board-notes { display: grid; gap: var(--s-1); margin-top: var(--s-2); }
+.board-notes:empty { display: none; }
+.board-note { color: var(--ink); font-size: var(--fs-small); line-height: 1.45; }
+.board-note a { color: inherit; font-weight: 650; text-underline-offset: 0.2em; }
+.board-note--needs .status { font-size: var(--fs-small); font-weight: 750; }
+
+/* Owner inside the function cell: only where the owner column folds away (phone). */
+.fn-owner-inline { display: none; }
+.avatar--sm { width: 28px; height: 28px; font-size: 0.875rem; }
+
+/* ---------- Top bar: one row on laptops; Customize and the register move into the Menu as it narrows ---------- */
+
+.brand-title { white-space: nowrap; }
+.topbar-home--icon { width: var(--tap); min-width: var(--tap); }
+@media (min-width: 760px) {
+  :root[data-layout="v2"] .topbar-more {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    min-height: var(--tap);
+    min-width: var(--tap);
+    padding: 0 var(--s-3);
+    border: 1px solid var(--bar-line);
+    border-radius: var(--radius);
+    background: none;
+    color: var(--bar-ink);
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  :root[data-layout="v2"] .topbar-more .icon { width: 18px; height: 18px; }
+  @media (hover: hover) and (pointer: fine) { :root[data-layout="v2"] .topbar-more:hover { background: rgb(255 255 255 / 0.08); } }
+}
+@media (max-width: 1599px) {
+  :root[data-layout="v2"] .topbar-customize,
+  :root[data-layout="v2"] .brand-title .v2-only { display: none; }
+}
+@media (max-width: 1439px) {
+  :root[data-layout="v2"] .topbar-actions { display: none; }
+  :root[data-layout="v2"] { --gutter: 1.5rem; }
+}
+@media (min-width: 1240px) and (max-width: 1339px) {
+  :root[data-layout="v2"] .topbar-inner { flex-wrap: nowrap; }
+  :root[data-layout="v2"] .brand { flex: 0 1 auto; }
+  :root[data-layout="v2"] :is(.topbar-home, .topbar-more, .datebar, .topbar .actions) { order: 0; }
+  :root[data-layout="v2"] .datebar { margin-left: auto; }
+  :root[data-layout="v2"] .topbar .actions { margin-left: 0; }
+}
+@media (min-width: 760px) and (max-width: 1239px) {
+  :root[data-layout="v2"] .brand { flex: 1 1 calc(100% - 140px); }
+  :root[data-layout="v2"] .topbar-more { order: 1; }
+}
+
+/* ---------- Phone: owner folds into the function; the KPI is one line ---------- */
+
+@media (max-width: 759px) {
+  .board2 .v2cell--owner { display: none; }
+  .board2 .fn-owner-inline { display: flex; align-items: center; gap: var(--s-2); margin-top: var(--s-2); font-size: var(--fs-small); font-weight: 650; }
+  .board2 .v2cell--kpi .v2-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .board2 .v2cell--kpi { padding-block: var(--s-2); }
+  .board2 .kpi-name { display: inline; }
+  .board2 .kpi-goal { display: inline; margin-left: var(--s-2); }
+  .board2 .kpi-goal::before { content: "· "; color: var(--ink-2); }
+}
+
+/* ---------- A TV (1080p): all eight functions on one screen ---------- */
+
+@media (min-width: 1800px) and (max-height: 1200px) {
+  :root[data-layout="v2"] .summary { padding-block: var(--s-2) var(--s-1); }
+  :root[data-layout="v2"] .summary-lead { font-size: 1.75rem; }
+  :root[data-layout="v2"] .board2 .v2cell { padding: 6px 10px; }
+  :root[data-layout="v2"] .board2 .mini { height: 60px; }
+  :root[data-layout="v2"] .board2 .mini-caption { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  :root[data-layout="v2"] .board2 .fn-question { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  :root[data-layout="v2"] .board2 .v2-note { -webkit-line-clamp: 3; line-clamp: 3; }
+  :root[data-layout="v2"] .board2 .avatar { width: 44px; height: 44px; font-size: 1.25rem; }
+  :root[data-layout="v2"] .board2 .v2cell--owner { padding-top: var(--s-2); }
+  :root[data-layout="v2"] .block-status { font-size: 0.875rem; }
+  :root[data-layout="v2"] .block-figure { font-size: 2.375rem; }
+  :root[data-layout="v2"] .block-measure { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  :root[data-layout="v2"] .board-foot { display: none; }
+}
+
+/* Detail's day and month cards match the board's solid blocks (unless Customize asks for a wash or words). */
+:root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .sheet .kpi:is([data-status="on"], [data-status="off"]) {
+  padding-left: var(--s-4);
+  color: var(--n-0);
+}
+:root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .sheet .kpi[data-status="on"] { background: var(--on); }
+:root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .sheet .kpi[data-status="off"] { background: var(--off); }
+:root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .sheet .kpi:is([data-status="on"], [data-status="off"]) :is(.kpi-label, .kpi-measure, .status, .kpi-figure, .kpi-num, .kpi-rest, .term-btn, .measure) { color: inherit; }
+:root[data-layout="v2"]:not([data-cz-strength="soft"]):not([data-cz-strength="strong"]):not([data-cz-place="words"]) .sheet .kpi:is([data-status="on"], [data-status="off"]) :focus-visible { outline-color: var(--n-0); }

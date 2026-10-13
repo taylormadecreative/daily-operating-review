@@ -4,19 +4,23 @@
 // plain-word errors, Enter moves to the next box, only Save saves, and a
 // warning only when something would be lost.
 
-import { AREA_IDS, saveEntry, notesFor } from './store.js';
-import { getIdentity, setIdentity } from './identity.js';
-import { compareToGoal, isProductionDay, ON, NOT_ENTERED, NO_PRODUCTION } from './status.js';
+import { AREA_IDS, saveEntry, notesFor } from './store.js?v=20261012-235706';
+import { getIdentity, setIdentity } from './identity.js?v=20261012-235706';
+import { compareToGoal, isProductionDay, ON, NOT_ENTERED, NO_PRODUCTION } from './status.js?v=20261012-235706';
 import {
   toInputValue, parseInput, formatGoal, plainLabel, formatDayMedium, formatDayLong, monthSoFar, isPercent,
   glossaryTerm,
-} from './format.js';
-import { esc, statusMarkup, termButton } from './ui.js';
-import { statusWord } from './status.js';
+} from './format.js?v=20261012-235706';
+import { esc, statusMarkup, termButton } from './ui.js?v=20261012-235706';
+import { statusWord } from './status.js?v=20261012-235706';
 
 const AREA_NAME = { plant: 'Plant total', mold: 'Mold', bond: 'Bond', prime: 'Prime', compounding: 'Compounding' };
 const AREA_KEYS = ['mold', 'bond', 'prime', 'compounding'];
 const NUMBER_KEYS = ['plant', ...AREA_KEYS, 'month'];
+// KPIs added in Board setup get keys like "x-nearmiss"; a function added there has one number a day.
+const extraKey = (k) => `x-${k.kpiId}`;
+const extraOf = (fn, key) => (String(key).startsWith('x-') ? (fn.extraKpis ?? []).find((k) => extraKey(k) === key) ?? null : null);
+const numberKeys = (fn) => [...(fn.custom ? ['plant'] : NUMBER_KEYS), ...(fn.extraKpis ?? []).map(extraKey)];
 
 let dlg;
 let handlers;
@@ -54,11 +58,21 @@ export function openEnter(m, { fnId = null, day, mode = 'enter', focus = null })
   focusLanding();
 }
 
-/** The title, or the status control when the form was opened from "Set status". */
+/** The title, the status control ("Set status"), or one KPI's box (a KPI added in Board setup). */
 function focusLanding() {
+  if (st?.step === 'form' && String(st.focus ?? '').startsWith('kpi:')) {
+    const input = dlg.querySelector(`#e-x-${CSS.escape(st.focus.slice(4))}`);
+    if (input) {
+      requestAnimationFrame(() => {
+        input.scrollIntoView({ block: 'center' });
+        input.focus({ preventScroll: true });
+      });
+      return;
+    }
+  }
   if (st?.step === 'form' && st.focus === 'status') {
     requestAnimationFrame(() => {
-      const set = dlg.querySelector('.field--status');
+      const set = dlg.querySelector('.field--status:not(.field--xstatus)');
       const radio = set?.querySelector('input:checked') ?? set?.querySelector('input:not(:disabled)');
       if (!radio) { focusTitle(); return; }
       set.scrollIntoView({ block: 'center' });
@@ -115,7 +129,7 @@ function renderWho() {
 /* ---------- Step 2: the form ---------- */
 
 function fnObj() { return month.functions.find((f) => f.id === st.fnId); }
-const kpiFor = (fn, key) => (key === 'month' ? fn.kpiMonthly : fn.kpiDaily);
+const kpiFor = (fn, key) => extraOf(fn, key)?.kpiDaily ?? (key === 'month' ? fn.kpiMonthly : fn.kpiDaily);
 
 /** Current stored values for the function on the form's day, as input text. */
 function storedValues(fn, day) {
@@ -130,10 +144,20 @@ function storedValues(fn, day) {
   out.issue = n.problem ?? '';
   out.action = n.action ?? '';
   out.issueStatus = n.status ?? '';
+  for (const k of fn.extraKpis ?? []) {
+    const row = k.daily.plant.find((r) => r.day === day);
+    out[extraKey(k)] = toInputValue(row?.actual, k.kpiDaily);
+    const xn = notesFor(k, day);
+    out[`xi-${k.kpiId}`] = xn.problem ?? '';
+    out[`xa-${k.kpiId}`] = xn.action ?? '';
+    out[`xs-${k.kpiId}`] = xn.status ?? '';
+  }
   return out;
 }
 
 function goalOf(fn, key, day) {
+  const x = extraOf(fn, key);
+  if (x) return { goal: x.daily.plant.find((r) => r.day === day)?.goal ?? null, note: null };
   if (key === 'month') {
     const r = (fn.monthToDate ?? []).find((x) => x.day === day);
     return { goal: r?.goal ?? null, note: null };
@@ -199,11 +223,11 @@ function renderForm() {
         <p class="enter-sub">Numbers already on the board are filled in. Change any that are wrong. Goals come from the plant's plan. Leave a box empty if you don't have the number yet.</p>
 
         <fieldset class="group group--primary">
-          <legend><span class="group-name">Plant total</span> <span class="group-note">This number sets the status on the board.</span></legend>
+          <legend><span class="group-name">${fn.custom ? "The day's number" : 'Plant total'}</span> <span class="group-note">This number sets the status on the board.${fn.custom ? ' The month adds up by itself.' : ''}</span></legend>
           ${fieldMarkup(fn, 'plant', plainLabel(fn.kpiDaily), true)}
         </fieldset>
 
-        <details class="group group--areas" data-areas>
+        ${fn.custom ? '' : `<details class="group group--areas" data-areas>
           <summary><span class="group-name">By area</span> <span class="group-note">Optional: Mold, Bond, Prime, Compounding</span></summary>
           <div class="area-grid">
             ${AREA_KEYS.map((a) => fieldMarkup(fn, a, AREA_NAME[a], false)).join('')}
@@ -213,9 +237,35 @@ function renderForm() {
         <fieldset class="group">
           <legend><span class="group-name" data-month-legend></span></legend>
           ${fieldMarkup(fn, 'month', plainLabel(fn.kpiMonthly), false)}
-        </fieldset>
+        </fieldset>`}
+
+
+        ${(fn.extraKpis ?? []).length ? `<fieldset class="group group--extra">
+          <legend><span class="group-name">More ${esc(fn.name)} KPIs</span> <span class="group-note">Each has its own status on the board. The month adds up by itself.</span></legend>
+          ${fn.extraKpis.map((k) => `${fieldMarkup(fn, extraKey(k), plainLabel(k.kpiDaily), false)}
+          <details class="extra-notes">
+            <summary>Issue and action for ${esc(plainLabel(k.kpiDaily))}</summary>
+            <div class="field field--text">
+              <label class="field-label" for="e-xi-${esc(k.kpiId)}">What problem needs solving?</label>
+              <textarea class="field-textarea" id="e-xi-${esc(k.kpiId)}" name="xi-${esc(k.kpiId)}" rows="2"></textarea>
+            </div>
+            <fieldset class="field field--status field--xstatus">
+              <legend class="field-label">Where is this problem?</legend>
+              <div class="segmented">
+                <label><input type="radio" name="xs-${esc(k.kpiId)}" value="open"><span>Open</span></label>
+                <label><input type="radio" name="xs-${esc(k.kpiId)}" value="in-progress"><span>In progress</span></label>
+                <label><input type="radio" name="xs-${esc(k.kpiId)}" value="closed"><span>Closed</span></label>
+              </div>
+            </fieldset>
+            <div class="field field--text">
+              <label class="field-label" for="e-xa-${esc(k.kpiId)}">What are we doing in the next 24 hours?</label>
+              <textarea class="field-textarea" id="e-xa-${esc(k.kpiId)}" name="xa-${esc(k.kpiId)}" rows="2"></textarea>
+            </div>
+          </details>`).join('')}
+        </fieldset>` : ''}
 
         <div class="group group--text">
+          ${(fn.extraKpis ?? []).length ? `<p class="group-name group-name--text">Issue and action for ${esc(plainLabel(fn.kpiDaily))}</p>` : ''}
           <div class="field field--text">
             <label class="field-label" for="e-issue">What problem needs solving?</label>
             <textarea class="field-textarea" id="e-issue" name="issue" rows="3"></textarea>
@@ -234,6 +284,7 @@ function renderForm() {
             <textarea class="field-textarea" id="e-action" name="action" rows="3"></textarea>
           </div>
         </div>
+
       </div>
 
       <div class="enter-bar">
@@ -262,8 +313,8 @@ function renderForm() {
 
 function fillValues(values) {
   for (const [k, v] of Object.entries(values)) {
-    if (k === 'issueStatus') {
-      dlg.querySelectorAll('[name="issueStatus"]').forEach((r) => { r.checked = r.value === v; });
+    if (k === 'issueStatus' || k.startsWith('xs-')) {
+      dlg.querySelectorAll(`[name="${CSS.escape(k)}"]`).forEach((r) => { r.checked = r.value === v; });
       continue;
     }
     const el = dlg.querySelector(`[name="${k}"]`);
@@ -272,6 +323,9 @@ function fillValues(values) {
   // Areas stay folded unless there is already something in them.
   const areas = dlg.querySelector('[data-areas]');
   if (areas && AREA_KEYS.some((k) => String(values[k] ?? '').trim())) areas.open = true;
+  dlg.querySelectorAll('.extra-notes').forEach((d) => {
+    if ([...d.querySelectorAll('textarea')].some((t) => t.value.trim())) d.open = true;
+  });
   syncStatusControl();
 }
 
@@ -281,7 +335,7 @@ function fillValues(values) {
  * and clears if the problem is erased, so nothing is ever saved silently dropped.
  */
 function syncStatusControl() {
-  const set = dlg.querySelector('.field--status');
+  const set = dlg.querySelector('.field--status:not(.field--xstatus)');
   if (!set) return;
   const has = Boolean(dlg.querySelector('#e-issue')?.value.trim());
   set.disabled = !has;
@@ -294,6 +348,7 @@ function currentValues() {
   const out = {};
   dlg.querySelectorAll('.field-input, .field-textarea').forEach((el) => { out[el.name] = el.value; });
   out.issueStatus = dlg.querySelector('[name="issueStatus"]:checked')?.value ?? '';
+  dlg.querySelectorAll('.field--xstatus input:checked').forEach((r) => { out[r.name] = r.value; });
   return out;
 }
 
@@ -303,8 +358,9 @@ export const isDirty = () => Boolean(st && st.step === 'form' && st.initial !== 
 function updateDayDependent() {
   const fn = fnObj();
   dlg.querySelector('[data-form-title]').textContent = `${fn.name} numbers for ${formatDayMedium(month, st.day).replace(/ /g, ' ')}`;
-  dlg.querySelector('[data-month-legend]').textContent = `${monthSoFar(month)}, through ${formatDayMedium(month, st.day)}`;
-  for (const key of NUMBER_KEYS) {
+  const legend = dlg.querySelector('[data-month-legend]');
+  if (legend) legend.textContent = `${monthSoFar(month)}, through ${formatDayMedium(month, st.day)}`;
+  for (const key of numberKeys(fn)) {
     const { goal, note } = goalOf(fn, key, st.day);
     dlg.querySelector(`#e-${key}-goal`).textContent = formatGoal(goal, kpiFor(fn, key), note);
     updatePreview(key);
@@ -365,7 +421,7 @@ function updatePreview(key, { showError = false } = {}) {
 /* ---------- Events ---------- */
 
 function visibleNumberInputs() {
-  return NUMBER_KEYS
+  return numberKeys(fnObj())
     .map((k) => dlg.querySelector(`#e-${k}`))
     .filter((el) => el && !el.closest('details:not([open])'));
 }
@@ -408,7 +464,8 @@ function onInput(e) {
   const word = res.status ? statusWord(res.status, kpiFor(fnObj(), el.name)) : '';
   announceTimer = setTimeout(() => {
     const live = dlg.querySelector('[data-announce]');
-    if (live && !res.error && word) live.textContent = `${el.name === 'month' ? 'Month' : AREA_NAME[el.name]}: ${word}${res.suggest ? `. Did you mean ${res.suggest}%?` : ''}`;
+    const name = el.name === 'month' ? 'Month' : AREA_NAME[el.name] ?? plainLabel(kpiFor(fnObj(), el.name));
+    if (live && !res.error && word) live.textContent = `${name}: ${word}${res.suggest ? `. Did you mean ${res.suggest}%?` : ''}`;
   }, 700);
 }
 
@@ -499,7 +556,7 @@ function save() {
   const who = getIdentity(month);
   const values = {};
   let firstBad = null;
-  for (const key of NUMBER_KEYS) {
+  for (const key of numberKeys(fn)) {
     const kpi = kpiFor(fn, key);
     const res = updatePreview(key, { showError: true });
     const parsed = parseInput(dlg.querySelector(`#e-${key}`).value, kpi, goalOf(fn, key, st.day).goal);
@@ -524,6 +581,18 @@ function save() {
   };
   const monthValue = values.month;
   delete values.month;
+  // KPIs added in Board setup: their numbers and their own issue and action.
+  const extra = {};
+  const extraNotes = {};
+  for (const k of fn.extraKpis ?? []) {
+    extra[k.kpiId] = values[extraKey(k)] ?? null;
+    delete values[extraKey(k)];
+    const xi = text(`xi-${k.kpiId}`);
+    const xa = text(`xa-${k.kpiId}`);
+    const xs = dlg.querySelector(`[name="xs-${CSS.escape(k.kpiId)}"]:checked`)?.value ?? null;
+    // A problem with no status picked starts as Open; no problem, no status.
+    if (xi || xa) extraNotes[k.kpiId] = { issue: xi, action: xa, status: xi ? (xs ?? 'open') : null };
+  }
   const issue = text('issue');
   // Did the problem, its next step or its status change? Then the dashboard
   // shows the issue row after saving; otherwise the department's matrix row.
@@ -534,7 +603,8 @@ function save() {
     functionId: fn.id,
     day: st.day,
     values,
-    month: monthValue,
+    ...(fn.custom ? {} : { month: monthValue }),
+    ...(Object.keys(extra).length ? { extra, extraNotes } : {}),
     issue,
     action: text('action'),
     issueStatus: issue ? (dlg.querySelector('[name="issueStatus"]:checked')?.value ?? null) : null,

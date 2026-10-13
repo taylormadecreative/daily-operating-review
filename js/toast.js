@@ -4,15 +4,30 @@
 let region;
 let current = null;
 
+// Modal dialogs stack in the order they're shown; a toast belongs in the one on top.
+const shownAt = new WeakMap();
+let shownSeq = 0;
+
 export function initToast() {
   region = document.querySelector('[data-toasts]');
+  const showModal = HTMLDialogElement.prototype.showModal;
+  HTMLDialogElement.prototype.showModal = function showModalTracked(...args) {
+    shownAt.set(this, ++shownSeq);
+    return showModal.apply(this, args);
+  };
+}
+
+function topDialog() {
+  const open = [...document.querySelectorAll('dialog[open]')];
+  open.sort((a, b) => (shownAt.get(a) ?? 0) - (shownAt.get(b) ?? 0));
+  return open.pop() ?? null;
 }
 
 export function toast(message, { actionLabel, onAction, duration = 10000 } = {}) {
   dismiss(true);
   // Over an open modal (the Customize sheet) the page is inert, so the toast
   // lives in that dialog, where its Undo can be pressed; otherwise in the page.
-  const host = [...document.querySelectorAll('dialog[open]')].pop() ?? document.body;
+  const host = topDialog() ?? document.body;
   if (region.parentElement !== host) {
     host.append(region);
     // When that dialog closes, the message stays on screen in the page.

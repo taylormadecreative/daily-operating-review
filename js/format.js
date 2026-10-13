@@ -122,7 +122,8 @@ export function formatTick(v, unit, decimals) {
 /** Labels for a set of ticks. Percent ticks share one precision ("0.9%, 1.0%, 1.1%"). */
 export function formatTicks(ticks, unit) {
   if (unit !== 'fraction') return ticks.map((v) => formatTick(v, unit));
-  const d = Math.max(0, ...ticks.map((v) => decimalsNeeded(v * 100, 1)));
+  // Up to two decimals, so close ticks never print the same label (1.05% vs 1.1%).
+  const d = Math.max(0, ...ticks.map((v) => decimalsNeeded(v * 100, 2)));
   return ticks.map((v) => formatTick(v, unit, d));
 }
 

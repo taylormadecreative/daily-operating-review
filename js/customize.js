@@ -10,11 +10,13 @@
 
 import {
   readableShade, contrast, mix, cvdDelta, normalDelta, CVD_TARGET, CVD_FLOOR, NEAR_IDENTICAL, isHex, luminance,
-} from './color.js';
-import { esc } from './ui.js';
-import { toast } from './toast.js';
+} from './color.js?v=20261012-235706';
+import { esc } from './ui.js?v=20261012-235706';
+import { toast } from './toast.js?v=20261012-235706';
 
-const KEY = 'dor.customize.v1';
+const KEY = 'dor.customize.v2';
+// v1 settings carry over, except strength: v2's default is the client's solid blocks.
+const OLD_KEY = 'dor.customize.v1';
 
 // Board grounds (tokens.css): the page, the quiet surface, and the light chart
 // tooltip in Meeting. Dark grounds: Meeting's page and raised surface.
@@ -38,13 +40,13 @@ export const HEADER_COLORS = [
   { id: 'black', name: 'Black', hex: '#121417' },
   { id: 'steel', name: 'Steel blue', hex: '#3b5a7e' },
 ];
-const WASH = { soft: 0.075, strong: 0.17 }; // share of the off-goal color in the tint
+const WASH = { soft: 0.075, strong: 0.17, solid: 0.17 }; // share of the off-goal color in the tint
 
 // Custom colors start unset, so a Custom tile never looks like a preset.
 export const DEFAULTS = Object.freeze({
   off: 'red', offCustom: null,
   on: 'green', onCustom: null,
-  place: 'cell', strength: 'soft',
+  place: 'cell', strength: 'solid',
   header: 'navy', headerCustom: null,
   trend: true, notes: true, question: true,
   size: 'standard',
@@ -56,7 +58,11 @@ let settings = load();
 
 function load() {
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+    let raw = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+    if (!raw) {
+      raw = JSON.parse(localStorage.getItem(OLD_KEY) ?? 'null');
+      if (raw && typeof raw === 'object') delete raw.strength;
+    }
     if (!raw || typeof raw !== 'object') return { ...DEFAULTS };
     const s = { ...DEFAULTS, ...raw };
     // Anything malformed falls back to its default, field by field.
@@ -65,7 +71,7 @@ function load() {
     if (!ON_COLORS.some((c) => c.id === s.on) && !(s.on === 'custom' && s.onCustom)) s.on = DEFAULTS.on;
     if (!HEADER_COLORS.some((c) => c.id === s.header) && !(s.header === 'custom' && s.headerCustom)) s.header = DEFAULTS.header;
     if (!['cell', 'row', 'words'].includes(s.place)) s.place = DEFAULTS.place;
-    if (!['soft', 'strong'].includes(s.strength)) s.strength = DEFAULTS.strength;
+    if (!['solid', 'soft', 'strong'].includes(s.strength)) s.strength = DEFAULTS.strength;
     if (!['standard', 'large'].includes(s.size)) s.size = DEFAULTS.size;
     for (const k of ['trend', 'notes', 'question']) s[k] = s[k] !== false;
     return s;
@@ -244,7 +250,8 @@ function sheetMarkup() {
           <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-close"></use></svg>
         </button>
       </header>
-      <p class="cz-lead">Changes show on the board right away and stay on this device.</p>
+      <p class="cz-lead">Colors and what the board shows. Changes show right away and stay on this device.</p>
+      <p class="cz-setup">To change the plant name, functions, owners or KPIs, use <button class="btn--text cz-setup-link" type="button" data-open-setup>Board setup</button>.</p>
       <div class="cz-preview" role="img" data-cz-preview>
         <p class="cz-preview-label" aria-hidden="true">Preview</p>
         <div class="cz-mini-row" aria-hidden="true">
@@ -267,12 +274,13 @@ function sheetMarkup() {
           <legend class="cz-legend" data-cz-place-legend>Where the red shows</legend>
           <div class="cz-options cz-options--stack">
             ${placeOption('cell', 'The cell', 'Only the day or month box that missed. (default)')}
-            ${placeOption('row', 'The whole row', "The department's whole row when its day is off goal.")}
+            ${placeOption('row', 'The whole row', "The KPI's whole row when its day is off goal.")}
             ${placeOption('words', 'Just the words', 'No tint. Only the word and its dot take the color.')}
           </div>
           <fieldset class="cz-sub" data-cz-strength-set>
             <legend class="cz-sublegend">Strength</legend>
             <div class="segmented">
+              <label><input type="radio" name="cz-strength" value="solid"><span>Solid</span></label>
               <label><input type="radio" name="cz-strength" value="soft"><span>Soft</span></label>
               <label><input type="radio" name="cz-strength" value="strong"><span>Strong</span></label>
             </div>
@@ -309,9 +317,9 @@ function sheetMarkup() {
 
         <fieldset class="cz-group">
           <legend class="cz-legend">Show</legend>
-          <label class="cz-toggle"><input type="checkbox" name="cz-trend"><span>Trend, day by day</span></label>
-          <label class="cz-toggle"><input type="checkbox" name="cz-notes"><span>Problem → Next 24 hours</span></label>
-          <label class="cz-toggle"><input type="checkbox" name="cz-question"><span>The daily question under each department</span></label>
+          <label class="cz-toggle"><input type="checkbox" name="cz-trend"><span>Daily trend and year to date</span></label>
+          <label class="cz-toggle"><input type="checkbox" name="cz-notes"><span>Issue and action</span></label>
+          <label class="cz-toggle"><input type="checkbox" name="cz-question"><span>The daily question under each function</span></label>
         </fieldset>
       </form>
       <footer class="cz-foot">

@@ -1,5 +1,5 @@
 /* Meeting mode (TV). Everything is sized in em of one base that tracks the
-   screen: 30px at 1920x1080, 20px at 1280x720. Problem text = 1em (30px). */
+   screen: 30px at 1920x1080, 20px at 1280x720. Issue text = 1em (30px). */
 
 .meeting {
   position: fixed;
@@ -7,6 +7,7 @@
   z-index: 100;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr); /* never wider than the screen */
   gap: 0.6em;
   padding: 0.7em 1.6em 0.6em;
   font-size: min(calc(100vh / 36), calc(100vw / 64));
@@ -16,6 +17,17 @@
 }
 .meeting[hidden] { display: none; }
 html.is-meeting, html.is-meeting body { overflow: hidden; }
+
+/* Status reads from 15 ft: on track and off goal are solid fills, like the
+   board's (its own shades, so Customize carries over), with light text
+   (#E8EEF4: 5.7:1 on the red, 5.1:1 on the green), and still word + glyph.
+   Met-goal bars step back to steel so the misses lead the chart. */
+.meeting[data-theme="meeting"] {
+  --m-fill-on: var(--cz-on, var(--lx-mint-700));
+  --m-fill-off: var(--cz-off, var(--lx-red-700));
+  --m-fill-ink: var(--d-text);
+  --chart-bar: #6f8fb0;
+}
 
 .meeting .btn { font-size: max(0.6em, 15px); min-height: max(1.6em, 44px); }
 .meeting .btn .icon { width: 1.1em; height: 1.1em; }
@@ -30,9 +42,12 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
 .kbd { margin-left: 0.4em; padding: 0.05em 0.35em; border: 1px solid var(--rule-strong); border-radius: 3px; font-size: max(0.8em, 11px); color: var(--ink-2); }
 
 .meeting-stage { min-height: 0; }
+/* The slide, then live captions under it while recording. */
+.meeting-body { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; }
 
 .meeting-controls { display: flex; align-items: center; justify-content: space-between; gap: 1em; }
 .meeting-hint { font-size: max(0.55em, 12px); color: var(--ink-2); text-align: center; }
+.meeting-mid { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 1.2em; min-width: 0; }
 .meeting-nav { min-width: 7.5em; }
 
 /* ---------- Slide 0: summary and roadmap ---------- */
@@ -66,7 +81,10 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
   border: 1px solid var(--rule-strong);
   border-radius: 8px;
 }
-.m-tile[data-status="off"] { border: 2px solid var(--off); }
+.m-tile:is([data-status="on"], [data-status="off"]) { border-color: transparent; color: var(--m-fill-ink); }
+.m-tile[data-status="on"] { background: var(--m-fill-on); }
+.m-tile[data-status="off"] { background: var(--m-fill-off); }
+.m-tile:is([data-status="on"], [data-status="off"]) :is(.m-tile-num, .status) { color: inherit; }
 .m-tile-num { font-size: max(0.65em, 12px); font-weight: 650; color: var(--ink-2); }
 .m-tile-name {
   font-family: var(--font-display);
@@ -76,7 +94,7 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
   letter-spacing: 0.015em;
   text-transform: uppercase;
 }
-.m-tile-status { font-size: 0.85em; }
+.m-tile-status { font-size: 0.85em; font-weight: 700; }
 
 /* ---------- Slides 1-8: one function ---------- */
 
@@ -98,6 +116,10 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
   letter-spacing: 0.012em;
   text-transform: uppercase;
 }
+/* Name, owner and question on the left; Add action on the right. */
+.m-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0 1em; }
+.m-head-text { min-width: 0; }
+.m-add { margin-top: 0.1em; }
 .m-owner { margin-top: 0.35em; font-size: 0.9em; font-weight: 650; }
 .m-question { margin-top: 0.1em; font-size: 0.9em; color: var(--ink-2); max-width: 34em; }
 
@@ -105,10 +127,18 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-content: start;
-  border-top: 1px solid var(--rule-strong);
+  gap: 0.5em;
 }
-.m-kpi { padding: 0.45em 0.6em 0 0; min-width: 0; }
-.m-kpi + .m-kpi { padding-left: 0.8em; border-left: 1px solid var(--rule); }
+.m-kpi {
+  min-width: 0;
+  padding: 0.4em 0.7em 0.5em;
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+}
+.m-kpi:is([data-status="on"], [data-status="off"]) { border-color: transparent; color: var(--m-fill-ink); }
+.m-kpi[data-status="on"] { background: var(--m-fill-on); }
+.m-kpi[data-status="off"] { background: var(--m-fill-off); }
+.m-kpi:is([data-status="on"], [data-status="off"]) :is(.m-kpi-label, .status, .m-num--empty, .m-measure) { color: inherit; }
 .m-kpi-label { font-size: max(0.9em, 13px); font-weight: 650; color: var(--ink-2); }
 .m-status { margin-top: 0.2em; font-size: 1.05em; font-weight: 700; }
 .m-num {
@@ -135,7 +165,7 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
   color: var(--ink-2);
 }
 .m-section-title .legend { font-size: 0.9em; }
-/* Problem heading with its status (Open · In progress · Closed) on the same line. */
+/* Issue heading with its status (Open · In progress · Closed) on the same line. */
 .m-note-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 1em; }
 .m-problem-status { margin-top: 0; font-size: 0.85em; }
 .m-problem-status .problem-status-label { font-size: 1em; }
@@ -164,8 +194,32 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
 .m-note-text--problem { -webkit-line-clamp: var(--clamp, 8); line-clamp: var(--clamp, 8); }
 .m-note-text.is-empty { color: var(--ink-2); }
 
+/* Action, next 24 hours: the board's note, then the Action register's open actions. */
+.m-actions { display: grid; gap: 0.3em; margin-top: 0.2em; }
+.m-note-text--action + .m-actions { margin-top: 0.45em; }
+.m-action[hidden] { display: none; }
+/* A rule between shown actions only (some may give way to the "more" line). */
+.m-action:not([hidden]) ~ .m-action:not([hidden]) { padding-top: 0.3em; border-top: 1px solid var(--rule); }
+.m-action-text {
+  font-size: 1em;
+  line-height: 1.28;
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--clamp, 3);
+  line-clamp: var(--clamp, 3);
+  overflow: hidden;
+}
+.m-action-meta { margin-top: 0.1em; font-size: max(0.75em, 13px); font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.m-dot { white-space: pre; }
+.m-from { color: var(--ink); font-weight: 700; }
+.m-over { color: var(--off); font-weight: 700; white-space: nowrap; }
+.m-over .glyph { display: inline-block; width: 1.1em; height: 1.1em; margin-right: 0.25em; vertical-align: -0.2em; }
+.m-actions-more { padding-top: 0.2em; font-size: max(0.7em, 12px); color: var(--ink-2); }
+.m-actions-more[hidden] { display: none; }
+
 /* Short screens (720p): the fixed 44px controls cost more, so the display
-   type gives back a little room for Problem and Next 24 hours. */
+   type gives back a little room for the issue and the action. */
 @media (max-height: 820px) and (min-aspect-ratio: 4/3) {
   .m-name { font-size: 3em; }
   .m-num { font-size: 3.2em; }
@@ -176,6 +230,10 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
 @media (max-aspect-ratio: 4/3) {
   .meeting { font-size: min(calc(100vh / 44), calc(100vw / 30)); }
   .m-fn { grid-template-columns: 1fr; gap: 0.9em; overflow-y: auto; }
+  /* Stacked slides scroll, so each part keeps its natural height. */
+  .m-fn { align-content: start; }
+  .m-col { min-height: auto; }
+  .m-col--left, .m-col--left .m-notes { flex: none; overflow: visible; }
   .m-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -186,5 +244,106 @@ html.is-meeting, html.is-meeting body { overflow: hidden; }
   .meeting .btn { padding: 0 var(--s-4); }
 }
 
-/* Goal dashes need more weight at 15 ft */
-.meeting .chart-goal { stroke-width: 3; stroke-dasharray: 7 5; }
+/* Goal dashes need more weight at 15 ft: 3px, 8px dashes. */
+.meeting .chart-goal { stroke-width: 3; stroke-dasharray: 8 5; }
+.meeting .key--goal { border-top-width: 3px; }
+
+/* ---------- Extra measures (Board setup) under the main figures ---------- */
+
+.m-extras { border-top: 1px solid var(--rule); }
+.m-extra {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding: 0.3em 0 0.35em;
+}
+.m-extra[hidden] { display: none; }
+.m-extra + .m-extra { border-top: 1px solid var(--rule); }
+.m-extra-name { grid-column: 1 / -1; font-size: max(0.75em, 13px); font-weight: 650; }
+.m-extra-cell { min-width: 0; padding-right: 0.6em; font-size: max(0.8em, 13px); line-height: 1.3; }
+.m-extra-cell + .m-extra-cell { padding: 0 0 0 0.8em; border-left: 1px solid var(--rule); }
+.m-extra-status { font-size: 1em; vertical-align: -0.1em; }
+.m-extra-fig { margin-left: 0.2em; font-variant-numeric: tabular-nums; }
+.m-extra-measure { color: var(--ink-2); }
+.m-extra-more { padding-top: 0.25em; font-size: max(0.7em, 12px); color: var(--ink-2); }
+
+/* When extra measures crowd the notes, the display type gives back room. */
+.m-fn.is-compact .m-name { font-size: 2.5em; }
+.m-fn.is-compact .m-num { font-size: 2.5em; }
+.m-fn.is-compact .m-col { gap: 0.45em; }
+
+/* ---------- Recorder: actions count, Record / Stop, the recording indicator ---------- */
+
+.meeting-added { font-size: max(0.75em, 13px); font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.meeting-rec { display: flex; align-items: center; gap: 0.4em 0.7em; }
+.meeting-rec[hidden], .rec-live[hidden] { display: none; }
+.rec-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: max(0.8em, 13px);
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+/* The recording dot: always next to the word "Recording" and its time. */
+.rec-dot { width: 0.8em; height: 0.8em; flex: none; border-radius: 50%; background: var(--lx-red-300); }
+.rec-time:empty { display: none; }
+.meeting-rec[data-state="starting"] .rec-live { color: var(--ink-2); font-weight: 600; }
+.meeting-rec[data-state="starting"] .rec-dot { display: none; }
+.rec-btn .rec-icon--stop { display: none; }
+.meeting-rec:not([data-state="idle"]) .rec-icon--mic { display: none; }
+.meeting-rec:not([data-state="idle"]) .rec-icon--stop { display: block; }
+.rec-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.rec-btn:disabled:active { transform: none; }
+.rec-why { max-width: 15em; font-size: max(0.6em, 12px); line-height: 1.25; color: var(--ink-2); }
+
+/* ---------- Live captions ---------- */
+
+.meeting-captions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 0 0.9em;
+  margin-top: 0.5em;
+  padding: 0.35em 0.8em;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--surface-quiet);
+}
+.meeting-captions[hidden] { display: none; }
+.captions-label { padding-bottom: 0.3em; font-size: max(0.55em, 12px); font-weight: 650; color: var(--ink-2); white-space: nowrap; }
+/* Two lines, newest at the bottom; older words leave at the top. */
+.captions-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: calc(2 * 1.3em);
+  overflow: hidden;
+  font-size: max(0.85em, 15px);
+  line-height: 1.3;
+}
+.captions-inner { display: block; }
+.captions-interim { color: var(--ink-2); }
+.captions-toggle[hidden] { display: none; }
+
+/* Toasts sit above the meeting and stand off its dark ground. */
+html.is-meeting .toasts { z-index: 110; bottom: var(--meeting-toast-bottom, calc(var(--mobilebar-h) + var(--s-5))); }
+html.is-meeting .toast { background: var(--d-raise); border: 1px solid var(--d-rule-strong); }
+/* Wide screens: the message sits in the controls row, between Previous and
+   Next over the key hint, so it never covers the slide or the chart caption. */
+@media (min-width: 1000px) {
+  html.is-meeting .toasts { bottom: var(--meeting-toast-bottom, 0.5rem); width: min(560px, calc(100vw - 440px)); }
+}
+
+@media (max-width: 699px) {
+  .meeting-top { flex-wrap: wrap; gap: 0.5em 0.8em; }
+  .meeting-progress { flex: 1 0 100%; }
+  .meeting-rec { flex-wrap: wrap; }
+  .rec-why { max-width: none; }
+  .meeting-captions { grid-template-columns: minmax(0, 1fr); }
+  .captions-label { display: none; }
+  /* Hide captions gets its own row above Previous and Next. */
+  .meeting-controls { flex-wrap: wrap; row-gap: 0.2em; }
+  .meeting-mid { order: -1; flex: 1 0 100%; }
+  .meeting-mid:has(.captions-toggle[hidden]) { display: none; }
+}

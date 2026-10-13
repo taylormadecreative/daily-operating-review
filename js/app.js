@@ -2,21 +2,23 @@
 // URL = ?date=YYYY-MM-DD (production day) + hash for the open view:
 //   (none) board · #safety detail · #enter[/fn] enter numbers · #meeting[/n] meeting
 
-import * as store from './store.js';
-import { clearIdentity, snapshotIdentity, restoreIdentity } from './identity.js';
-import { renderBoard, revealRow, setUndoable } from './board.js';
-import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js';
-import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js';
-import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js';
-import { initToast, toast } from './toast.js';
-import { formatDayMedium } from './format.js';
-import { renderHome, revealHomeRow, AREA_OPTIONS } from './home.js';
-import { renderNav, wireShell, setNavState, openMenu } from './shell.js';
-import { downloadCsv, printDay } from './export.js';
-import { esc, statusMarkup } from './ui.js';
-import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js';
-import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js';
-import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION } from './status.js';
+import * as store from './store.js?v=20261012-235706';
+import { renderBoard, revealRow, setUndoable } from './board.js?v=20261012-235706';
+import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261012-235706';
+import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261012-235706';
+import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261012-235706';
+import { initToast, toast } from './toast.js?v=20261012-235706';
+import { formatDayMedium } from './format.js?v=20261012-235706';
+import { renderHome, revealHomeRow, AREA_OPTIONS } from './home.js?v=20261012-235706';
+import { renderNav, wireShell, setNavState, openMenu } from './shell.js?v=20261012-235706';
+import { downloadCsv, printDay } from './export.js?v=20261012-235706';
+import { esc, statusMarkup } from './ui.js?v=20261012-235706';
+import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261012-235706';
+import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261012-235706';
+import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION } from './status.js?v=20261012-235706';
+import { initActions, openActions, addAction } from './actions.js?v=20261012-235706';
+import { initRecorder, openMinutes } from './recorder.js?v=20261012-235706';
+import { initSetup, openSetup } from './setup.js?v=20261012-235706';
 
 // We decide where the page scrolls after views close (the saved row).
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -49,12 +51,12 @@ function parseRoute() {
       view: 'enter',
       fnId: store.functionById(month, arg) ? arg : null,
       mode: arg === 'switch' ? 'switch' : 'enter',
-      focus: extra === 'status' ? 'status' : null,
+      focus: extra === 'status' ? 'status' : String(extra ?? '').startsWith('kpi:') ? extra : null,
     };
   }
   if (v === 'meeting') return { ...base, view: 'meeting', slide: Math.max(0, Math.min(month.functions.length, Number(arg) || 0)) };
   if (v === 'customize' && page === 'dor') return { ...base, view: 'customize' };
-  if (store.functionById(month, v)) return { ...base, view: 'detail', fnId: v };
+  if (store.kpiRowById(month, v)) return { ...base, view: 'detail', fnId: v };
   return { ...base, view: 'board' };
 }
 
@@ -103,6 +105,7 @@ function showDateNote(text) {
 /** Render whichever page is showing: the dashboard or the DOR board. */
 function renderView() {
   document.documentElement.dataset.view = view;
+  document.title = `Daily Operating Review, ${String(month.plant ?? '').replace(/\s+plant$/i, '')}`;
   setNavState({ area, view }); // every link built below keeps the day and area
   if (view === 'home') renderHome(month, day, area);
   else renderBoard(month, day);
@@ -233,6 +236,21 @@ function wireBoard() {
       return;
     }
     if (e.target.closest('[data-reset]')) resetDemo();
+    // The board's Action cell: add an action for that KPI in the Action register.
+    const addAct = e.target.closest('[data-add-action]');
+    // Detail and the meeting handle their own Add action buttons.
+    if (addAct && addAct.dataset.addAction && !addAct.closest('#detail, #meeting')) { e.preventDefault(); openActions({ addFor: addAct.dataset.addAction, kpiId: addAct.dataset.addKpi || null }); return; }
+    // A new KPI's "Enter the first one": Enter numbers, on that KPI's box.
+    const first = e.target.closest('[data-enter-kpi]');
+    if (first) { e.preventDefault(); navigate(`enter/${first.dataset.enterKpi}${first.dataset.enterKpiId ? `/kpi:${first.dataset.enterKpiId}` : ''}`); return; }
+    const goDay = e.target.closest('[data-go-day]');
+    if (goDay && !e.metaKey && !e.ctrlKey) { e.preventDefault(); goToDay(Number(goDay.dataset.goDay)); return; }
+    // A board row's charts open that KPI's detail too (they sit above the row's link so hover still works).
+    const chartRow = e.target.closest('.kpirow .mini');
+    if (chartRow) { e.preventDefault(); navigate(chartRow.closest('.kpirow').dataset.kpi); return; }
+    if (e.target.closest('[data-open-actions]')) { e.preventDefault(); document.getElementById('dor-menu')?.hidePopover?.(); openActions(); return; }
+    if (e.target.closest('[data-open-minutes]')) { e.preventDefault(); document.getElementById('dor-menu')?.hidePopover?.(); openMinutes(); return; }
+    if (e.target.closest('[data-open-setup]')) { e.preventDefault(); document.getElementById('dor-menu')?.hidePopover?.(); openSetup(); return; }
     if (e.target.closest('[data-customize]')) {
       e.preventDefault();
       document.getElementById('dor-menu')?.hidePopover?.();
@@ -267,15 +285,20 @@ function goToDay(next) {
 
 /** The date text opens the browser's own date picker, limited to the month's data. */
 function wireDatePicker() {
-  const input = document.querySelector('[data-date-input]');
-  document.querySelector('[data-date-pick]').addEventListener('click', () => {
-    try { input.showPicker(); } catch { input.focus(); }
-  });
-  input.addEventListener('change', () => {
-    const d = store.dayFromIso(month, input.value);
-    if (d !== null) goToDay(d);
-    else input.value = store.isoForDay(month, day);
-  });
+  // The dashboard's picker and the DOR board's picker work the same way.
+  for (const [btnSel, inputSel] of [['[data-date-pick]', '[data-date-input]'], ['[data-board-date-pick]', '[data-board-date-input]']]) {
+    const input = document.querySelector(inputSel);
+    const btn = document.querySelector(btnSel);
+    if (!input || !btn) continue;
+    btn.addEventListener('click', () => {
+      try { input.showPicker(); } catch { input.focus(); }
+    });
+    input.addEventListener('change', () => {
+      const d = store.dayFromIso(month, input.value);
+      if (d !== null) goToDay(d);
+      else input.value = store.isoForDay(month, day);
+    });
+  }
 }
 
 function stepDay(delta) {
@@ -292,22 +315,33 @@ function stepDay(delta) {
   if (nextBtn.disabled && document.activeElement === nextBtn) prev.focus();
 }
 
+/**
+ * Start the demo over: clear everything this demo saved on the device (numbers,
+ * Board setup, actions, minutes, Customize, tours) and load a clean page. The
+ * snapshot rides along in sessionStorage so the fresh page can offer Undo.
+ */
 function resetDemo() {
-  const identity = snapshotIdentity();
-  const { ok, snapshot } = store.resetDemo();
-  clearIdentity();
-  lastSave = null;
-  setUndoable(null);
-  refreshAll();
-  toast(ok ? "Demo data reset. The board shows the workbook's numbers again." : 'This browser blocked the reset.', {
-    actionLabel: ok ? 'Undo' : undefined,
+  const snapshot = store.resetEverything();
+  try { sessionStorage.setItem(store.RESET_UNDO_KEY, JSON.stringify(snapshot)); } catch { /* no Undo then */ }
+  location.replace(`${location.pathname}${view === 'dor' ? '?view=dor' : ''}`);
+}
+
+/** After a reset: say so, with Undo. Returns true when this load follows a reset. */
+function afterReset() {
+  let raw = null;
+  try { raw = sessionStorage.getItem(store.RESET_UNDO_KEY); sessionStorage.removeItem(store.RESET_UNDO_KEY); } catch { return false; }
+  if (!raw) return false;
+  let snapshot = null;
+  try { snapshot = JSON.parse(raw); } catch { return false; }
+  toast("Demo started over. Everything is back to the plant's February workbook. Take the tour anytime.", {
+    actionLabel: 'Undo',
+    duration: 20000,
     onAction: () => {
-      store.restoreOverlay(snapshot);
-      restoreIdentity(identity);
-      refreshAll();
-      toast('Undone. Your entries are back.');
+      store.restoreEverything(snapshot);
+      location.reload();
     },
   });
+  return true;
 }
 
 /* ---------- Popovers: How to read, and term definitions ---------- */
@@ -433,7 +467,7 @@ async function init() {
   initToast();
   initDetail({
     onClose: closeView,
-    onEdit: (fnId, d) => navigate(`enter/${fnId}`, { toDay: d }),
+    onEdit: (fnId, d, kpiId) => navigate(`enter/${fnId}${kpiId ? `/kpi:${kpiId}` : ''}`, { toDay: d }),
   });
   initEnter({
     onCancel: closeView,
@@ -494,11 +528,29 @@ async function init() {
   wireTerms();
   wireDatePicker();
   initCustomize({ onClose: closeView });
+  // Demo features that live on this device: the Action Register, meeting minutes, and Board setup.
+  initActions({
+    getMonth: () => month,
+    getDay: () => day,
+    toast,
+    openMinutes: (id) => openMinutes(id),
+    enterFor: (fnId) => navigate(`enter/${fnId}`),
+    // An action was added, changed or removed: the board's Action cells follow.
+    onChange: () => { month = store.getMonth(); renderView(); refreshDetail(month); },
+  });
+  initRecorder({ getMonth: () => month, getDay: () => day, toast, addAction, openActions });
+  initSetup({
+    getMonth: () => month,
+    getDay: () => day,
+    toast,
+    onChange: () => { month = store.getMonth(); renderView(); },
+  });
   window.addEventListener('popstate', onPop);
   let resizeTimer;
   window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(refreshMeeting, 150); });
   applyRoute();
-  autoTour();
+  // Right after "Start the demo over", the Undo message comes first; the tour waits for Take the tour.
+  if (!afterReset()) autoTour();
 }
 
 /**
@@ -514,7 +566,7 @@ function autoTour() {
   try { arrived = sessionStorage.getItem(ARRIVAL_KEY); sessionStorage.removeItem(ARRIVAL_KEY); } catch { /* storage blocked */ }
   if (arrived === view) {
     toast(view === 'dor'
-      ? 'This is the classic board. Take its tour anytime from Take the tour.'
+      ? 'This is the DOR board. Take its tour anytime from Take the tour.'
       : 'This is the new dashboard. Take its tour anytime from How it works.');
   }
   if (ask === 'off' || parseRoute().view !== 'board' || isTourOpen()) return;

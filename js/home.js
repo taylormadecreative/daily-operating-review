@@ -1,20 +1,21 @@
 // Home dashboard (Nelson's reference layout): the one-line answer, KPI cards,
-// the department × area matrix, trends and key metrics, issues and actions,
+// the function × area matrix, trends and key metrics, issues and actions,
 // and the daily questions. Every number is calculated from the month.
 
-import { dailySeries, isoForDay, notesFor, noteParagraphs, entryInfo, hasProblem } from './store.js';
+import { dailySeries, isoForDay, notesFor, noteParagraphs, entryInfo, hasProblem } from './store.js?v=20261012-235706';
 import {
   ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION,
   dayStatus, monthStatus, isProductionDay, compareToGoal, boardSummary, statusWord,
-} from './status.js';
+} from './status.js?v=20261012-235706';
 import {
-  formatPair, glossaryTerm, formatDayLong, formatDayMedium, formatEnteredAt, formatTicks, dayHeading,
-} from './format.js';
-import { esc, termButton, GLYPH, issueStatusMarkup } from './ui.js';
-import { icon } from './icons.js';
-import { getUndoable } from './board.js';
-import { getIdentity } from './identity.js';
-import { pageHref } from './shell.js';
+  formatPair, glossaryTerm, formatDayLong, formatDayMedium, formatEnteredAt, formatTicks, dayHeading, plainLabel,
+} from './format.js?v=20261012-235706';
+import { esc, termButton, GLYPH, issueStatusMarkup } from './ui.js?v=20261012-235706';
+import { icon } from './icons.js?v=20261012-235706';
+import { getUndoable } from './board.js?v=20261012-235706';
+import { getIdentity } from './identity.js?v=20261012-235706';
+import { pageHref } from './shell.js?v=20261012-235706';
+import { actionsFor } from './actions.js?v=20261012-235706';
 
 export const AREA_OPTIONS = [
   { id: 'all', name: 'All areas' },
@@ -36,14 +37,16 @@ const statusLine = (status, kpi, cls = 'hs') => `<p class="${cls} hs--${status}"
 const href = (month, day, fnId) => pageHref(month, day, { view: 'home', hash: fnId });
 /** "People · Fri, Feb 27": a narrow card wraps at the dot, never inside a date. */
 const tagMarkup = (when) => when.split(' · ').map((part) => `<span class="nowrap">${esc(part)}</span>`).join(' · ');
-const byId = (month, id) => month.functions.find((f) => f.id === id);
+// The dashboard's fixed cards and tiles name a workbook function. When Board setup
+// hides that function, its cards are skipped (never a link to a page that isn't there).
+const byId = (month, id) => month.functions.find((f) => f.id === id) ?? null;
 const actualOn = (fn, areaId, day) => (fn.daily?.[areaId] ?? []).find((r) => r.day === day)?.actual;
 
 /* ---------- The one-line answer (header subtitle) ---------- */
 
 /**
- * "4 of 8 departments on track for Fri, Feb 27 · Off goal: People, …", each
- * department a link to its Detail. Plant totals decide it, as on the DOR board.
+ * "4 of 8 functions on track for Fri, Feb 27 · Off goal: People, …", each
+ * function a link to its Detail. Plant totals decide it, as on the DOR board.
  */
 function summaryMarkup(month, day, area) {
   const s = boardSummary(month, day);
@@ -56,7 +59,7 @@ function summaryMarkup(month, day, area) {
   const parts = [s.productionDay === false
     ? `<strong>No production scheduled</strong>${when}`
     : area === 'all'
-      ? `<strong>${y[ON]} of ${y.total} departments on track</strong>${when}`
+      ? `<strong>${y[ON]} of ${y.total} functions on track</strong>${when}`
       : `<strong>${y[ON]} of ${y.total} on track</strong> (plant totals)${when}`];
   if (y.attention.length) parts.push(`Off goal: ${names(y.attention)}`);
   if (y.noGoal.length) parts.push(`No goal set: ${names(y.noGoal)}`);
@@ -80,7 +83,7 @@ const KPI_CARDS = [
 
 /**
  * Status and numbers for a function's daily or monthly measure, area-aware.
- * `when` names the department and the period ("People · Fri, Feb 27",
+ * `when` names the function and the period ("People · Fri, Feb 27",
  * "Safety · Month to date"), plus the area when one is picked; monthly
  * measures don't split by area ("Plant total").
  */
@@ -130,6 +133,7 @@ function valueBlock(m, { style = 'slash' } = {}) {
 
 function kpiCard(month, day, area, spec) {
   const fn = byId(month, spec.fn);
+  if (!fn) return ''; // hidden in Board setup
   const m = measure(month, fn, day, spec.kind, area);
   const t = glossaryTerm(month, m.kpi);
   const v = valueBlock(m);
@@ -146,7 +150,7 @@ function kpiCard(month, day, area, spec) {
     </article>`;
 }
 
-/* ---------- Department × area matrix ---------- */
+/* ---------- Function × area matrix ---------- */
 
 function cellLabel(areaLabel, fn, s, kpi) {
   const f = formatPair(s.actual, s.goal, kpi);
@@ -154,12 +158,17 @@ function cellLabel(areaLabel, fn, s, kpi) {
   return `${areaLabel}, ${fn.name}: ${statusWord(s.status, kpi).toLowerCase()}${nums}`;
 }
 
+/** A function added in Board setup has a plant total only: its area cells say so, quietly. */
+const tracksAreas = (fn) => !fn.custom;
+
 function matrixRow(month, day, area, fn) {
-  const cells = AREA_COLS.map((a) => {
-    const s = dayStatus(month, fn, day, a);
-    const label = cellLabel(areaName(a), fn, s, fn.kpiDaily);
-    return `<td class="mcell${area === a ? ' is-area' : ''}"><span class="mcell-in" role="img" aria-label="${esc(label)}" data-tip="${esc(label)}">${mdot(s.status)}</span></td>`;
-  }).join('');
+  const cells = !tracksAreas(fn)
+    ? `<td class="mcell mcell--untracked" colspan="${AREA_COLS.length}"><span class="mcell-none">Not tracked<span class="sr-only"> by area for ${esc(fn.name)}</span></span></td>`
+    : AREA_COLS.map((a) => {
+      const s = dayStatus(month, fn, day, a);
+      const label = cellLabel(areaName(a), fn, s, fn.kpiDaily);
+      return `<td class="mcell${area === a ? ' is-area' : ''}"><span class="mcell-in" role="img" aria-label="${esc(label)}" data-tip="${esc(label)}">${mdot(s.status)}</span></td>`;
+    }).join('');
   const p = dayStatus(month, fn, day);
   const mo = monthStatus(month, fn, day);
   const pl = cellLabel('Plant total', fn, p, fn.kpiDaily);
@@ -179,12 +188,14 @@ function matrixRow(month, day, area, fn) {
  * cells are empty, back to "Status by production area" when every one is in.
  */
 export function areaNote(month, day) {
-  const missing = month.functions.some((fn) => AREA_COLS.some((a) => dayStatus(month, fn, day, a).status === NOT_ENTERED));
+  // Functions added in Board setup have no areas, so they never make areas look missing.
+  const byArea = month.functions.filter(tracksAreas);
+  const missing = byArea.some((fn) => AREA_COLS.some((a) => dayStatus(month, fn, day, a).status === NOT_ENTERED));
   if (!missing) return 'Status by production area';
   // "Last entered" means the board as a whole: the last day on which at least
-  // half the departments had area numbers (one leftover column doesn't count).
-  const enough = Math.ceil(month.functions.length / 2);
-  const hadAreas = (d) => month.functions.filter((fn) => AREA_COLS.some((a) => typeof actualOn(fn, a, d) === 'number')).length >= enough;
+  // half the functions had area numbers (one leftover column doesn't count).
+  const enough = Math.ceil(byArea.length / 2);
+  const hadAreas = (d) => byArea.filter((fn) => AREA_COLS.some((a) => typeof actualOn(fn, a, d) === 'number')).length >= enough;
   let last = null;
   for (let d = day; d >= 1 && last === null; d -= 1) if (hadAreas(d)) last = d;
   const plantIn = month.functions.every((fn) => dayStatus(month, fn, day).status !== NOT_ENTERED);
@@ -197,7 +208,7 @@ export function areaNote(month, day) {
 function matrixPanel(month, day, area) {
   const present = new Set();
   for (const fn of month.functions) {
-    for (const a of [...AREA_COLS, 'plant']) present.add(dayStatus(month, fn, day, a).status);
+    for (const a of [...(tracksAreas(fn) ? AREA_COLS : []), 'plant']) present.add(dayStatus(month, fn, day, a).status);
     present.add(monthStatus(month, fn, day).status);
   }
   const legend = [[ON, 'On track'], [OFF, 'Off goal'], [NOT_ENTERED, 'Not entered']];
@@ -207,14 +218,14 @@ function matrixPanel(month, day, area) {
     <section class="panel panel--matrix" aria-labelledby="mx-title">
       <header class="panel-head">
         <span class="panel-icon">${icon('users')}</span>
-        <div class="panel-titles"><h2 class="panel-title" id="mx-title">Department Performance</h2><p class="panel-sub" data-area-note>${esc(areaNote(month, day))}</p></div>
+        <div class="panel-titles"><h2 class="panel-title" id="mx-title">Function performance</h2><p class="panel-sub" data-area-note>${esc(areaNote(month, day))}</p></div>
         <ul class="mx-legend" aria-label="Legend">${legend.map(([s, w]) => `<li>${mdot(s)}<span>${w}</span></li>`).join('')}</ul>
       </header>
       <div class="mx-scroll">
         <table class="mx">
-          <caption class="sr-only">Status for ${esc(formatDayMedium(month, day))} by department and production area, with the plant total and the month so far.</caption>
+          <caption class="sr-only">Status for ${esc(formatDayMedium(month, day))} by function and production area, with the plant total and the month so far.</caption>
           <thead><tr>
-            <th scope="col">Department</th><th scope="col" class="mx-owner">Owner</th>
+            <th scope="col">Function</th><th scope="col" class="mx-owner">Owner</th>
             ${AREA_COLS.map((a) => `<th scope="col" class="${area === a ? 'is-area' : ''}">${a === 'compounding'
     ? '<span class="col-full">Compounding</span><span class="col-abbr" aria-hidden="true">Comp.</span><span class="sr-only col-abbr-sr">Compounding</span>'
     : esc(areaName(a))}</th>`).join('')}
@@ -228,10 +239,10 @@ function matrixPanel(month, day, area) {
 
 /* ---------- Trends & key metrics ---------- */
 
-function tile({ month, day, fn, label, iconName, body, status, kpi, when, showStatus = true }) {
+function tile({ month, day, fn, label, iconName, body, status, kpi, when, showStatus = true, wide = false }) {
   const t = glossaryTerm(month, kpi);
   return `
-    <article class="tile" data-status="${status}" data-fn="${esc(fn.id)}">
+    <article class="tile${wide ? ' tile--wide' : ''}" data-status="${status}" data-fn="${esc(fn.id)}">
       <div class="tile-head">
         <span class="tile-icon">${icon(iconName)}</span>
         <h3 class="tile-label"><a class="kc-link" href="${href(month, day, fn.id)}" data-open-detail="${esc(fn.id)}">${esc(label)}<span class="sr-only">, ${esc(when)}</span></a></h3>
@@ -245,6 +256,7 @@ function tile({ month, day, fn, label, iconName, body, status, kpi, when, showSt
 
 function bufferTile(month, day, area) {
   const fn = byId(month, 'materials');
+  if (!fn) return ''; // hidden in Board setup
   const m = measure(month, fn, day, 'day', area);
   const f = formatPair(m.actual, m.goal, m.kpi);
   const v = valueBlock(m);
@@ -257,11 +269,12 @@ function bufferTile(month, day, area) {
       </div>
       <div class="bar" role="img" aria-label="${pct}% of goal"><span class="bar-fill bar-fill--${m.status}" style="width:${Math.min(100, pct)}%"></span></div>`;
   }
-  return tile({ month, day, fn, label: 'Critical buffer parts', iconName: 'layers', body, status: m.status, kpi: m.kpi, when: m.when, showStatus: !v.inline });
+  return tile({ month, day, fn, label: 'Critical buffer parts', iconName: 'layers', body, status: m.status, kpi: m.kpi, when: m.when, showStatus: !v.inline, wide: true });
 }
 
 function simpleTile(month, day, area, fnId, kind, label, iconName, style = 'of') {
   const fn = byId(month, fnId);
+  if (!fn) return ''; // hidden in Board setup
   const m = measure(month, fn, day, kind, area);
   const v = valueBlock(m, { style });
   return tile({ month, day, fn, label, iconName, body: v.html, status: m.status, kpi: m.kpi, when: m.when, showStatus: !v.inline });
@@ -281,6 +294,7 @@ function scrapPoints(month, day, area) {
 
 function scrapTile(month, day, area) {
   const fn = byId(month, 'engineering');
+  if (!fn) return ''; // hidden in Board setup
   const m = measure(month, fn, day, 'day', area);
   const pts = scrapPoints(month, day, area);
   const span = pts.length === 1 ? 'last production day' : `last ${pts.length} production days`;
@@ -293,27 +307,28 @@ function scrapTile(month, day, area) {
     : `<p class="mini-empty">No scrap numbers for ${esc(areaName(area))} in the ${span}.</p>`;
   // No status line here: the Scrap % card above already says it.
   return tile({
-    month, day, fn, label: 'Scrap % trend', iconName: 'trend', body, status: m.status, kpi: m.kpi, showStatus: false,
+    month, day, fn, label: 'Scrap % trend', iconName: 'trend', body, status: m.status, kpi: m.kpi, showStatus: false, wide: true,
     when: `${fn.name} · ${pts.length === 1 ? '1 day so far' : `last ${pts.length} days`}${area === 'all' ? '' : ` · ${areaName(area)}`}`,
   });
 }
 
 function trendsPanel(month, day, area) {
+  const tiles = [
+    bufferTile(month, day, area),
+    scrapTile(month, day, area),
+    simpleTile(month, day, area, 'operations', 'month', 'Labor efficiency', 'gauge'),
+    simpleTile(month, day, area, 'operations', 'day', 'Parts produced', 'package'),
+    simpleTile(month, day, area, 'plant', 'day', 'Earned hours', 'clock'),
+    simpleTile(month, day, area, 'maintenance', 'day', 'Critical equipment down', 'wrench'),
+  ].join('');
   return `
     <section class="panel panel--trends" aria-labelledby="tr-title">
       <header class="panel-head">
         <span class="panel-icon">${icon('barChart')}</span>
-        <div class="panel-titles"><h2 class="panel-title" id="tr-title">Trends &amp; Key Metrics</h2></div>
+        <div class="panel-titles"><h2 class="panel-title" id="tr-title">Trends and key metrics</h2></div>
         <p class="panel-aside">Performance for ${esc(formatDayMedium(month, day))}</p>
       </header>
-      <div class="tiles">
-        ${bufferTile(month, day, area)}
-        ${scrapTile(month, day, area)}
-        ${simpleTile(month, day, area, 'operations', 'month', 'Labor efficiency', 'gauge')}
-        ${simpleTile(month, day, area, 'operations', 'day', 'Parts produced', 'package')}
-        ${simpleTile(month, day, area, 'plant', 'day', 'Earned hours', 'clock')}
-        ${simpleTile(month, day, area, 'maintenance', 'day', 'Critical equipment down', 'wrench')}
-      </div>
+      ${tiles.trim() ? `<div class="tiles">${tiles}</div>` : '<p class="mini-empty">The functions these metrics come from are hidden in Board setup.</p>'}
     </section>`;
 }
 
@@ -402,16 +417,49 @@ export const oneLine = (t) => t.split('\n').map((l) => l.trim()).filter(Boolean)
 
 export { hasProblem };
 
-function issueRows(month, day, fn) {
-  const n = notesFor(fn, day);
-  const st = dayStatus(month, fn, day).status;
-  // Problem status shows once, on the department's first row: the status, a quiet
-  // "Set status" link when there is a problem without one, or nothing at all.
+/** "Sat, Feb 28" from 'YYYY-MM-DD', on one line (the year only when it isn't the board's). */
+function dueDay(iso, month) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (Number.isNaN(dt.getTime())) return iso;
+  const sameYear = String(y) === month.month.slice(0, 4);
+  return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC', ...(sameYear ? {} : { year: 'numeric' }) })
+    .format(dt).replace(/ /g, ' ');
+}
+
+/**
+ * Open actions from the Action register for one KPI row: the text, then
+ * "Owner · Due Sat, Feb 28" ("Overdue" with the off glyph when the due day has
+ * passed the selected day; "No due date" when there is none).
+ */
+function registerMarkup(month, day, row, list) {
+  const today = isoForDay(month, day);
+  return `<ul class="iss-reg" aria-label="From the Action register">${list.map((a) => {
+    const over = a.due && a.due < today;
+    const due = a.due
+      ? `${over ? `<span class="iss-over">${mdot(OFF)}Overdue</span> · ` : ''}Due ${esc(dueDay(a.due, month))}`
+      : 'No due date';
+    return `<li><span class="iss-reg-text">${esc(a.text)}</span><span class="iss-reg-meta">${esc(a.owner || row.owner)} · ${due}</span></li>`;
+  }).join('')}</ul>`;
+}
+
+/**
+ * The rows for one KPI row of a function: its workbook KPI (row = fn) or a KPI
+ * added in Board setup (row = one of fn.extraKpis). One table row per issue note.
+ */
+function issueRows(month, day, fn, row = fn) {
+  const added = row !== fn;
+  const named = added || (fn.extraKpis?.length ?? 0) > 0; // a function with several KPIs names each one
+  const kpiName = named ? plainLabel(row.kpiDaily) : '';
+  const n = notesFor(row, day);
+  const st = dayStatus(month, row, day).status;
+  // Issue status shows once, on the row's first line: the status, a quiet
+  // "Set status" link when there is an issue without one, or nothing at all.
   let statusCell = '';
   if (hasProblem(n)) {
     statusCell = n.status
       ? issueStatusMarkup(n.status)
-      : `<a class="set-status" href="#enter/${esc(fn.id)}/status" data-set-status="${esc(fn.id)}">Set status<span class="sr-only"> for ${esc(fn.name)}'s problem</span></a>`;
+      : `<a class="set-status" href="#enter/${esc(fn.id)}/status" data-set-status="${esc(fn.id)}">Set status<span class="sr-only"> for ${esc(fn.name)}${kpiName ? `, ${esc(kpiName)}` : ''} issue</span></a>`;
   }
   let notes;
   let actions;
@@ -420,10 +468,12 @@ function issueRows(month, day, fn) {
     actions = [];
   } else {
     const p = noteParagraphs(n.problem);
-    notes = p.length ? p.map((t) => ({ text: oneLine(t) })) : [{ text: 'No problem reported', empty: true }];
+    notes = p.length ? p.map((t) => ({ text: oneLine(t) })) : [{ text: 'No issue reported', empty: true }];
     actions = noteParagraphs(n.action).map(oneLine);
   }
-  const info = entryInfo(fn, day);
+  // With no action in the note, the row shows its open actions from the Action register.
+  const register = actions.length ? [] : actionsFor(fn.id, added ? row.kpiId : null);
+  const info = added ? null : entryInfo(fn, day);
   const undo = getUndoable();
   const entered = info?.enteredBy
     ? `<p class="iss-entered">Entered by ${esc(info.enteredBy)} <span class="nowrap">· ${esc(formatEnteredAt(info.enteredAt))}</span>${undo && undo.fnId === fn.id && undo.day === day ? ' <button class="undo-link" type="button" data-undo-save>Undo</button>' : ''}</p>`
@@ -433,11 +483,13 @@ function issueRows(month, day, fn) {
     let act = actions[i] ?? '';
     if (i === notes.length - 1 && actions.length > notes.length) act = oneLine(actions.slice(i).join('\n'));
     const first = i === 0;
-    return `<tr class="iss-row${first ? ' is-first' : ''}" data-status="${st}" data-fn="${esc(fn.id)}">
-        <th scope="row" class="iss-dept"><span class="iss-bar iss-bar--${st}" aria-hidden="true"></span><a class="iss-link" href="${href(month, day, fn.id)}" data-open-detail="${esc(fn.id)}">${esc(fn.name)}<span class="sr-only">, ${esc(statusWord(st, fn.kpiDaily).toLowerCase())}${notes.length > 1 ? `, note ${i + 1} of ${notes.length}` : ''}</span></a></th>
-        <td class="iss-notes" data-label="Details / Notes"><span class="${nt.empty ? 'is-empty' : ''}">${esc(nt.text)}</span>${first ? entered : ''}</td>
-        <td class="iss-action" data-label="Action / Next step">${act ? esc(act) : '<span class="is-empty" aria-label="None">—</span>'}</td>
-        <td class="iss-owner" data-label="Owner">${esc(fn.owner)}</td>
+    let actCell = act ? esc(act) : '<span class="is-empty">No action yet</span>';
+    if (!act && first && register.length) actCell = registerMarkup(month, day, row, register);
+    return `<tr class="iss-row${first ? ' is-first' : ''}" data-status="${st}" data-fn="${esc(fn.id)}" data-kpi-row="${esc(row.id)}">
+        <th scope="row" class="iss-dept"><span class="iss-bar iss-bar--${st}" aria-hidden="true"></span><a class="iss-link${kpiName ? ' iss-link--kpi' : ''}" href="${href(month, day, row.id)}" data-open-detail="${esc(row.id)}">${esc(fn.name)}${kpiName ? `<span class="iss-kpi"><span class="sr-only">, </span>${esc(kpiName)}</span>` : ''}<span class="sr-only">, ${esc(statusWord(st, row.kpiDaily).toLowerCase())}${notes.length > 1 ? `, note ${i + 1} of ${notes.length}` : ''}</span></a></th>
+        <td class="iss-notes" data-label="Issue"><span class="${nt.empty ? 'is-empty' : ''}">${esc(nt.text)}</span>${first ? entered : ''}</td>
+        <td class="iss-action" data-label="Action, next 24 hours">${actCell}</td>
+        <td class="iss-owner" data-label="Owner">${esc(row.owner)}</td>
         <td class="iss-status${first && statusCell ? '' : ' is-blank'}" data-label="Status">${first ? statusCell : ''}</td>
       </tr>`;
   }).join('');
@@ -446,18 +498,19 @@ function issueRows(month, day, fn) {
 function issuesPanel(month, day) {
   const key = [[ON, 'On track'], [OFF, 'Off goal'], [NOT_ENTERED, 'Not entered']]
     .map(([s, w]) => `<span class="iss-key-item"><span class="iss-key-bar iss-bar--${s}"></span>${w}</span>`).join('');
+  const rows = month.functions.map((fn) => [fn, ...(fn.extraKpis ?? [])].map((row) => issueRows(month, day, fn, row)).join('')).join('');
   return `
     <section class="panel panel--issues" aria-labelledby="iss-title">
       <header class="panel-head">
         <span class="panel-icon">${icon('clipboard')}</span>
-        <div class="panel-titles"><h2 class="panel-title" id="iss-title">Issues and Actions</h2></div>
-        <p class="panel-aside iss-key"><span>Bar color = the department's status for the day:</span>${key}</p>
+        <div class="panel-titles"><h2 class="panel-title" id="iss-title">Issues and actions</h2></div>
+        <p class="panel-aside iss-key"><span>Bar color = that row's status for the day:</span>${key}</p>
       </header>
       <div class="iss-scroll">
         <table class="iss">
-          <caption class="sr-only">Problems, next steps and their status for ${esc(formatDayMedium(month, day))}</caption>
-          <thead><tr><th scope="col">Department</th><th scope="col">Details / Notes</th><th scope="col">Action / Next step</th><th scope="col">Owner</th><th scope="col">Status</th></tr></thead>
-          <tbody>${month.functions.map((fn) => issueRows(month, day, fn)).join('')}</tbody>
+          <caption class="sr-only">Issues, actions and their status for ${esc(formatDayMedium(month, day))}</caption>
+          <thead><tr><th scope="col">Function</th><th scope="col">Issue</th><th scope="col">Action, next 24 hours</th><th scope="col">Owner</th><th scope="col">Status</th></tr></thead>
+          <tbody>${rows}</tbody>
         </table>
       </div>
     </section>`;
@@ -470,16 +523,17 @@ function kbiPanel(month, day) {
     <section class="panel panel--kbi" aria-labelledby="kbi-title">
       <header class="panel-head">
         <span class="panel-icon">${icon('help')}</span>
-        <div class="panel-titles"><h2 class="panel-title" id="kbi-title">Daily Questions / KBIs</h2></div>
+        <div class="panel-titles"><h2 class="panel-title" id="kbi-title">Daily questions</h2></div>
         <p class="panel-aside">Check in. Drive performance. Every day.</p>
       </header>
       <ol class="kbi-q">
         ${month.functions.map((fn, i) => {
           const st = dayStatus(month, fn, day).status;
+          const q = fn.dorQuestion?.trim();
           return `
           <li><a class="kbi-link" href="${href(month, day, fn.id)}" data-open-detail="${esc(fn.id)}">
             <span class="kbi-n" aria-hidden="true">${i + 1}</span>
-            <span class="kbi-question">${esc(fn.dorQuestion)}</span>
+            <span class="kbi-question${q ? '' : ' is-empty'}">${q ? esc(q) : 'No daily question yet'}</span>
             <span class="kbi-meta"><span class="kbi-dept">${esc(fn.name)}</span><span class="kbi-st hs--${st}">${mdot(st)}<span>${esc(statusWord(st, fn.kpiDaily))}</span></span></span>
           </a></li>`;
         }).join('')}
@@ -492,6 +546,19 @@ function kbiPanel(month, day) {
 const initials = (name) => name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
 let miniObserver = null;
+let lastRender = null; // { month, day } of the last render, for the Action register refresh
+
+// The Action register is its own sheet. When it closes, the issues panel picks up
+// the actions added, edited or closed there (the 'close' event doesn't bubble: capture it).
+document.addEventListener('close', (e) => {
+  if (e.target?.id !== 'action-register' || !lastRender) return;
+  const panel = document.querySelector('.home-app .panel--issues');
+  if (!panel || document.documentElement.dataset.view !== 'home') return;
+  const scroll = panel.querySelector('.iss-scroll')?.scrollLeft ?? 0;
+  panel.outerHTML = issuesPanel(lastRender.month, lastRender.day);
+  const next = document.querySelector('.home-app .panel--issues .iss-scroll');
+  if (next) next.scrollLeft = scroll;
+}, true);
 
 export function renderHome(month, day, area) {
   document.querySelectorAll('[data-home-title]').forEach((n) => { n.textContent = `${month.plant} DOR Dashboard`; });
@@ -515,14 +582,20 @@ export function renderHome(month, day, area) {
   chip.innerHTML = who
     ? `<span class="chip-initials" aria-hidden="true">${esc(initials(who.name))}</span><span class="chip-name">${esc(who.name)}</span>${icon('chevronDown', 'i chip-chev')}`
     : `<span class="chip-initials chip-initials--none" aria-hidden="true">${icon('user')}</span>${icon('chevronDown', 'i chip-chev')}`;
-  chip.setAttribute('aria-label', who ? `${who.name}: switch person or reset demo data` : "Choose who's entering, or reset demo data");
+  chip.setAttribute('aria-label', who ? `${who.name}: switch person or start the demo over` : "Choose who's entering, or start the demo over");
   chip.title = who ? who.name : "Who's entering?";
   chip.classList.toggle('is-unset', !who);
 
   // An unseen h2 keeps the outline whole: page h1, then this group's h2, then each card's h3.
-  document.querySelector('[data-kpis]').innerHTML = `<h2 class="sr-only">Key numbers</h2>${KPI_CARDS.map((c) => kpiCard(month, day, area, c)).join('')}`;
+  // Cards for functions hidden in Board setup are skipped; the row keeps one column per card.
+  const cards = KPI_CARDS.map((c) => kpiCard(month, day, area, c)).filter(Boolean);
+  const kpis = document.querySelector('[data-kpis]');
+  kpis.innerHTML = `<h2 class="sr-only">Key numbers</h2>${cards.join('')}`;
+  kpis.style.setProperty('--kpi-n', String(Math.max(1, cards.length)));
+  kpis.hidden = cards.length === 0;
   document.querySelector('[data-row2]').innerHTML = matrixPanel(month, day, area) + trendsPanel(month, day, area);
   document.querySelector('[data-row3]').innerHTML = issuesPanel(month, day) + kbiPanel(month, day);
+  lastRender = { month, day };
   document.querySelector('[data-print-meta]').textContent = `Area: ${areaName(area)}`;
 
   miniObserver?.disconnect();
@@ -541,7 +614,7 @@ printQuery.addEventListener('change', () => {
 });
 
 /**
- * After a save on the home: bring the department into view, wash it briefly and
+ * After a save on the home: bring the function into view, wash it briefly and
  * put focus on its link. A changed problem or status goes to its issue row;
  * numbers go to its matrix row.
  */

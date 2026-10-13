@@ -4,11 +4,11 @@
 // labels in text tokens, a hover/focus tooltip, and a table twin for every chart.
 // Charts are drawn at their real pixel width so text never stretches.
 
-import { OFF } from './status.js';
-import { formatTicks } from './format.js';
+import { OFF } from './status.js?v=20261012-235706';
+import { formatTicks } from './format.js?v=20261012-235706';
 
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
-import { esc, glyphMarkup, statusMarkup } from './ui.js';
+import { esc, glyphMarkup, statusMarkup } from './ui.js?v=20261012-235706';
 
 function niceStep(x) {
   if (!(x > 0)) return 1;
@@ -29,7 +29,13 @@ function zeroTicks(max, unit) {
 
 /** Data-range ticks for lines. */
 function rangeTicks(lo, hi, unit) {
-  if (lo === hi) { lo -= 1; hi += 1; if (lo < 0 && unit !== 'fraction') { hi -= lo; lo = 0; } }
+  if (lo === hi) {
+    // One value (often just the goal): a small band around it, never below zero for data that can't be.
+    const pad = unit === 'fraction' ? Math.max(0.01, Math.abs(lo) * 0.05) : Math.max(1, Math.abs(lo) * 0.1);
+    const floor = lo >= 0 ? 0 : -Infinity;
+    lo = Math.max(floor, lo - pad);
+    hi += pad;
+  }
   let step = niceStep((hi - lo) / 3);
   if (['count', 'people', 'parts'].includes(unit)) step = Math.max(1, Math.round(step));
   const a = Math.floor(lo / step) * step;
@@ -44,9 +50,15 @@ function rangeTicks(lo, hi, unit) {
 
 function shell(el, o, draw) {
   el.classList.add('chart');
-  el.tabIndex = 0;
-  el.setAttribute('role', 'group');
-  el.setAttribute('aria-label', `${o.label}. Use the left and right arrow keys to read each point, or open the table.`);
+  if (o.focusable === false) {
+    // Board rows: hover only. The same numbers are in Detail, with keyboard and table.
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', o.label);
+  } else {
+    el.tabIndex = 0;
+    el.setAttribute('role', 'group');
+    el.setAttribute('aria-label', `${o.label}. Use the left and right arrow keys to read each point, or open the table.`);
+  }
   el.innerHTML = '';
   const svgHost = document.createElement('div');
   svgHost.className = 'chart-svg';
@@ -125,8 +137,8 @@ function shell(el, o, draw) {
  * as color, and the same mark the status words use everywhere.
  * `bottom` is where the mark's lower edge sits; `attrs` go on the group.
  */
-function flag(cx, bottom, fs, attrs = '') {
-  const r = Math.max(5.5, fs * 0.5);
+function flag(cx, bottom, fs, attrs = '', radius = null) {
+  const r = radius ?? Math.max(5.5, fs * 0.5);
   const cy = bottom - r;
   const w = Math.max(1.8, r * 0.27);
   const svg = `<g class="chart-flag"${attrs}><circle cx="${cx}" cy="${cy}" r="${r}"></circle>`
@@ -164,7 +176,7 @@ export function barChart(el, o) {
     const ph = base - m.top;
     const slot = pw / o.daysInMonth;
     const barW = Math.max(3, Math.min(24, slot - 4));
-    const rows = o.series.filter((r) => r.day <= o.day && o.isProductionDay(r.day) !== false);
+    const rows = o.series.filter((r) => r.day <= o.day && !r.beforeStart && o.isProductionDay(r.day) !== false);
     const max = Math.max(0, ...rows.flatMap((r) => [r.actual, r.goal]).filter(isNum));
     const { top, ticks } = zeroTicks(max, o.kpi.unit);
     const y = (v) => base - (v / top) * ph;
@@ -225,7 +237,7 @@ export function lineChart(el, o) {
     const m = { top: 12, right: Math.round(fs * 4.5), bottom: fs + 12 };
     const base = H - m.bottom;
     const pw = width - left - m.right;
-    const rows = o.series.filter((r) => r.day <= o.day && o.isProductionDay(r.day) !== false);
+    const rows = o.series.filter((r) => r.day <= o.day && !r.beforeStart && o.isProductionDay(r.day) !== false);
     const vals = rows.flatMap((r) => [r.actual, r.goal]).filter(isNum);
     const { lo, hi, ticks } = rangeTicks(Math.min(...vals, vals.length ? Infinity : 0), Math.max(...vals, vals.length ? -Infinity : 1), o.kpi.unit);
     const x = (d) => left + ((d - 1) / Math.max(1, o.daysInMonth - 1)) * pw;
@@ -278,8 +290,8 @@ export function yearChart(el, o) {
   return shell(el, o, (width) => {
     const fs = o.fontSize ?? 12;
     const H = o.height ?? 170;
-    const left = Math.round(fs * 3.6);
-    const m = { top: fs + 8, right: 10, bottom: fs + 12 };
+    const left = o.left ?? Math.round(fs * 3.6);
+    const m = { top: o.top ?? fs + 8, right: o.right ?? 10, bottom: fs + (o.compact ? 6 : 12) };
     const base = H - m.bottom;
     const pw = width - left - m.right;
     const slot = pw / 12;
@@ -297,7 +309,9 @@ export function yearChart(el, o) {
       y = (v) => base - (v / z.top) * (base - m.top);
     }
     let svg = `<svg width="${width}" height="${H}" viewBox="0 0 ${width} ${H}" role="img" aria-label="${esc(o.label)}">`;
-    svg += gridAndYLabels(ticks, y, left, width - m.right, o.kpi.unit, fs);
+    // Board rows are short: every other tick, so labels never crowd.
+    const shownTicks = o.compact && ticks.length > 3 ? ticks.filter((_, i) => i % 2 === 0) : ticks;
+    svg += gridAndYLabels(shownTicks, y, left, width - m.right, o.kpi.unit, fs);
     const cx = (i) => left + slot * i + slot / 2;
     const points = [];
     let goals = '';
@@ -383,4 +397,73 @@ export function dataTable(rows, columns, caption) {
   }
   table.append(cap, thead, tbody);
   return table;
+}
+
+/* ---------- Board row: the month so far, day by day (compact) ---------- */
+
+/**
+ * A small line of each production day's actual against its goal, for a board row.
+ * On-goal days are dots in the on-track color; off-goal days are the off-goal glyph
+ * (red dot with a "!"), so shape carries the status as well as color. The goal is a
+ * dashed line (a target, not a grid). A production day with no number breaks the
+ * line and shows a hollow ring on the baseline.
+ * o = { series, day, isProductionDay(d), statusOf(row), describe(row), kpi, label,
+ *       height?, fontSize?, firstLabel(d), lastLabel(d), focusable? }
+ */
+export function trendChart(el, o) {
+  return shell(el, o, (width) => {
+    const fs = o.fontSize ?? 10;
+    const H = o.height ?? 88;
+    const left = o.left ?? Math.round(fs * 3.4);
+    const m = { top: 8, right: 8, bottom: fs + 6 };
+    const base = H - m.bottom;
+    const rows = o.series.filter((r) => r.day <= o.day && !r.beforeStart && o.isProductionDay(r.day) !== false);
+    const vals = rows.flatMap((r) => [r.actual, r.goal]).filter(isNum);
+    const { lo, hi, ticks } = rangeTicks(vals.length ? Math.min(...vals) : 0, vals.length ? Math.max(...vals) : 1, o.kpi.unit);
+    const shown = ticks.length > 3 ? ticks.filter((_, i) => i % 2 === 0) : ticks;
+    const first = rows[0]?.day ?? 1;
+    const last = Math.max(first, rows[rows.length - 1]?.day ?? first);
+    // One day so far sits in the middle; more spread from the first day to the last.
+    const x = (d) => (last === first ? left + (width - left - m.right) / 2 : left + 4 + ((d - first) / (last - first)) * (width - left - m.right - 8));
+    const y = (v) => base - ((v - lo) / (hi - lo || 1)) * (base - m.top);
+    const path = (key) => {
+      let d = ''; let pen = false;
+      for (const r of rows) {
+        if (!isNum(r[key])) { pen = false; continue; }
+        d += `${pen ? 'L' : 'M'}${x(r.day).toFixed(1)} ${y(r[key]).toFixed(1)} `;
+        if (!pen) d += 'l0 0 ';
+        pen = true;
+      }
+      return d.trim();
+    };
+    let svg = `<svg width="${width}" height="${H}" viewBox="0 0 ${width} ${H}" aria-hidden="true" focusable="false">`;
+    svg += gridAndYLabels(shown, y, left, width - m.right, o.kpi.unit, fs);
+    svg += `<line class="chart-axis" x1="${left}" x2="${width - m.right}" y1="${base}" y2="${base}"></line>`;
+    svg += `<path class="chart-goal-line" d="${path('goal')}"></path><path class="chart-line" d="${path('actual')}"></path>`;
+    const points = [];
+    let marks = '';
+    for (const r of rows) {
+      const i = points.length;
+      const cx = x(r.day);
+      if (isNum(r.actual)) {
+        const cy = y(r.actual);
+        const status = o.statusOf(r);
+        // Small dots with no ring, so close days don't merge; a miss is a slightly larger red dot.
+        // The selected day carries the full off-goal glyph (red dot with "!"), the shape that never relies on color.
+        if (r.day === o.day && status === OFF) marks += flag(cx, cy + 5, 9, ` data-i="${i}"`, 5).svg;
+        else marks += `<circle class="chart-dot chart-dot--${status}" data-i="${i}" cx="${cx}" cy="${cy}" r="${status === OFF ? 3.25 : 2.5}"></circle>`;
+        points.push({ x: cx, yTop: cy - 10, text: o.describe(r) });
+      } else {
+        marks += `<circle class="chart-missing" data-i="${i}" cx="${cx}" cy="${base - 3}" r="2"></circle>`;
+        points.push({ x: cx, yTop: base - 12, text: o.describe(r) });
+      }
+    }
+    svg += marks;
+    if (rows.length) {
+      svg += `<text class="chart-label" x="${x(first)}" y="${H - 1}" text-anchor="start" font-size="${fs}">${esc(o.firstLabel(first))}</text>`;
+      if (last !== first) svg += `<text class="chart-label is-strong" x="${x(last)}" y="${H - 1}" text-anchor="end" font-size="${fs}">${esc(o.lastLabel(last))}</text>`;
+    }
+    svg += '</svg>';
+    return { svg, points };
+  });
 }

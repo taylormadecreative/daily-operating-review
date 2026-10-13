@@ -5,11 +5,11 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Daily Operating Review</title>
-  <meta name="description" content="A live Daily Operating Review board for the plant floor: status calculated from the numbers, updated daily from any phone, with a meeting mode for the TV. Prototype by Taylormade Creative for LinkedXL OS.">
+  <meta name="description" content="The Daily Operating Review as a dashboard: every KPI against its goal, every miss with an owner and a next-24-hour action. A demo on a real plant's February numbers, by Taylormade Creative for LinkedXL OS.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="LinkedXL OS">
-  <meta property="og:title" content="Daily Operating Review · Live Dashboard">
-  <meta property="og:description" content="A live Daily Operating Review board for the plant floor: status calculated from the numbers, updated daily from any phone, with a meeting mode for the TV. Prototype by Taylormade Creative for LinkedXL OS.">
+  <meta property="og:title" content="Daily Operating Review · Dashboard">
+  <meta property="og:description" content="The Daily Operating Review as a dashboard: every KPI against its goal, every miss with an owner and a next-24-hour action. A demo on a real plant's February numbers, by Taylormade Creative for LinkedXL OS.">
   <meta property="og:url" content="https://taylormadecreative.github.io/daily-operating-review/">
   <meta property="og:image" content="https://taylormadecreative.github.io/daily-operating-review/og-image.jpg">
   <meta property="og:image:width" content="1200">
@@ -21,6 +21,8 @@
   <script>
     // Home (dashboard) by default; ?view=dor shows the ledger board. Set before first paint.
     document.documentElement.dataset.view = new URLSearchParams(location.search).get('view') === 'dor' ? 'dor' : 'home';
+    // DOR board layout: the client's v2 (10/12) by default; ?layout=classic keeps the v1 ledger for rollback.
+    document.documentElement.dataset.layout = new URLSearchParams(location.search).get('layout') === 'classic' ? 'classic' : 'v2';
     // Customize (classic board): paint the saved look before first paint. js/customize.js keeps this cache.
     try {
       var cz = JSON.parse(localStorage.getItem('dor.customize.paint.v1') || 'null');
@@ -32,18 +34,22 @@
   </script>
   <link rel="preload" href="assets/fonts/BigShouldersDisplay-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/Archivo-var.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/fonts.css">
-  <link rel="stylesheet" href="css/tokens.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/board.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/detail.css">
-  <link rel="stylesheet" href="css/enter.css">
-  <link rel="stylesheet" href="css/meeting.css">
-  <link rel="stylesheet" href="css/home.css">
-  <link rel="stylesheet" href="css/customize.css">
-  <link rel="stylesheet" href="css/tour.css">
-  <script type="module" src="js/app.js"></script>
+  <link rel="stylesheet" href="css/fonts.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/tokens.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/base.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/board.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/board-v2.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/components.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/detail.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/enter.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/meeting.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/home.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/customize.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/tour.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/actions.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/recorder.css?v=20261012-235706">
+  <link rel="stylesheet" href="css/setup.css?v=20261012-235706">
+  <script type="module" src="js/app.js?v=20261012-235706"></script>
 </head>
 <body>
   <svg class="sprite" aria-hidden="true" focusable="false">
@@ -93,7 +99,7 @@
           <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
       </div>
-      <nav class="side-nav" data-side-nav aria-label="Pages and departments"></nav>
+      <nav class="side-nav" data-side-nav aria-label="Pages and functions"></nav>
       <div class="side-bottom">
         <button class="side-link side-tour" type="button" data-start-tour title="How it works">
           <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
@@ -137,7 +143,7 @@
         <div class="h-actions">
           <a class="hbtn hbtn--primary" href="#enter" data-enter>
             <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/></svg>
-            <span>Update Daily</span>
+            <span>Enter numbers</span>
           </a>
           <button class="hbtn" type="button" data-export-toggle aria-haspopup="menu" aria-expanded="false" aria-controls="export-menu">
             <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
@@ -172,7 +178,7 @@
     </div>
 
     <div class="h-mobilebar">
-      <a class="hbtn hbtn--primary" href="#enter" data-enter>Update Daily</a>
+      <a class="hbtn hbtn--primary" href="#enter" data-enter>Enter numbers</a>
     </div>
   </div>
 
@@ -183,7 +189,7 @@
         <a class="brand" href="./" data-nav-home aria-label="Daily Operating Review, LinkedXL OS. Home dashboard">
           <svg class="brand-badge" viewBox="0 0 153.85 127.21" aria-hidden="true" focusable="false"><use href="#lx-badge"></use></svg>
           <span class="brand-text">
-            <span class="brand-title">Daily Operating Review</span>
+            <span class="brand-title">Daily Operating Review<span class="v2-only"> (DOR)</span></span>
             <span class="brand-plant" data-plant>Conneaut plant</span>
           </span>
         </a>
@@ -192,17 +198,28 @@
           <button class="icon-btn" type="button" data-prev aria-label="Previous day">
             <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-prev"></use></svg>
           </button>
-          <p class="date-label"><time data-board-date datetime=""></time></p>
+          <span class="date-pick">
+            <button class="date-label date-pick-btn" type="button" data-board-date-pick aria-describedby="board-date-hint">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <time data-board-date datetime=""></time>
+            </button>
+            <span class="sr-only" id="board-date-hint">Choose a production day</span>
+            <!-- Native picker, limited to the month's data. On touch screens it sits over the button so a tap opens it directly. -->
+            <input class="date-input" type="date" data-board-date-input tabindex="-1" aria-label="Production day">
+          </span>
           <button class="icon-btn" type="button" data-next aria-label="Next day">
             <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-next"></use></svg>
           </button>
         </nav>
 
-        <a class="topbar-home" href="./" data-nav-home>
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>Home
+        <a class="topbar-home topbar-home--icon" href="./" data-nav-home aria-label="Home dashboard" title="Home dashboard">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></svg>
         </a>
         <button class="topbar-home topbar-customize" type="button" data-customize>
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Customize
+        </button>
+        <button class="topbar-home topbar-actions" type="button" data-open-actions>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>Action register
         </button>
         <button class="topbar-more" type="button" data-topbar-more aria-haspopup="menu" aria-expanded="false" aria-controls="dor-menu">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span class="topbar-more-text">Menu</span>
@@ -223,9 +240,11 @@
             <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-info"></use></svg>How to read this board
           </button>
           <button class="btn btn--text howto-btn" type="button" data-start-tour>Take the tour</button>
+          <button class="btn btn--text howto-btn" type="button" data-open-setup>Set up this board</button>
           <p class="your-row" data-your-row hidden></p>
         </div>
         <p class="date-note" data-date-note role="status" hidden></p>
+        <div class="board-notes" data-board-notes></div>
       </section>
 
       <div class="board">
@@ -241,9 +260,35 @@
         <ol class="rows" data-rows aria-label="Departments in meeting order"></ol>
       </div>
 
+      <div class="board2">
+        <div class="board2-head" aria-hidden="true">
+          <span class="h2c h2c--fn">Function</span>
+          <span class="h2c">Owner</span>
+          <span class="h2c">KPI<small>and goal</small></span>
+          <span class="h2c">Status<small data-head-day2></small></span>
+          <span class="h2c">Month to date<small data-head-month2></small></span>
+          <span class="h2c h2c--trend">Daily trend<small data-head-trend></small></span>
+          <span class="h2c h2c--ytd">Year to date<small>Jan &ndash; Dec vs goal</small></span>
+          <span class="h2c h2c--issue">Issue</span>
+          <span class="h2c h2c--action">Action<small>Next 24 hours</small></span>
+        </div>
+        <ol class="rows2" data-rows2 aria-label="Functions in meeting order"></ol>
+        <div class="board2-foot">
+          <p class="b2-brand">LinkedXL OS<span aria-hidden="true">&nbsp;·&nbsp;</span><span class="b2-tagline">Every Goal Connected<span aria-hidden="true"> · </span>Every KPI Driven by KPAs<span aria-hidden="true"> · </span>Every Action Accountable</span></p>
+          <ul class="b2-key" aria-label="Key">
+            <li><svg class="glyph b2-key-on" aria-hidden="true" focusable="false"><use href="#g-on"></use></svg>On track</li>
+            <li><svg class="glyph b2-key-off" aria-hidden="true" focusable="false"><use href="#g-off"></use></svg>Off goal</li>
+            <li><svg class="glyph b2-key-na" aria-hidden="true" focusable="false"><use href="#g-missing"></use></svg>Not entered</li>
+            <li><span class="key key--actual" aria-hidden="true"></span>Actual</li>
+            <li><span class="key key--goal" aria-hidden="true"></span>Goal</li>
+          </ul>
+          <p class="b2-updated" data-last-updated></p>
+        </div>
+      </div>
+
       <footer class="board-foot">
         <p>Prototype by Taylormade Creative for LinkedXL. Anything you enter stays on this device. Status is calculated from each number and its goal.</p>
-        <button class="btn btn--quiet" type="button" data-reset>Reset demo data</button>
+        <button class="btn btn--quiet" type="button" data-reset>Start the demo over</button>
       </footer>
     </main>
 
@@ -281,7 +326,7 @@
         <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
-    <nav class="side-nav" data-side-nav aria-label="Pages and departments"></nav>
+    <nav class="side-nav" data-side-nav aria-label="Pages and functions"></nav>
     <div class="side-bottom">
       <button class="side-link side-tour" type="button" data-start-tour>
         <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
@@ -297,6 +342,9 @@
 
   <div class="hmenu dor-menu" id="dor-menu" popover role="menu" aria-label="Menu">
     <a class="menu-item" role="menuitem" href="./" data-nav-home>Home dashboard</a>
+    <button class="menu-item" type="button" role="menuitem" data-open-actions>Action register</button>
+    <button class="menu-item" type="button" role="menuitem" data-open-minutes>Meeting minutes</button>
+    <button class="menu-item" type="button" role="menuitem" data-open-setup>Board setup</button>
     <button class="menu-item" type="button" role="menuitem" data-customize>Customize this board</button>
     <button class="menu-item" type="button" role="menuitem" data-start-tour>Take the tour</button>
   </div>
@@ -312,15 +360,35 @@
         <p class="meeting-progress-text" data-progress-text aria-live="polite"></p>
         <div class="meeting-progress-line" aria-hidden="true"><span data-progress-fill></span></div>
       </div>
+      <p class="meeting-added" data-actions-added role="status" hidden></p>
+      <div class="meeting-rec" data-rec data-state="idle" hidden>
+        <p class="rec-live" data-rec-live hidden><span class="rec-dot" aria-hidden="true"></span><span class="rec-word" data-rec-word>Recording</span><span class="rec-time" data-rec-time></span></p>
+        <button class="btn btn--secondary rec-btn" type="button" data-rec-toggle aria-label="Record the meeting">
+          <svg class="icon rec-icon rec-icon--mic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="7" y="2.5" width="6" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="icon rec-icon rec-icon--stop" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="5" y="5" width="10" height="10" rx="1.5" fill="currentColor"/></svg>
+          <span data-rec-label>Record</span>
+        </button>
+        <p class="rec-why" id="rec-why" data-rec-why hidden>Recording works in Chrome, Edge and Safari.</p>
+        <p class="sr-only" data-rec-announce role="status"></p>
+      </div>
       <p class="meeting-timer"><span class="sr-only">Meeting time </span><span data-timer>0:00</span></p>
       <button class="btn btn--secondary meeting-exit" type="button" data-exit>Exit <span class="kbd" aria-hidden="true">Esc</span></button>
     </header>
-    <div class="meeting-stage" data-stage></div>
+    <div class="meeting-body">
+      <div class="meeting-stage" data-stage></div>
+      <div class="meeting-captions" data-captions role="region" aria-label="Live captions" hidden>
+        <p class="captions-label" aria-hidden="true">Live captions</p>
+        <p class="captions-box"><span class="captions-inner"><span class="captions-final" data-captions-final></span> <span class="captions-interim" data-captions-interim></span></span></p>
+      </div>
+    </div>
     <footer class="meeting-controls">
       <button class="btn btn--secondary meeting-nav" type="button" data-prev-slide>
         <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-prev"></use></svg>Previous
       </button>
-      <p class="meeting-hint">Arrow keys or a presenter clicker move between departments.</p>
+      <div class="meeting-mid">
+        <p class="meeting-hint">Arrow keys or a presenter clicker move between functions.</p>
+        <button class="btn btn--text captions-toggle" type="button" data-captions-toggle hidden>Hide captions</button>
+      </div>
       <button class="btn btn--primary meeting-nav" type="button" data-next-slide>
         Next<svg class="icon" aria-hidden="true" focusable="false"><use href="#g-next"></use></svg>
       </button>

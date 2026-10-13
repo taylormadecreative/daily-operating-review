@@ -239,3 +239,11 @@
 @media (prefers-reduced-motion: reduce) {
   .cz-sheet, .cz-sheet:not([open]) { transform: none; transition: none; }
 }
+
+/* v2 board: the preview shows solid blocks when Strength is Solid (the default). */
+:root[data-cz-strength="solid"]:not([data-cz-place="words"]) .cz-mini-cell--off { background: var(--off); color: var(--n-0); }
+:root[data-cz-strength="solid"]:not([data-cz-place="words"]) .cz-mini-cell--on { background: var(--on); color: var(--n-0); }
+:root[data-cz-strength="solid"]:not([data-cz-place="words"]) .cz-mini-cell .status-glyph,
+:root[data-cz-strength="solid"]:not([data-cz-place="words"]) .cz-mini-cell svg { color: inherit; }
+.cz-setup { margin: var(--s-2) 0 0; color: var(--ink-2); font-size: var(--fs-small); }
+.cz-setup-link { min-height: var(--tap); padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
