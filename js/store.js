@@ -5,7 +5,7 @@
 // localStorage overlay of what people entered on this device. getMonth()
 // returns a fresh merged copy; nothing outside this file touches storage.
 
-const DATA_URL = new URL('../data/conneaut-2026-02.json?v=20261013-151156', import.meta.url);
+const DATA_URL = new URL('../data/conneaut-2026-02.json?v=20261112-075602', import.meta.url);
 const OVERLAY_KEY = 'dor.overlay.v1';
 const SETUP_KEY = 'dor.setup.v1';
 export const AREA_IDS = ['plant', 'mold', 'bond', 'prime', 'compounding'];
@@ -176,6 +176,8 @@ export const UNITS = [
   { id: 'hours', name: 'Hours', rollup: 'total' },
 ];
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+/** The Weekly review's rules (js/weekly.js RULE_IDS; repeated here so this module stays free of it). */
+export const WEEKLY_RULE_IDS = ['sum', 'mean', 'weighted', 'latest', 'weekly-only'];
 const emptySetup = () => ({ version: 1, plant: null, functions: {}, added: [], kpis: {}, order: null });
 
 const isObj = (v) => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
@@ -203,6 +205,8 @@ function cleanFunctionSetup(f) {
     monthGoal: num(f.monthGoal),
     hidden: f.hidden === true ? true : undefined,
     icon: str(f.icon, 30),
+    // The Weekly review's rule for the workbook KPI (js/weekly.js); unset = its default.
+    weeklyRule: WEEKLY_RULE_IDS.includes(f.weeklyRule) ? f.weeklyRule : undefined,
   };
   for (const k of Object.keys(out)) if (out[k] === undefined) delete out[k];
   return out;
@@ -237,6 +241,7 @@ function normalizeSetup(raw) {
         ...(k.rollup === 'total' || k.rollup === 'average' ? { rollup: k.rollup } : {}),
         ...(isNum(k.monthGoal) ? { monthGoal: k.monthGoal } : {}),
         ...(Number.isInteger(k.startDay) ? { startDay: k.startDay } : {}),
+        ...(WEEKLY_RULE_IDS.includes(k.weeklyRule) ? { weeklyRule: k.weeklyRule } : {}),
       }));
     }
   }
@@ -307,6 +312,10 @@ export function resetEverything() {
   setupMem = null;
   setupWriteFailed = false;
   overlayMem = null; // this visit's numbers go too, even when the browser was refusing writes
+  orgMem = null;     // and this visit's Organization
+  orgWriteFailed = false;
+  weeklyMem = null;  // and this visit's Weekly review
+  weeklyWriteFailed = false;
   return snapshot;
 }
 
@@ -322,6 +331,17 @@ export function restoreEverything(snapshot) {
 }
 
 export const RESET_UNDO_KEY = 'dor.reset.undo';
+
+/** Does this browser keep what's saved here? (A private window or blocked storage doesn't.) */
+export function storageWorks() {
+  try {
+    localStorage.setItem('dor.probe', '1');
+    localStorage.removeItem('dor.probe');
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /** A KPI's unit changed to or from percent: its stored numbers change scale with it (5 stays 5%, not 500%). */
 export function scaleExtraValues(fnId, kpiId, factor) {
@@ -387,6 +407,7 @@ function newKpiRow(month, fn, k, prod) {
     startDay: Number.isInteger(k.startDay) && k.startDay >= 1 ? k.startDay : 1,
     rollup: k.rollup === 'total' || k.rollup === 'average' ? k.rollup : unit.rollup,
     monthGoal: isNum(k.monthGoal) ? k.monthGoal : null,
+    weeklyRule: WEEKLY_RULE_IDS.includes(k.weeklyRule) ? k.weeklyRule : null,
     name: fn.name,
     owner: fn.owner,
     ownerPhoto: fn.ownerPhoto ?? null,
@@ -456,7 +477,7 @@ function applySetup(month, setup, prod) {
     const fn = { id: a.id, name: a.name || 'New function', owner: a.owner || 'Owner', dorQuestion: a.question ?? '', custom: true, icon: a.icon ?? null };
     const first = (setup.kpis?.[a.id] ?? [])[0];
     const row = newKpiRow(month, fn, first ?? { id: 'kpi', name: 'KPI', unit: 'count', better: 'higher', goal: null }, prod);
-    Object.assign(fn, { kpiDaily: row.kpiDaily, kpiMonthly: row.kpiMonthly, daily: row.daily, monthToDate: [], monthly: row.monthly, rollup: row.rollup, monthGoal: row.monthGoal, startDay: row.startDay, firstKpiId: first?.id ?? 'kpi' });
+    Object.assign(fn, { kpiDaily: row.kpiDaily, kpiMonthly: row.kpiMonthly, daily: row.daily, monthToDate: [], monthly: row.monthly, rollup: row.rollup, monthGoal: row.monthGoal, startDay: row.startDay, weeklyRule: row.weeklyRule, firstKpiId: first?.id ?? 'kpi' });
     month.functions.push(fn);
   }
   for (const fn of month.functions) {
@@ -467,6 +488,7 @@ function applySetup(month, setup, prod) {
     if (typeof f.question === 'string') fn.dorQuestion = f.question;
     fn.ownerPhoto = typeof f.photo === 'string' && f.photo.startsWith('data:image/') ? f.photo : null;
     if (f.icon) fn.icon = f.icon;
+    if (!fn.custom) fn.weeklyRule = WEEKLY_RULE_IDS.includes(f.weeklyRule) ? f.weeklyRule : null;
     // The workbook KPI: a new display name, and goals set here instead of the plan's.
     if (!fn.custom) {
       fn.sourceDayLabel = fn.kpiDaily.boardLabel;
@@ -539,7 +561,300 @@ function applyExtraEntries(month, overlay, prod) {
   }
 }
 
-/** A fresh merged copy of the month: workbook + Board setup + entries from this device. */
+/* ---------- Organization (spec §3): people, roles, who answers for each function ----------
+   Stored on this device under dor.org.v1 as { version, active, draft, rev, checked, activatedAt }.
+   Until an organization is activated, `active` is null and the organization is read from the board
+   (one person per function owner, the Plant owner accountable for every function). Board setup
+   edits a draft (a copy); Validate checks it; Activate makes it the one the pages use. Roles are
+   shown, not enforced: the connected version checks sign-in. */
+
+const ORG_KEY = 'dor.org.v1';
+export const ROLES = [
+  { id: 'admin', name: 'Administrator' },
+  { id: 'leader', name: 'Site or department leader' },
+  { id: 'contributor', name: 'Contributor' },
+  { id: 'facilitator', name: 'Facilitator' },
+  { id: 'verifier', name: 'Verifier' },
+  { id: 'executive', name: 'Read-only executive' },
+];
+/** The DOR keeps each owner's morning to a few numbers (spec §1, §4: "at most 1–3"). */
+export const DAILY_MEASURE_MAX = 3;
+export const WEEKDAYS = [['mon', 'Mon'], ['tue', 'Tue'], ['wed', 'Wed'], ['thu', 'Thu'], ['fri', 'Fri'], ['sat', 'Sat'], ['sun', 'Sun']];
+export const ORG_NAME_MAX = 80;
+
+let orgMem = null;
+let orgWriteFailed = false;
+
+const emptyOrgDoc = () => ({ version: 1, active: null, draft: null, rev: 0, checked: null, activatedAt: null });
+
+function cleanOrg(o) {
+  if (!isObj(o)) return null;
+  const text = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
+  const ids = new Set();
+  const people = (Array.isArray(o.people) ? o.people : []).filter((p) => isObj(p) && okId(p.id) && !ids.has(p.id) && ids.add(p.id)).map((p) => ({
+    id: p.id,
+    name: text(p.name, NAME_MAX.owner),
+    title: text(p.title, NAME_MAX.owner),
+    roles: Array.isArray(p.roles) ? ROLES.map((r) => r.id).filter((r) => p.roles.includes(r)) : [],
+    reportsTo: okId(p.reportsTo) ? p.reportsTo : null,
+  }));
+  const functions = {};
+  if (isObj(o.functions)) {
+    for (const [id, f] of Object.entries(o.functions)) {
+      if (okId(id) && isObj(f)) functions[id] = { responsible: okId(f.responsible) ? f.responsible : null, accountable: okId(f.accountable) ? f.accountable : null };
+    }
+  }
+  const list = (v, max) => (Array.isArray(v) ? v : []).filter((x) => isObj(x) && okId(x.id)).map((x) => ({ id: x.id, name: text(x.name, max) }));
+  const areas = (Array.isArray(o.areas) ? o.areas : []).filter((a) => isObj(a) && okId(a.id)).map((a) => ({ id: a.id, name: text(a.name, 40), lead: okId(a.lead) ? a.lead : null }));
+  return {
+    name: text(o.name, ORG_NAME_MAX),
+    timeZone: text(o.timeZone, 60),
+    weekStart: o.weekStart === 'sun' ? 'sun' : 'mon',
+    productionDays: Array.isArray(o.productionDays) ? WEEKDAYS.map(([d]) => d).filter((d) => o.productionDays.includes(d)) : ['mon', 'tue', 'wed', 'thu', 'fri'],
+    cutoff: typeof o.cutoff === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(o.cutoff) ? o.cutoff : '',
+    areas,
+    shifts: list(o.shifts, 40),
+    people,
+    functions,
+    // Action verification (spec §12): an owner can't verify their own action unless this is on.
+    allowSelfVerify: o.allowSelfVerify === true,
+  };
+}
+
+function readOrgDoc() {
+  let raw = null;
+  if (orgWriteFailed && orgMem) raw = orgMem;
+  else {
+    try { raw = JSON.parse(localStorage.getItem(ORG_KEY) ?? 'null') ?? orgMem; } catch { raw = orgMem; }
+  }
+  const doc = emptyOrgDoc();
+  if (!isObj(raw) || raw.version !== 1) return doc;
+  doc.active = cleanOrg(raw.active);
+  doc.draft = cleanOrg(raw.draft);
+  doc.rev = Number.isInteger(raw.rev) && raw.rev >= 0 ? raw.rev : 0;
+  doc.activatedAt = typeof raw.activatedAt === 'string' ? raw.activatedAt : null;
+  if (isObj(raw.checked) && Number.isInteger(raw.checked.rev) && Array.isArray(raw.checked.issues)) {
+    doc.checked = {
+      rev: raw.checked.rev,
+      ok: raw.checked.ok === true,
+      at: typeof raw.checked.at === 'string' ? raw.checked.at : null,
+      issues: raw.checked.issues.filter((i) => isObj(i) && typeof i.text === 'string').map((i) => ({ code: String(i.code ?? ''), text: i.text, focus: typeof i.focus === 'string' ? i.focus : null })),
+    };
+  }
+  return doc;
+}
+
+/** Returns false when the browser refused: the change then holds for this visit only. */
+function writeOrgDoc(doc) {
+  orgMem = structuredClone(doc);
+  try {
+    localStorage.setItem(ORG_KEY, JSON.stringify(doc));
+    orgWriteFailed = false;
+    return true;
+  } catch {
+    orgWriteFailed = true;
+    return false;
+  }
+}
+
+/**
+ * The organization read from the board, before anyone activated one: a person for each function's
+ * owner (one person for a name that owns several), titled "{Function} lead" and the Plant owner
+ * "Plant manager", every lead reporting to the Plant owner, who is the accountable leader for every
+ * function. Titles and roles are starting points, all editable in Board setup.
+ */
+export function defaultOrg(month) {
+  const people = [];
+  const byName = new Map();
+  const plantFn = month.functions.find((f) => f.id === 'plant') ?? null;
+  for (const fn of month.functions) {
+    const name = String(fn.owner ?? '').trim();
+    if (!name || /^owner( name)?$/i.test(name) || byName.has(name.toLowerCase())) continue;
+    const person = {
+      id: `p-${fn.id}`,
+      name,
+      title: fn.id === 'plant' ? 'Plant manager' : `${fn.name} lead`,
+      roles: fn.id === 'plant' ? ['admin', 'leader', 'facilitator', 'verifier'] : ['leader', 'contributor'],
+      reportsTo: null,
+    };
+    byName.set(name.toLowerCase(), person);
+    people.push(person);
+  }
+  const top = plantFn ? byName.get(String(plantFn.owner ?? '').trim().toLowerCase()) ?? null : null;
+  for (const p of people) if (top && p !== top) p.reportsTo = top.id;
+  const functions = {};
+  for (const fn of month.functions) {
+    functions[fn.id] = { responsible: byName.get(String(fn.owner ?? '').trim().toLowerCase())?.id ?? null, accountable: top?.id ?? null };
+  }
+  const site = String(month.sourcePlant ?? month.plant ?? '').replace(/\s+plant$/i, '');
+  return {
+    name: '',
+    timeZone: `Eastern (${site}, OH)`,
+    weekStart: 'mon',
+    productionDays: ['mon', 'tue', 'wed', 'thu', 'fri'],
+    cutoff: '',
+    areas: (month.areas ?? []).filter((a) => a.id !== 'plant').map((a) => ({ id: a.id, name: a.name, lead: null })),
+    shifts: [{ id: 's1', name: '1st shift' }, { id: 's2', name: '2nd shift' }, { id: 's3', name: '3rd shift' }],
+    people,
+    functions,
+    allowSelfVerify: false,
+  };
+}
+
+/**
+ * The organization the pages use (active), the one being edited (draft), and its lifecycle.
+ * -> { active, stored, draft, rev, checked, activatedAt }  (`stored`: an organization was activated)
+ */
+export function getOrg(month) {
+  const doc = readOrgDoc();
+  return { active: doc.active ?? defaultOrg(month), stored: Boolean(doc.active), draft: doc.draft, rev: doc.rev, checked: doc.checked, activatedAt: doc.activatedAt };
+}
+
+/** A copy of the whole stored record, for Undo. */
+export const snapshotOrg = () => structuredClone(readOrgDoc());
+export const restoreOrg = (doc) => writeOrgDoc(isObj(doc) ? doc : emptyOrgDoc());
+
+/** Change the draft (made from the active organization on the first change). Returns { ok, draft }. */
+export function editOrgDraft(month, change) {
+  const doc = readOrgDoc();
+  if (!doc.draft) doc.draft = structuredClone(doc.active ?? defaultOrg(month));
+  change(doc.draft);
+  doc.draft = cleanOrg(doc.draft);
+  doc.rev += 1;
+  doc.checked = null;
+  return { ok: writeOrgDoc(doc), draft: doc.draft };
+}
+
+/** The responsible person for a function: { id, name } or, with nobody assigned, the board's owner name. */
+export function responsibleFor(month, org, fnId) {
+  const pid = org.functions?.[fnId]?.responsible;
+  const person = pid ? org.people.find((p) => p.id === pid) : null;
+  if (person) return { id: person.id, name: person.name };
+  const fn = [...month.functions, ...(month.hiddenFunctions ?? [])].find((f) => f.id === fnId);
+  return { id: null, name: fn?.owner ?? '' };
+}
+
+/** The accountable leader for a function: { id, name } (name '' when nobody is set). */
+export function accountableFor(org, fnId) {
+  const pid = org?.functions?.[fnId]?.accountable;
+  const person = pid ? (org.people ?? []).find((p) => p.id === pid) : null;
+  return { id: person?.id ?? null, name: person?.name?.trim() ?? '' };
+}
+
+/** How many DOR daily measures a person owns, and where: { count, by: [{ fn, count }] }. */
+export function dailyMeasuresOf(month, org, personId) {
+  const by = month.functions.filter((fn) => org.functions?.[fn.id]?.responsible === personId).map((fn) => ({ fn, count: kpiRowsFor(fn).length }));
+  return { count: by.reduce((n, x) => n + x.count, 0), by };
+}
+
+/**
+ * The owner a new daily measure on this function would go to, and how many they already have, by the
+ * active organization (an unassigned function counts on its own). -> { name, count, max }
+ */
+export function measureLoad(month, fnId) {
+  const org = getOrg(month).active;
+  const who = responsibleFor(month, org, fnId);
+  const fn = month.functions.find((f) => f.id === fnId);
+  const count = who.id ? dailyMeasuresOf(month, org, who.id).count : (fn ? kpiRowsFor(fn).length : 0);
+  return { name: who.name, count, max: DAILY_MEASURE_MAX };
+}
+
+const listWords = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+
+/**
+ * Validate (spec §3 lifecycle): every function has a responsible owner and an accountable leader, no
+ * owner has more than 3 daily measures, nobody's reporting line runs in a circle, and everyone has a
+ * name. -> [{ code, text, focus }] in plain words (focus: the Board setup box that fixes it).
+ */
+export function validateOrg(month, org) {
+  const issues = [];
+  const byId = new Map(org.people.map((p) => [p.id, p]));
+  const nameOf = (p) => p.name.trim() || 'A person with no name';
+  org.people.forEach((p) => {
+    if (!p.name.trim()) issues.push({ code: 'name', text: 'A person in the list has no name.', focus: `person:${p.id}` });
+  });
+  for (const fn of month.functions) {
+    const a = org.functions?.[fn.id] ?? {};
+    if (!a.responsible || !byId.has(a.responsible)) issues.push({ code: 'owner', text: `${fn.name} has no responsible owner.`, focus: `owner:${fn.id}` });
+    if (!a.accountable || !byId.has(a.accountable)) issues.push({ code: 'leader', text: `${fn.name} has no accountable leader.`, focus: `leader:${fn.id}` });
+  }
+  for (const p of org.people) {
+    const load = dailyMeasuresOf(month, org, p.id);
+    if (load.count > DAILY_MEASURE_MAX) {
+      const where = listWords(load.by.map((x) => `${x.fn.name}: ${x.count}`));
+      issues.push({ code: 'cap', text: `${nameOf(p)} owns ${load.count} daily measures (${where}). The DOR shows at most ${DAILY_MEASURE_MAX} for one owner. Give a function to someone else, or remove a KPI under Functions.`, focus: `person:${p.id}` });
+    }
+  }
+  // Reporting loops: follow each line up; a person met twice closes a circle (each circle said once).
+  const seen = new Set();
+  for (const start of org.people) {
+    const path = [];
+    let p = start;
+    while (p && !path.includes(p.id) && !seen.has(p.id)) { path.push(p.id); p = byId.get(p.reportsTo); }
+    if (p && path.includes(p.id)) {
+      const ring = path.slice(path.indexOf(p.id)).map((id) => byId.get(id));
+      const names = ring.map(nameOf);
+      const text = ring.length === 1
+        ? `Reporting loop: ${names[0]} reports to themselves.`
+        : ring.length === 2
+          ? `Reporting loop: ${names[0]} reports to ${names[1]}, who reports to ${names[0]}.`
+          : `Reporting loop: ${names.map((n, i) => (i === 0 ? `${n} reports to ${names[1]}` : i < names.length - 1 ? `${n} to ${names[i + 1]}` : '')).filter(Boolean).join(', ')}, and ${names[names.length - 1]} back to ${names[0]}.`;
+      issues.push({ code: 'loop', text, focus: `reports:${ring[0].id}` });
+    }
+    path.forEach((id) => seen.add(id));
+  }
+  return issues;
+}
+
+/** Validate the draft and keep the result with it. -> { ok, issues } */
+export function checkOrgDraft(month) {
+  const doc = readOrgDoc();
+  if (!doc.draft) return { ok: false, issues: [] };
+  const issues = validateOrg(month, doc.draft);
+  doc.checked = { rev: doc.rev, ok: issues.length === 0, at: new Date().toISOString(), issues };
+  writeOrgDoc(doc);
+  return { ok: issues.length === 0, issues };
+}
+
+/** Activate a validated draft. Returns the record before, for Undo, or null when it isn't ready. */
+export function activateOrgDraft() {
+  const doc = readOrgDoc();
+  if (!doc.draft || !doc.checked?.ok || doc.checked.rev !== doc.rev) return null;
+  const before = structuredClone(doc);
+  doc.active = doc.draft;
+  doc.draft = null;
+  doc.checked = null;
+  doc.activatedAt = new Date().toISOString();
+  doc.rev += 1;
+  writeOrgDoc(doc);
+  return before;
+}
+
+/** Throw the draft away (the active organization stays). Returns the record before, for Undo. */
+export function discardOrgDraft() {
+  const doc = readOrgDoc();
+  const before = structuredClone(doc);
+  doc.draft = null;
+  doc.checked = null;
+  doc.rev += 1;
+  writeOrgDoc(doc);
+  return before;
+}
+
+/** The active organization names each function's owner on every page (applied after Board setup). */
+function applyOrg(month, org) {
+  if (!org) return;
+  const byId = new Map(org.people.map((p) => [p.id, p]));
+  for (const fn of [...month.functions, ...(month.hiddenFunctions ?? [])]) {
+    const person = byId.get(org.functions?.[fn.id]?.responsible);
+    if (person?.name.trim()) {
+      fn.owner = person.name.trim();
+      fn.ownerPersonId = person.id;
+    }
+  }
+}
+
+/** A fresh merged copy of the month: workbook + Board setup + the active Organization + entries from this device. */
 export function getMonth() {
   if (!base) throw new Error('Call load() first.');
   const overlay = readOverlay();
@@ -549,6 +864,7 @@ export function getMonth() {
     month.productionDays = workbookCalendar(month);
     const prod = productionMap(month.productionDays);
     applySetup(month, readSetup(), prod);
+    applyOrg(month, readOrgDoc().active);
     applyOverlay(month, overlay);
     applyExtraEntries(month, overlay, prod);
     return month;
@@ -693,4 +1009,240 @@ export function restoreOverlay(snapshot) {
 
 export function hasEntries() {
   return Object.keys(readOverlay().entries).length > 0;
+}
+
+/* ---------- Weekly review (dor.weekly.v1): inputs, commentary, readiness, review records ----------
+   Everything the Weekly review saves on this device, by week ('YYYY-MM-DD' of the week's first day):
+
+   { version: 1,
+     weeks: { [weekKey]: {
+       inputs: { [metricKey]: {            metricKey: a KPI row id ("engineering", "people--absent"),
+                                           or "m:<functionId>" for a broader weekly measure (TRIR, Uptime)
+         weekly:   { value, by, at } | null           WEEKLY_ONLY: the week's value, entered once
+         override: { value, reason, approver, approverId, expires, at, raw, received } | null
+                                           OVERRIDE: replaces the effective result; raw = the calculated
+                                           value when it was approved (a later change flags reapproval)
+         history:  [{ kind, value, raw, reason, approver, by, at }]
+                                           kind: 'weekly-entered' | 'weekly-changed' | 'weekly-cleared' |
+                                           'override-added' | 'override-removed'; never trimmed
+       } },
+       commentary: { [functionId]: { happened, expected, risks, at } }   never changes a number
+       participants: [personId],                                         confirmed from the Organization
+       preparedAt: ISO time | null }                                    the last Prepare review
+     },
+     records: [ReviewRecord] }
+
+   ReviewRecord (a weekly review's Governance record, spec §7 and §13):
+   { id: 'wor-…', type: 'WOR', weekKey, weekStart, weekEnd, asOfIso,
+     state: 'draft' | 'finalized',      Prepare review saves or refreshes the week's draft; Finish review finalizes it
+     createdAt, updatedAt, finalizedAt, finalizedBy (name), version, calcVersion,
+     facilitator: personId | null,      who finalized it (an Administrator or Facilitator)
+     attendees: [personId], decisions: [{ id, text, by, at, context }],   context: the agenda item it was taken on
+     attendeeNames: [{ id, name }], actionSnapshots: [{ id, text, status, owner, ownerPersonId, due, fnId }]   frozen when finalized
+     commentary: { fnId: { happened, expected, risks } }   each function's commentary when saved (frozen when finalized)
+     actionIds: [actionId],             carried in, opened this week, assigned in the meeting, escalated (by native id)
+     escalations: [{ id, fnId, label, actionId, to, reason, by, at }],
+     exceptions: [{ text }], exceptionNote,   what was still open when it was finalized, and why (stays visible)
+     nextReviewDate: 'YYYY-MM-DD',      the next week's first day
+     meeting: { startedAt, endedAt, durationSec, recorded, transcript: [{ at, text }] } | null,
+     basedOn: recordId | null,          a draft started after the week was finalized
+     amendments: [{ text, by, at }],    notes appended after finalizing, with reason and author (shown as "Notes")
+     summary: string,
+     results: [{ key, fnId, fnName, owner, kpiName, unit, better, rule, raw, effective, goal, goalVaries,
+                 status, expected, received, provisional, overridden, met, missed, gap }],
+     readiness: [{ id, done, text }] }
+   Lifecycle: Draft → Finalized → Revised. A finalized record never changes: editWeekly puts it back
+   if a change touches it, except notes (`amendments`) appended to its end. Changes after finalizing go into a
+   revised version (a new draft, basedOn the finalized one, version continues); once it's finalized it is the
+   week's record and the earlier version reads "Replaced by v2". It keeps its numbers: the page compares them with the live calculation and
+   says "Source revised" when a later edit changed the week. The connected version keeps these in
+   LinkedXL OS Governance; here they live on this device only. */
+
+const WEEKLY_KEY = 'dor.weekly.v1';
+export const WEEKLY_HISTORY_KINDS = ['weekly-entered', 'weekly-changed', 'weekly-cleared', 'override-added', 'override-removed'];
+let weeklyMem = null;
+let weeklyWriteFailed = false;
+
+const isoTime = (v) => (typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? v : null);
+const dayKey = (v) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+const textField = (v, max = 4000) => (typeof v === 'string' ? v.slice(0, max) : '');
+
+function cleanInput(i) {
+  if (!isObj(i)) return null;
+  const weekly = isObj(i.weekly) && isNum(i.weekly.value)
+    ? { value: i.weekly.value, by: textField(i.weekly.by, NAME_MAX.owner), at: isoTime(i.weekly.at) }
+    : null;
+  const override = isObj(i.override) && isNum(i.override.value)
+    ? {
+      value: i.override.value,
+      reason: textField(i.override.reason, 500),
+      approver: textField(i.override.approver, NAME_MAX.owner),
+      approverId: okId(i.override.approverId) ? i.override.approverId : null,
+      expires: dayKey(i.override.expires),
+      at: isoTime(i.override.at),
+      raw: isNum(i.override.raw) ? i.override.raw : null,
+      received: Number.isInteger(i.override.received) ? i.override.received : null,
+    }
+    : null;
+  const history = (Array.isArray(i.history) ? i.history : []).filter((h) => isObj(h) && WEEKLY_HISTORY_KINDS.includes(h.kind)).map((h) => ({
+    kind: h.kind,
+    value: isNum(h.value) ? h.value : null,
+    raw: isNum(h.raw) ? h.raw : null,
+    reason: textField(h.reason, 500),
+    approver: textField(h.approver, NAME_MAX.owner),
+    expires: dayKey(h.expires),
+    // Every step says who; an older one saved without a name says so.
+    by: textField(h.by, NAME_MAX.owner).trim() || 'Not recorded (an older entry)',
+    at: isoTime(h.at),
+  }));
+  return { weekly, override, history };
+}
+
+function cleanWeek(w) {
+  const out = { inputs: {}, commentary: {}, participants: [], preparedAt: null };
+  if (!isObj(w)) return out;
+  if (isObj(w.inputs)) {
+    for (const [k, v] of Object.entries(w.inputs)) {
+      const c = typeof k === 'string' && k.length < 120 ? cleanInput(v) : null;
+      if (c) out.inputs[k] = c;
+    }
+  }
+  if (isObj(w.commentary)) {
+    for (const [fnId, c] of Object.entries(w.commentary)) {
+      if (!okId(fnId) || !isObj(c)) continue;
+      out.commentary[fnId] = { happened: textField(c.happened), expected: textField(c.expected), risks: textField(c.risks), at: isoTime(c.at) };
+    }
+  }
+  if (Array.isArray(w.participants)) out.participants = [...new Set(w.participants.filter(okId))];
+  out.preparedAt = isoTime(w.preparedAt);
+  return out;
+}
+
+/** A review record, checked: a damaged one is dropped, never thrown. */
+function cleanRecord(r) {
+  if (!isObj(r) || typeof r.id !== 'string' || !r.id || !dayKey(r.weekKey)) return null;
+  const list = (v) => (Array.isArray(v) ? v : []);
+  return {
+    id: r.id.slice(0, 80),
+    type: 'WOR',
+    weekKey: r.weekKey,
+    weekStart: dayKey(r.weekStart) ?? r.weekKey,
+    weekEnd: dayKey(r.weekEnd),
+    asOfIso: dayKey(r.asOfIso),
+    state: r.state === 'finalized' ? 'finalized' : 'draft',
+    createdAt: isoTime(r.createdAt),
+    updatedAt: isoTime(r.updatedAt),
+    finalizedAt: isoTime(r.finalizedAt),
+    finalizedBy: textField(r.finalizedBy, NAME_MAX.owner) || null,
+    finalizedById: okId(r.finalizedById) ? r.finalizedById : null,
+    version: Number.isInteger(r.version) && r.version > 0 ? r.version : 1,
+    calcVersion: textField(r.calcVersion, 40),
+    facilitator: okId(r.facilitator) ? r.facilitator : null,
+    attendees: list(r.attendees).filter(okId),
+    // Frozen when finalized: the attendees' names and each action as it stood (the record shows "now: …" beside changes).
+    attendeeNames: list(r.attendeeNames).filter((x) => isObj(x) && okId(x.id)).map((x) => ({ id: x.id, name: textField(x.name, NAME_MAX.owner) })),
+    actionSnapshots: list(r.actionSnapshots).filter((x) => isObj(x) && typeof x.id === 'string' && x.id).map((x) => (x.missing
+      ? { id: x.id.slice(0, 80), missing: true }
+      : { id: x.id.slice(0, 80), text: textField(x.text, 2000), status: textField(x.status, 20), owner: textField(x.owner, NAME_MAX.owner), ownerPersonId: okId(x.ownerPersonId) ? x.ownerPersonId : null, due: dayKey(x.due), fnId: textField(x.fnId, 60) || null })),
+    // null: saved before records kept commentary (the record says so rather than "nothing written").
+    commentary: isObj(r.commentary) ? Object.fromEntries(Object.entries(r.commentary).filter(([k, v]) => okId(k) && isObj(v))
+      .map(([k, v]) => [k, { happened: textField(v.happened, 4000), expected: textField(v.expected, 4000), risks: textField(v.risks, 4000) }])) : null,
+    decisions: list(r.decisions).filter((d) => isObj(d) && typeof d.text === 'string' && d.text.trim())
+      .map((d) => ({ id: textField(d.id, 80), text: textField(d.text, 2000), by: textField(d.by, NAME_MAX.owner), at: isoTime(d.at), context: textField(d.context, 160) })),
+    actionIds: [...new Set(list(r.actionIds).filter((x) => typeof x === 'string' && x).map((x) => x.slice(0, 80)))],
+    escalations: list(r.escalations).filter((e) => isObj(e) && typeof e.reason === 'string' && e.reason.trim())
+      .map((e) => ({ id: textField(e.id, 80), fnId: textField(e.fnId, 60), label: textField(e.label, 200), actionId: typeof e.actionId === 'string' && e.actionId ? e.actionId.slice(0, 80) : null, to: textField(e.to, NAME_MAX.owner), reason: textField(e.reason, 1000), by: textField(e.by, NAME_MAX.owner), at: isoTime(e.at) })),
+    exceptions: list(r.exceptions).filter((x) => isObj(x) && typeof x.text === 'string' && x.text.trim()).map((x) => ({ text: textField(x.text, 400) })),
+    exceptionNote: textField(r.exceptionNote, 1000),
+    nextReviewDate: dayKey(r.nextReviewDate),
+    meeting: isObj(r.meeting) ? {
+      startedAt: isoTime(r.meeting.startedAt),
+      endedAt: isoTime(r.meeting.endedAt),
+      durationSec: Number.isFinite(Number(r.meeting.durationSec)) && Number(r.meeting.durationSec) >= 0 ? Math.round(Number(r.meeting.durationSec)) : 0,
+      recorded: r.meeting.recorded === true,
+      transcript: list(r.meeting.transcript).filter((l) => isObj(l) && typeof l.text === 'string' && l.text.trim()).slice(0, 2000)
+        .map((l) => ({ at: Number.isFinite(Number(l.at)) && Number(l.at) >= 0 ? Number(l.at) : 0, text: textField(l.text, 1000) })),
+    } : null,
+    basedOn: typeof r.basedOn === 'string' && r.basedOn ? r.basedOn.slice(0, 80) : null,
+    amendments: list(r.amendments).filter((a) => isObj(a) && typeof a.text === 'string')
+      .map((a) => ({ text: textField(a.text, 2000), by: textField(a.by, NAME_MAX.owner), byId: okId(a.byId) ? a.byId : null, at: isoTime(a.at) })),
+    summary: textField(r.summary, 1000),
+    results: list(r.results).filter((x) => isObj(x) && typeof x.key === 'string').map((x) => ({
+      key: x.key.slice(0, 120),
+      fnId: textField(x.fnId, 60),
+      fnName: textField(x.fnName, NAME_MAX.fn),
+      owner: textField(x.owner, NAME_MAX.owner),
+      kpiName: textField(x.kpiName, NAME_MAX.kpi + 40),
+      unit: textField(x.unit, 20) || 'count',
+      better: x.better === 'lower' ? 'lower' : 'higher',
+      rule: WEEKLY_RULE_IDS.includes(x.rule) ? x.rule : 'sum',
+      raw: isNum(x.raw) ? x.raw : null,
+      effective: isNum(x.effective) ? x.effective : null,
+      goal: isNum(x.goal) ? x.goal : null,
+      goalVaries: x.goalVaries === true,
+      status: textField(x.status, 20) || 'not-entered',
+      expected: Number.isInteger(x.expected) ? x.expected : 0,
+      received: Number.isInteger(x.received) ? x.received : 0,
+      provisional: x.provisional === true,
+      overridden: x.overridden === true,
+      met: Number.isInteger(x.met) ? x.met : 0,
+      missed: Number.isInteger(x.missed) ? x.missed : 0,
+      gap: textField(x.gap, 120),
+    })),
+    readiness: list(r.readiness).filter((x) => isObj(x)).map((x) => ({ id: textField(x.id, 40), done: x.done === true, text: textField(x.text, 400) })),
+  };
+}
+
+/** The whole Weekly review document, checked on every read. */
+export function readWeekly() {
+  let raw = null;
+  if (weeklyWriteFailed && weeklyMem) raw = weeklyMem;
+  else {
+    try { raw = JSON.parse(localStorage.getItem(WEEKLY_KEY) ?? 'null') ?? weeklyMem; } catch { raw = weeklyMem; }
+  }
+  const doc = { version: 1, weeks: {}, records: [] };
+  if (!isObj(raw) || raw.version !== 1) return doc;
+  if (isObj(raw.weeks)) for (const [k, w] of Object.entries(raw.weeks)) if (dayKey(k)) doc.weeks[k] = cleanWeek(w);
+  if (Array.isArray(raw.records)) doc.records = raw.records.map(cleanRecord).filter(Boolean);
+  return doc;
+}
+
+/** Returns false when the browser refused: the change then holds for this visit only. */
+function writeWeekly(doc) {
+  weeklyMem = structuredClone(doc);
+  try {
+    localStorage.setItem(WEEKLY_KEY, JSON.stringify(doc));
+    weeklyWriteFailed = false;
+    return true;
+  } catch {
+    weeklyWriteFailed = true;
+    return false;
+  }
+}
+
+/** One week's saved state (an empty one when nothing is saved for it yet). */
+export const weekSaved = (doc, weekKey) => doc.weeks[weekKey] ?? cleanWeek(null);
+
+/**
+ * Change the Weekly review document: change(doc, week) mutates it (week = that week's state, created
+ * on first use). -> { ok, doc }  (ok false: this browser isn't saving; it holds for this visit)
+ */
+export function editWeekly(weekKey, change) {
+  const doc = readWeekly();
+  if (weekKey && !doc.weeks[weekKey]) doc.weeks[weekKey] = cleanWeek(null);
+  // A finalized record never changes (spec §13): only amendments appended to it are kept.
+  const sealed = new Map(doc.records.filter((r) => r.state === 'finalized').map((r) => [r.id, structuredClone(r)]));
+  change(doc, weekKey ? doc.weeks[weekKey] : null);
+  if (weekKey) doc.weeks[weekKey] = cleanWeek(doc.weeks[weekKey]);
+  doc.records = doc.records.map(cleanRecord).filter(Boolean).map((r) => {
+    const was = sealed.get(r.id);
+    if (!was) return r;
+    const body = (x) => JSON.stringify({ ...x, amendments: null });
+    const kept = r.amendments.length >= was.amendments.length && JSON.stringify(r.amendments.slice(0, was.amendments.length)) === JSON.stringify(was.amendments);
+    if (body(r) === body(was) && kept) return r;
+    return { ...was, amendments: kept ? r.amendments : was.amendments };
+  });
+  // Nor is one ever removed.
+  for (const [id, was] of sealed) if (!doc.records.some((r) => r.id === id)) doc.records.push(was);
+  return { ok: writeWeekly(doc), doc };
 }

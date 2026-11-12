@@ -2,29 +2,31 @@
 // the function × area matrix, trends and key metrics, issues and actions,
 // and the daily questions. Every number is calculated from the month.
 
-import { dailySeries, isoForDay, notesFor, noteParagraphs, entryInfo, hasProblem, kpiRowsFor, NO_ISSUE } from './store.js?v=20261013-151156';
+import { dailySeries, isoForDay, notesFor, noteParagraphs, entryInfo, hasProblem, kpiRowsFor, NO_ISSUE } from './store.js?v=20261112-075602';
 import {
   ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED, STATUS_WORD,
   dayStatus, monthStatus, isProductionDay, compareToGoal, boardSummary, statusWord,
-} from './status.js?v=20261013-151156';
+} from './status.js?v=20261112-075602';
 import {
   formatPair, glossaryTerm, formatDayLong, formatDayMedium, formatEnteredAt, formatTicks, dayHeading, plainLabel,
-} from './format.js?v=20261013-151156';
-import { esc, termButton, GLYPH, issueStatusMarkup } from './ui.js?v=20261013-151156';
-import { icon } from './icons.js?v=20261013-151156';
-import { getUndoable, plantName, actionStateFor, needsSummary, ACTION_WORD, recordedOn, issueGap, ISSUE_GAP_WORD, NO_FUNCTIONS } from './board.js?v=20261013-151156';
-import { getIdentity } from './identity.js?v=20261013-151156';
-import { pageHref } from './shell.js?v=20261013-151156';
+} from './format.js?v=20261112-075602';
+import { esc, termButton, GLYPH, issueStatusMarkup } from './ui.js?v=20261112-075602';
+import { icon } from './icons.js?v=20261112-075602';
+import { getUndoable, plantName, actionStateFor, needsSummary, ACTION_WORD, recordedOn, issueGap, ISSUE_GAP_WORD, NO_FUNCTIONS, periodDateMarkup } from './board.js?v=20261112-075602';
+import { getIdentity } from './identity.js?v=20261112-075602';
+import { isVerifiedAction, isCompletedAction } from './action-state.js?v=20261112-075602';
+import { pageHref } from './shell.js?v=20261112-075602';
+import { weekGlance } from './wor.js?v=20261112-075602';
 
 export const AREA_OPTIONS = [
-  { id: 'all', name: 'All areas' },
+  { id: 'all', name: 'Plant total' },
   { id: 'mold', name: 'Mold' },
   { id: 'bond', name: 'Bond' },
   { id: 'prime', name: 'Prime' },
   { id: 'compounding', name: 'Compounding' },
 ];
 const AREA_COLS = ['mold', 'bond', 'prime', 'compounding'];
-export const areaName = (id) => AREA_OPTIONS.find((a) => a.id === id)?.name ?? 'All areas';
+export const areaName = (id) => AREA_OPTIONS.find((a) => a.id === id)?.name ?? 'Plant total';
 
 /** One status language everywhere ("Below goal" / "Above goal" for a miss). */
 export const homeWord = statusWord;
@@ -90,6 +92,19 @@ function needsMarkup(month, day) {
   }
   if (sum.allClear) return `<span class="h-needs-lead hs--on">${mdot(ON)}${esc(sum.lead)}</span>`;
   return '';
+}
+
+/** "This week so far: 5 of 8 on track · Off goal for the week: People, Operations · Weekly review". */
+function weekLineMarkup(month, day) {
+  let g = null;
+  try { g = weekGlance(month, day); } catch { g = null; }
+  if (!g) return '';
+  const through = formatDayMedium(month, Number(g.asOfIso.slice(8, 10)));
+  const link = `<a href="${pageHref(month, day, { view: 'wor' })}">Open the Weekly review</a>`;
+  const off = g.off.length ? `<span class="h-sum-sep" aria-hidden="true"> · </span><span class="sr-only">. </span>Off goal for the week: ${esc(g.off.join(', '))}` : '';
+  // Getting better? Against last week's whole week, by the same rules (the Weekly review's headline says the same).
+  const trend = g.trend?.words ? `, <span class="nowrap">${esc(g.trend.words)}</span>` : '';
+  return `This week so far: <strong>${g.on} of ${g.total} on track</strong> <span class="nowrap">(through ${esc(through)})</span>${trend}${off}<span class="h-week-go"><span class="h-sum-sep" aria-hidden="true"> · </span><span class="sr-only">. </span>${link}</span>`;
 }
 
 /* ---------- KPI cards ---------- */
@@ -628,9 +643,12 @@ function registerMarkup(month, day, row, list) {
   const today = isoForDay(month, day);
   return `<ul class="iss-reg" aria-label="From the Action register">${list.map((a) => {
     // Closed that day or later: still this KPI's action for the day, and done.
-    if (a.status === 'closed') {
-      const closed = a.closedDayIso ? ` · Done ${esc(dueDay(a.closedDayIso, month))}` : '';
-      return `<li class="is-done"><span class="iss-reg-text"><span class="iss-done">${mdot(ON)}Done:</span> ${esc(a.text)}</span><span class="iss-reg-meta">${esc(a.owner || row.owner)}${closed}</span></li>`;
+    if (isVerifiedAction(a)) {
+      const closed = a.closedDayIso ? ` · Verified ${esc(dueDay(a.closedDayIso, month))}` : '';
+      return `<li class="is-done"><span class="iss-reg-text"><span class="iss-done">${mdot(ON)}Verified:</span> ${esc(a.text)}</span><span class="iss-reg-meta">${esc(a.owner || row.owner)}${closed}</span></li>`;
+    }
+    if (isCompletedAction(a)) {
+      return `<li><span class="iss-reg-text">${esc(a.text)}</span><span class="iss-reg-meta">${esc(a.owner || row.owner)} · Completed, awaiting verification</span></li>`;
     }
     const over = a.due && a.due < today;
     const due = a.due
@@ -813,8 +831,8 @@ document.addEventListener('close', (e) => {
 }, true);
 
 export function renderHome(month, day, area) {
-  // "Riverside plant · Daily Operating Review": a narrow screen breaks after the dot (a long plant name may still wrap).
-  document.querySelectorAll('[data-home-title]').forEach((n) => { n.innerHTML = `${esc(plantName(month))} · <span class="nowrap">Daily Operating Review</span>`; });
+  // The page header names the page, then the plant (the same pattern on every page).
+  document.querySelectorAll('[data-home-plant]').forEach((n) => { n.textContent = `${plantName(month)} · LinkedXL OS`; });
   document.querySelectorAll('[data-plant-name]').forEach((n) => { n.textContent = plantName(month); });
   // Every function removed in Board setup: the board's one line (never "0 of 0 functions on
   // track" over empty tables), and under it the one way back, as on the board.
@@ -827,8 +845,11 @@ export function renderHome(month, day, area) {
       : needsMarkup(month, day);
     needsLine.hidden = !needsLine.innerHTML;
   }
+  // This week so far, one line under the day's answer, linking to the Weekly review.
+  const weekLine = document.querySelector('[data-home-week]');
+  if (weekLine) weekLine.innerHTML = none ? '' : weekLineMarkup(month, day);
   const label = document.querySelector('[data-home-date]');
-  label.textContent = formatDayLong(month, day);
+  label.innerHTML = periodDateMarkup(formatDayLong(month, day));
   label.setAttribute('datetime', isoForDay(month, day));
   const picker = document.querySelector('[data-date-input]');
   picker.min = isoForDay(month, 1);
@@ -836,8 +857,7 @@ export function renderHome(month, day, area) {
   picker.value = isoForDay(month, day);
   document.querySelector('[data-home-prev]').disabled = day <= 1;
   document.querySelector('[data-home-next]').disabled = day >= month.daysInMonth;
-  const sel = document.querySelector('[data-area]');
-  if (sel.value !== area) sel.value = area;
+  // The Area filter is in the scope line (shell.js), as on the DOR board.
 
   // Identity chip: initials and name, or a person icon when nobody is set.
   const who = getIdentity(month);
@@ -889,7 +909,7 @@ export function renderHome(month, day, area) {
 
 const PHONE = matchMedia('(max-width: 760px)');
 let barsWatch = null;
-const topBar = () => document.querySelector('.home-app > .side');
+const topBar = () => document.querySelector('.shell > .side');
 const enterBar = () => document.querySelector('.home-app > .h-mobilebar');
 
 /**
@@ -943,9 +963,9 @@ document.addEventListener('focusin', (e) => {
  * and Settings side by side as icons (their names stay for screen readers and in the tooltip).
  * Every link keeps its 44px. Measured with both off first, so a taller screen gets them back.
  */
-function fitSide() {
-  const side = document.querySelector('.home-app .side');
-  if (!side || document.documentElement.dataset.view !== 'home') return;
+export function fitSide() {
+  const side = document.querySelector('.shell > .side');
+  if (!side) return;
   side.classList.remove('is-tight', 'is-tighter');
   const over = () => side.clientHeight > 0 && side.scrollHeight > side.clientHeight + 1;
   if (over()) side.classList.add('is-tight');

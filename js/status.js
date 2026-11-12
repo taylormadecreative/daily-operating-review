@@ -167,3 +167,26 @@ export function boardSummary(month, day) {
     month: tally((fn) => worst(fn, (k) => monthStatus(month, k, day))),
   };
 }
+
+/**
+ * This week so far (Monday through the selected day), judged day by day against the daily goal
+ * (plant total). It counts the board's own daily statuses; it is not a weekly rollup rule.
+ * -> { met, missed, notEntered, days, from }  (from: the week's first day in this month's data)
+ */
+export function weekRecord(month, fn, day) {
+  const [y, m] = String(month.month).split('-').map(Number);
+  const wd = new Date(Date.UTC(y, m - 1, day)).getUTCDay(); // 0 = Sunday
+  const from = Math.max(1, day - ((wd + 6) % 7));
+  const out = { met: 0, missed: 0, notEntered: 0, days: 0, from };
+  for (let d = from; d <= day; d += 1) {
+    if (isProductionDay(month, d) === false) continue;
+    const row = seriesRow(fn, 'plant', d);
+    if (row?.beforeStart) continue;
+    out.days += 1;
+    const s = compareToGoal(row?.actual ?? null, row?.goal ?? null, fn.kpiDaily.better);
+    if (s === ON) out.met += 1;
+    else if (s === OFF) out.missed += 1;
+    else if (s === NOT_ENTERED) out.notEntered += 1;
+  }
+  return out;
+}

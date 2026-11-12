@@ -241,7 +241,28 @@
 [data-theme="meeting"] {
   --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23E8EEF4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
-:is(.su-field, .ar-pick) select:not([multiple]),
+/* One select for every form box (Board setup's fields and its Organization tables, the Weekly review's
+   sheets, the minutes): the same height, border, type and chevron as the text boxes beside it. */
+:is(.wc-field, .org-table, .ff-final, .mn-final) select:not([multiple]),
+.su-field select:not([multiple]) {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 40px 0 var(--s-3);
+  border: 1px solid var(--ink-2);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+:is(.wc-field, .org-table, .ff-final, .mn-final) select:not([multiple]):focus-visible,
+.su-field select:not([multiple]):focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--ink); }
+:is(.wc-field, .org-table, .ff-final, .mn-final) select[aria-invalid="true"] { border-color: var(--error); }
+@media (hover: hover) and (pointer: fine) {
+  :is(.wc-field, .org-table, .ff-final, .mn-final, .su-field) select:not([multiple]):hover { border-color: var(--ink); }
+}
+:is(.su-field, .ar-pick, .wc-field, .org-table, .ff-final, .mn-final) select:not([multiple]),
 select:is(.day-select, .ma-select):not([multiple]) {
   -webkit-appearance: none;
   appearance: none;

@@ -1,21 +1,22 @@
 // Board (home): the summary sentence and the eight functions in meeting order.
 
-import { dailySeries, isoForDay, notesFor, entryInfo, hasProblem, kpiRowsFor, ownerFor } from './store.js?v=20261013-151156';
+import { dailySeries, isoForDay, notesFor, entryInfo, hasProblem, kpiRowsFor, ownerFor, noteParagraphs, NO_ISSUE } from './store.js?v=20261112-075602';
 import {
-  ON, OFF, NO_PRODUCTION, NOT_TRACKED,
+  ON, OFF, NO_PRODUCTION, NOT_TRACKED, NOT_ENTERED,
   dayStatus, monthStatus, trackRecord, boardSummary, isProductionDay, lastProductionDay, compareToGoal, statusWord,
-} from './status.js?v=20261013-151156';
+} from './status.js?v=20261112-075602';
 import {
   formatPair, plainLabel, glossaryTerm, formatDayLong, formatDayMedium, formatMonthName, formatMonthShort,
   dayHeading, daySentence, monthSoFar, formatEnteredAt, lowerNote, formatValue, goalSign,
-} from './format.js?v=20261013-151156';
-import { trendChart, yearChart } from './charts.js?v=20261013-151156';
-import { actionsFor } from './actions.js?v=20261013-151156';
-import { icon, DEPT_ICON } from './icons.js?v=20261013-151156';
-import { renderSparkline } from './sparkline.js?v=20261013-151156';
-import { getIdentity } from './identity.js?v=20261013-151156';
-import { esc, statusMarkup, termButton, issueStatusMarkup } from './ui.js?v=20261013-151156';
-import { pageHref } from './shell.js?v=20261013-151156';
+} from './format.js?v=20261112-075602';
+import { trendChart, yearChart } from './charts.js?v=20261112-075602';
+import { actionsFor, actionsForDays, verifiedBetween } from './actions.js?v=20261112-075602';
+import { isOpenAction, isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261112-075602';
+import { icon, DEPT_ICON } from './icons.js?v=20261112-075602';
+import { renderSparkline } from './sparkline.js?v=20261112-075602';
+import { getIdentity } from './identity.js?v=20261112-075602';
+import { esc, statusMarkup, termButton, issueStatusMarkup } from './ui.js?v=20261112-075602';
+import { pageHref, scopeWord } from './shell.js?v=20261112-075602';
 
 /* ---------- Pieces shared with Detail and Meeting ---------- */
 
@@ -112,10 +113,36 @@ let undoable = null; // { fnId, day } of the last save, until the next save or a
 export const setUndoable = (v) => { undoable = v; };
 export const getUndoable = () => undoable;
 
+/* ---------- Scope: the Area filter governs the daily Status column ---------- */
+
+/**
+ * A KPI row seen through the Area filter: its daily series for that area, read like its plant series,
+ * so the status helpers work unchanged. A KPI added in Board setup has one number a day and no areas:
+ * null (the block says "Not tracked by area"). 'all' is the row itself (plant totals).
+ */
+export function scopedRow(k, area) {
+  if (!area || area === 'all') return k;
+  if (k.custom || !Array.isArray(k.daily?.[area])) return null;
+  return { ...k, daily: { ...k.daily, plant: k.daily[area] } };
+}
+
+/**
+ * The day's status in the board's scope. A missing area number reads "Not entered for Mold", never the
+ * plant value; a KPI with no area numbers at all reads "Not tracked by area".
+ * -> { status, actual, goal, word }
+ */
+export function scopedDayStatus(month, k, day, area) {
+  const row = scopedRow(k, area);
+  if (!row) return { status: NOT_TRACKED, actual: null, goal: null, word: 'Not tracked by area' };
+  const y = dayStatus(month, row, day);
+  const word = area && area !== 'all' && y.status === NOT_ENTERED ? `Not entered for ${scopeWord(area)}` : undefined;
+  return { ...y, word };
+}
+
 /* ---------- Rows ---------- */
 
-function rowElement(month, fn, day) {
-  const y = dayStatus(month, fn, day);
+function rowElement(month, fn, day, area = 'all') {
+  const y = scopedDayStatus(month, fn, day, area);
   const mo = monthStatus(month, fn, day);
   const notes = notesText(month, fn, day);
   const caption = recordText(month, fn, day);
@@ -137,12 +164,12 @@ function rowElement(month, fn, day) {
       <p class="fn-question">${esc(fn.dorQuestion)}</p>
     </div>
     <div class="cell cell--day" data-status="${y.status}">
-      <p class="cell-label">${esc(dayHeading(month, day))}</p>
-      ${statusMarkup(y.status, { kpi: fn.kpiDaily })}
+      <p class="cell-label">${esc(area === 'all' ? dayHeading(month, day) : `${scopeWord(area)} · ${dayHeading(month, day)}`)}</p>
+      ${statusMarkup(y.status, { kpi: fn.kpiDaily, word: y.word })}
       ${showDayFigure ? figureMarkup(y.actual, y.goal, fn.kpiDaily) + measureMarkup(month, fn.kpiDaily) : ''}
     </div>
     <div class="cell cell--month" data-status="${mo.status}">
-      <p class="cell-label">${esc(monthSoFar(month))}</p>
+      <p class="cell-label">${esc(area === 'all' ? monthSoFar(month) : `${monthSoFar(month)} · Plant total`)}</p>
       ${statusMarkup(mo.status, { kpi: fn.kpiMonthly })}
       ${showMonthFigure ? figureMarkup(mo.actual, mo.goal, fn.kpiMonthly) + measureMarkup(month, fn.kpiMonthly, monthNote) : ''}
     </div>
@@ -180,21 +207,72 @@ function rowElement(month, fn, day) {
 
 /* ---------- Summary ---------- */
 
-export function summaryParts(month, day) {
+export function summaryParts(month, day, area = 'all') {
   const s = boardSummary(month, day);
   const y = s.yesterday;
+  // With an area picked, the count still judges plant totals (as Home's does), and says so first.
   const count = s.productionDay === false
     ? `No production was scheduled ${daySentence(month, day, 'on')}.`
-    : `${y[ON]} of ${y.total} on track ${daySentence(month, day)}.`;
+    : `${area === 'all' ? '' : 'Plant totals: '}${y[ON]} of ${y.total} on track ${daySentence(month, day)}.`;
   return { s, count };
 }
 
 /** Every function removed in Board setup: one line in place of "0 of 0 on track" over an empty table. */
 export const NO_FUNCTIONS = 'Every function is hidden. Put them back in Board setup.';
 
-function summaryMarkup(month, day) {
+/* ---------- Off goal only (spec §4: exceptions-only filter), remembered on this device ---------- */
+
+const OFF_ONLY_KEY = 'dor.offOnly.v1';
+let offOnlyMem = false;
+export function getOffOnly() {
+  try { return localStorage.getItem(OFF_ONLY_KEY) === '1'; } catch { return offOnlyMem; }
+}
+export function setOffOnly(on) {
+  offOnlyMem = Boolean(on);
+  try {
+    if (on) localStorage.setItem(OFF_ONLY_KEY, '1'); else localStorage.removeItem(OFF_ONLY_KEY);
+  } catch { /* this visit only */ }
+}
+
+/** Is any of the function's KPIs off goal on the day, as the Status column shows it (the Area filter's scope)? */
+export function offOnDay(month, fn, day, area = 'all') {
+  return kpiRowsFor(fn).some((k) => (area === 'all' ? dayStatus(month, k, day) : scopedDayStatus(month, k, day, area)).status === OFF);
+}
+
+/**
+ * The filter's words say its scope: the day (the Status column, in the Area filter's scope). A month-only
+ * miss isn't in it: the filter answers "what went wrong on this day?". -> "Off goal on Fri, Feb 27 only"
+ */
+export const offOnlyLabel = (month, day) => `Off goal on ${formatDayMedium(month, day)} only`;
+
+/** The functions the board shows: all of them, or with Off goal only on, the ones off goal that day. */
+export function shownFunctions(month, day, area = 'all') {
+  return getOffOnly() ? month.functions.filter((fn) => offOnDay(month, fn, day, area)) : month.functions;
+}
+
+/**
+ * The honest empty state when Off goal only finds nothing: "All 8 on track for Fri, Feb 27." when that's
+ * so; otherwise what the day does hold ("Nothing is off goal for Fri, Feb 27. 6 on track, 2 not entered.").
+ */
+export function offOnlyEmptyText(month, day, area = 'all') {
+  const total = month.functions.length;
+  const when = formatDayMedium(month, day);
+  const where = area === 'all' ? '' : ` for ${scopeWord(area)}`;
+  const counts = {};
+  for (const fn of month.functions) {
+    const st = area === 'all' ? dayStatus(month, fn, day).status : scopedDayStatus(month, fn, day, area).status;
+    counts[st] = (counts[st] ?? 0) + 1;
+  }
+  if (area === 'all' && counts[ON] === total) return { lead: `All ${total} on track for ${when}.`, rest: '' };
+  if (counts[NO_PRODUCTION] === total) return { lead: `Nothing is off goal on ${when}.`, rest: 'No production was scheduled that day.' };
+  const words = { [ON]: 'on track', [NOT_ENTERED]: 'not entered', 'no-goal': 'no goal set', [NO_PRODUCTION]: 'no production scheduled', [NOT_TRACKED]: 'not tracked yet' };
+  const rest = Object.entries(counts).filter(([st]) => words[st]).map(([st, n]) => `${n} ${words[st]}`).join(', ');
+  return { lead: `Nothing is off goal${where} on ${when}.`, rest: rest ? `${rest.charAt(0).toUpperCase()}${rest.slice(1)}.` : '' };
+}
+
+function summaryMarkup(month, day, area = 'all') {
   if (!month.functions.length) return { lead: `<span class="summary-count">${esc(NO_FUNCTIONS)}</span>`, monthLine: '' };
-  const { s, count } = summaryParts(month, day);
+  const { s, count } = summaryParts(month, day, area);
   const link = (fn) => `<a href="#fn-${esc(fn.id)}" data-jump="${esc(fn.id)}">${esc(fn.name)}</a>`;
   const names = (list) => list.map(link).join(', ');
   const y = s.yesterday;
@@ -215,20 +293,32 @@ function summaryMarkup(month, day) {
   return { lead, monthLine };
 }
 
-/** Render the whole board for a day. */
-export function renderBoard(month, day) {
+/**
+ * "Fri, Feb 27<span class="period-year">, 2026</span>": the header's day, with the year in its own span so a
+ * tight header (css/header.css) can drop it; the scope line under the band always has it.
+ */
+export function periodDateMarkup(long) {
+  const i = String(long).lastIndexOf(', ');
+  return i > 0 ? `${esc(long.slice(0, i))}<span class="period-year">${esc(long.slice(i))}</span>` : esc(long);
+}
+
+/** Render the whole board for a day. `area` (the Area filter) governs the daily Status column. */
+export function renderBoard(month, day, area = 'all') {
   const label = document.querySelector('[data-board-date]');
-  label.textContent = formatDayLong(month, day);
+  label.innerHTML = periodDateMarkup(formatDayLong(month, day));
   label.setAttribute('datetime', isoForDay(month, day));
   document.querySelector('[data-prev]').disabled = day <= 1;
   document.querySelector('[data-next]').disabled = day >= month.daysInMonth;
   document.querySelectorAll('[data-plant]').forEach((n) => { n.textContent = `${plantName(month)}\u00a0·\u00a0LinkedXL OS`; });
+  // "This week →": the week holding this day, on the Weekly review (pageHref keeps the day; the review finds its week).
+  document.querySelectorAll('[data-week-link]').forEach((a) => { a.href = pageHref(month, day, { view: 'wor' }).replace(/&week=[^&#]*/, ''); });
+  document.querySelectorAll('[data-week-link-sr]').forEach((n) => { n.textContent = `: the week holding ${formatDayMedium(month, day)}, in the Weekly review`; });
 
-  const { lead, monthLine } = summaryMarkup(month, day);
+  const { lead, monthLine } = summaryMarkup(month, day, area);
   document.querySelector('[data-summary-lead]').innerHTML = lead;
   document.querySelector('[data-summary-month]').innerHTML = monthLine;
-  document.querySelector('[data-head-day]').textContent = dayHeading(month, day);
-  document.querySelector('[data-head-month]').textContent = monthSoFar(month);
+  document.querySelector('[data-head-day]').textContent = area === 'all' ? dayHeading(month, day) : `${scopeWord(area)} · ${dayHeading(month, day)}`;
+  document.querySelector('[data-head-month]').textContent = area === 'all' ? monthSoFar(month) : `${monthSoFar(month)} · Plant total`;
 
   // Shortcut to the remembered person's own row (phones: row 6 is far down).
   const yours = document.querySelector('[data-your-row]');
@@ -252,10 +342,13 @@ export function renderBoard(month, day) {
     picker.value = isoForDay(month, day);
   });
 
-  if (document.documentElement.dataset.layout === 'v2') renderBoardV2(month, day);
+  if (document.documentElement.dataset.layout === 'v2') renderBoardV2(month, day, area);
   else {
     const list = document.querySelector('[data-rows]');
-    list.replaceChildren(...month.functions.map((fn) => rowElement(month, fn, day)));
+    const shown = shownFunctions(month, day, area);
+    renderOffEmpty(list.closest('.board'), month, day, area, Boolean(month.functions.length) && !shown.length);
+    list.replaceChildren(...shown.map((fn) => rowElement(month, fn, day, area)));
+    fitClampedText(list, CLASSIC_CLAMPED);
   }
   document.documentElement.dataset.ready = 'true';
 }
@@ -325,12 +418,12 @@ const weekendFigure = (actual) => typeof actual === 'number' && actual !== 0;
  * one unbreakable unit (narrow cells put the value on its own line for every KPI);
  * "No goal set" when there's no goal.
  */
-function goalLine(kpi, goal) {
+function goalLine(kpi, goal, scope = '') {
   const f = formatPair(null, goal, kpi);
-  if (f.goal === null) return 'No goal set';
+  if (f.goal === null) return scope ? `No ${esc(scope)} goal set` : 'No goal set';
   const word = f.useOf && f.word ? `\u00a0${f.word}` : '';
   const sign = goalSign(goal, kpi);
-  return `<span class="kpi-goal-label">Goal:</span> <span class="kpi-goal-value">${esc(`${sign}${f.goal}${word}`)}</span>`;
+  return `<span class="kpi-goal-label">${scope ? `${esc(scope)} goal:` : 'Goal:'}</span> <span class="kpi-goal-value">${esc(`${sign}${f.goal}${word}`)}</span>`;
 }
 
 /** The first day a KPI is tracked: the day it was added in Board setup (or its first number), else day 1. */
@@ -371,7 +464,7 @@ function blockMarkup(o) {
   const f = formatPair(o.actual, o.goal, o.kpi);
   const label = `<p class="v2-label">${esc(o.label)}</p>`;
   if (o.status === NOT_TRACKED) {
-    const word = o.from ? `Tracked from ${o.from.replace(/ /g, '\u00a0')}` : undefined;
+    const word = o.word ?? (o.from ? `Tracked from ${o.from.replace(/ /g, '\u00a0')}` : undefined);
     return `${label}${statusMarkup(o.status, { kpi: o.kpi, extra: 'block-status', word })}`;
   }
   let body = '';
@@ -380,7 +473,7 @@ function blockMarkup(o) {
   } else if (o.show) {
     body = `<p class="block-rest">${esc(f.rest)}</p>`;
   }
-  const word = o.status === NO_PRODUCTION ? 'No production' : undefined;
+  const word = o.status === NO_PRODUCTION ? 'No production' : o.word;
   return `${label}${statusMarkup(o.status, { kpi: o.kpi, extra: 'block-status', word })}${body}${o.measure ?? ''}${o.extra ?? ''}`;
 }
 
@@ -437,13 +530,105 @@ export function recordedOn(k, day) {
   return Boolean(k.custom) && hasNumber;
 }
 
+/** A note's real words: its paragraphs other than "No new issues to report" (null when there are none). */
+export const realWords = (t) => noteParagraphs(t).filter((p) => !NO_ISSUE.test(p)).join('\n') || null;
+
+/**
+ * THE response rule: one function decides whether a KPI has an action, for the DOR board (one day), the
+ * Weekly review's scoreboard, its readiness, Finish review and the weekly meeting (the week's days
+ * through the day it looks from). A KPI has an action for those days when, on one of them:
+ *   - its owner wrote what happens in the next 24 hours on the daily board (words other than
+ *     "No new issues to report"), or
+ *   - the Action register has an action that counts that day (open, or verified that day or later;
+ *     a cancelled one never counts: cancelling doesn't resolve the issue).
+ * A verified fix answers only while it holds: when the KPI is off goal on a day after the day it was
+ * verified (through the last day looked at), it stops counting and is listed in `lapsed` ("Verified
+ * Tue, Feb 24 · missed 3 days since"). So a week whose action was verified on Tuesday, then missed
+ * Wednesday to Friday, needs an action, as the DOR board says on Friday.
+ * days: board days (numbers).
+ * -> { has, note: { day, text } | null (the latest written), assigned, lapsed: [{ a, verifiedIso, missed }] }
+ */
+export function responseFor(month, fn, k, days) {
+  const list = (days ?? []).filter((d) => Number.isInteger(d)).sort((a, b) => a - b);
+  let note = null;
+  for (const d of list) {
+    const words = realWords(notesFor(k, d).action);
+    if (words) note = { day: d, text: words };
+  }
+  const kpiId = k.primary ? null : k.kpiId;
+  const counted = actionsForDays(fn.id, kpiId, list.map((d) => isoForDay(month, d)));
+  const lapsed = lapsedFixes(month, fn, k, list);
+  const assigned = counted.filter((a) => !lapsed.some((x) => x.a.id === a.id));
+  return { has: Boolean(note) || assigned.length > 0, note, assigned, lapsed };
+}
+
+/**
+ * Verified actions for a KPI whose fix didn't hold: verified on or after the first day looked at (a
+ * single day looks back over the 6 days before it) and before the last, with off-goal days since.
+ * -> [{ a, verifiedIso, missed }] newest verification first.
+ */
+function lapsedFixes(month, fn, k, list) {
+  if (!list.length) return [];
+  const last = list[list.length - 1];
+  const lastIso = isoForDay(month, last);
+  const fromIso = list.length > 1 ? isoForDay(month, list[0])
+    : new Date(Date.parse(`${lastIso}T00:00:00Z`) - 6 * 864e5).toISOString().slice(0, 10);
+  const out = [];
+  for (const a of verifiedBetween(fn.id, k.primary ? null : k.kpiId, fromIso, lastIso)) {
+    let missed = 0;
+    for (let d = 1; d <= last; d += 1) {
+      if (isoForDay(month, d) > a.closedDayIso && dayStatus(month, k, d).status === OFF) missed += 1;
+    }
+    if (missed) out.push({ a, verifiedIso: a.closedDayIso, missed });
+  }
+  return out;
+}
+
+/** "Verified Tue, Feb 24 · missed 3 days since": a fix that didn't hold, in the board's words. */
+export function lapsedWords(x) {
+  const d = new Date(`${x.verifiedIso}T00:00:00Z`);
+  const when = Number.isNaN(d.getTime()) ? x.verifiedIso
+    : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return `Verified ${when} · missed ${x.missed} ${x.missed === 1 ? 'day' : 'days'} since`;
+}
+
+/**
+ * The daily board's own words for a function across some days (the Weekly review's commentary starts
+ * from them): the latest issue and the latest next-24-hours action written, each with its day. Read only.
+ * -> [{ day, issue, action }] newest first (one entry per day that has either), at most two days.
+ */
+export function dailyWords(month, fn, days) {
+  const rows = kpiRowsFor(fn);
+  const named = rows.length > 1;
+  const latest = { issue: null, action: null };
+  const list = (days ?? []).filter((d) => Number.isInteger(d)).sort((a, b) => b - a);
+  for (const kind of ['issue', 'action']) {
+    for (const d of list) {
+      const parts = rows.map((k) => {
+        const n = notesFor(k, d);
+        const words = realWords(kind === 'issue' ? n.problem : n.action);
+        return words ? `${named ? `${plainLabel(k.kpiDaily)}: ` : ''}${words}` : null;
+      }).filter(Boolean);
+      if (parts.length) { latest[kind] = { day: d, text: parts.join('\n') }; break; }
+    }
+  }
+  const byDay = new Map();
+  for (const kind of ['issue', 'action']) {
+    const x = latest[kind];
+    if (!x) continue;
+    if (!byDay.has(x.day)) byDay.set(x.day, { day: x.day, issue: null, action: null });
+    byDay.get(x.day)[kind] = x.text;
+  }
+  return [...byDay.values()].sort((a, b) => b.day - a.day);
+}
+
 /**
  * The action state for one KPI row on a day, the same on every screen.
  * state: 'has' (a note, or Action register actions that count that day), 'needs' (off goal, nothing to fix it yet),
  *        'none' (not off goal), 'nothing' (nothing recorded for this KPI that day).
- * assigned: the register's actions for that day, open ones first, then done ones
- * (status 'closed', closed that day or later: show them as "Done: …"); open and
- * done are the same two lists apart.
+ * assigned: the register's actions for that day, open ones first, then verified ones
+ * (verified that day or later: show them as "Verified: …"); open and done are the same
+ * two lists apart. Cancelled actions never count (cancelling doesn't resolve the issue).
  * -> { state, word, text, assigned, open, done, off, monthOnly, y, mo }
  */
 export function actionStateFor(month, fn, k, day) {
@@ -451,20 +636,26 @@ export function actionStateFor(month, fn, k, day) {
   const mo = monthStatus(month, k, day);
   const n = notesFor(k, day);
   // Actions belong to days: added for this day or before, and still open or closed this day or later.
-  const assigned = actionsFor(fn.id, k.primary ? null : k.kpiId, isoForDay(month, day));
-  const open = assigned.filter((a) => a.status !== 'closed');
-  const done = assigned.filter((a) => a.status === 'closed');
+  const response = responseFor(month, fn, k, [day]);
+  const assigned = response.assigned;
+  const open = assigned.filter(isOpenAction);
+  const done = assigned.filter(isVerifiedAction);
   const text = typeof n.action === 'string' && n.action.trim() ? n.action.replace(/\n\s*\n/g, '\n') : null;
   const dayOff = y.status === OFF;
   const monthOff = mo.status === OFF;
   const off = dayOff || monthOff;
   let state;
-  if (text || assigned.length) state = 'has';
+  // One rule with the Weekly review (responseFor). Words that only say "No new issues to report" show
+  // as written on a row that's on track, but they don't answer for a miss.
+  if (response.has || (text && !off)) state = 'has';
+  // A verified fix that didn't hold (off goal again since) needs a new action whether or not anything was
+  // written on the board that day: the miss itself is the news, so it's never "Nothing recorded".
+  else if (off && response.lapsed.length) state = 'needs';
   else if (!recordedOn(k, day)) state = 'nothing';
   else if (off) state = 'needs';
   else state = 'none';
   const word = state === 'needs' ? ACTION_WORD.needs : state === 'none' ? ACTION_WORD.none : state === 'nothing' ? ACTION_WORD.nothing : '';
-  return { state, word, text, assigned, open, done, off, monthOnly: monthOff && !dayOff, y, mo };
+  return { state, word, text, assigned, open, done, off, monthOnly: monthOff && !dayOff, y, mo, lapsed: response.lapsed };
 }
 
 /** "Operations (On-time delivery, this month)": names the KPI when a function has several, and a month-only miss. */
@@ -504,22 +695,22 @@ export function needsSummary(month, day) {
 function actionCell(month, fn, k, day, st, undo) {
   const addLabel = plainLabel(st.monthOnly ? k.kpiMonthly : k.kpiDaily);
   const owner = (a) => esc(a.owner || ownerFor(fn).name);
-  // " · Done Fri, Feb 27" after a done action's owner (the board day it was closed on), as an open
-  // one reads " · Due Mon, Mar 2"; the register and the minutes use the same words.
+  // " · Verified Fri, Feb 27" after a verified action's owner (the board day it was closed on), as an
+  // open one reads " · Due Mon, Mar 2"; the register and the minutes use the same words.
   const closedOn = (iso) => (typeof iso === 'string' && iso.startsWith(`${month.month}-`)
-    ? ` · Done\u00a0${esc(formatDayMedium(month, Number(iso.slice(8, 10))).replace(/ /g, '\u00a0'))}`
+    ? ` · Verified\u00a0${esc(formatDayMedium(month, Number(iso.slice(8, 10))).replace(/ /g, '\u00a0'))}`
     : '');
-  const items = st.assigned.slice(0, 2).map((a) => (a.status === 'closed'
-    // Closed that day or later: it was this KPI's action that day, and it's done.
+  const items = st.assigned.slice(0, 2).map((a) => (isVerifiedAction(a)
+    // Verified that day or later: it was this KPI's action that day, and it's closed.
     ? `
     <li class="v2-assigned v2-assigned--done">
-      <span class="v2-assigned-text">${statusMarkup(ON, { tag: 'span', word: 'Done:', extra: 'v2-done' })} ${esc(a.text)}</span>
+      <span class="v2-assigned-text">${statusMarkup(ON, { tag: 'span', word: 'Verified:', extra: 'v2-done' })} ${esc(a.text)}</span>
       <span class="v2-assigned-meta">${owner(a)}${closedOn(a.closedDayIso)}</span>
     </li>`
     : `
     <li class="v2-assigned">
       <span class="v2-assigned-text">${esc(a.text)}</span>
-      <span class="v2-assigned-meta">${owner(a)} · ${esc(dueText(a.due))}</span>
+      <span class="v2-assigned-meta">${owner(a)} · ${isCompletedAction(a) ? 'Completed, awaiting verification' : esc(dueText(a.due))}${isEscalatedAction(a) ? ' · Escalated' : ''}</span>
     </li>`)).join('');
   const more = st.assigned.length > 2 ? `<p class="v2-more">${st.assigned.length - 2} more in the Action register</p>` : '';
   const needs = st.state === 'needs';
@@ -529,12 +720,19 @@ function actionCell(month, fn, k, day, st, undo) {
     body = `${st.text ? `<p class="v2-note">${esc(st.text)}</p>` : ''}${items ? `<ul class="v2-assigned-list">${items}</ul>` : ''}${more}${add}`;
   } else if (needs) {
     // "Needs an action" and its Add action button share a line where they fit (it wraps under when narrow).
-    body = `<div class="v2-needs-row"><p class="v2-needs">${statusMarkup(OFF, { tag: 'span', word: ACTION_WORD.needs })}</p>${add}</div>`;
+    body = `<div class="v2-needs-row"><p class="v2-needs">${statusMarkup(OFF, { tag: 'span', word: ACTION_WORD.needs })}</p>${add}</div>${lapsedMarkup(st.lapsed)}`;
   } else {
     body = `<p class="v2-note is-empty">${esc(st.word)}</p>`;
   }
   // "Entered by" sits on the KPI row the entry changed (an added KPI's own row when only it was filled in).
   return `${body}${enteredByMarkup(k, day, { undo })}`;
+}
+
+/** A verified fix that didn't hold, under "Needs an action": "Verified Tue, Feb 24 · missed 3 days since: …". */
+export function lapsedMarkup(lapsed) {
+  if (!lapsed?.length) return '';
+  const x = lapsed[0];
+  return `<p class="v2-lapsed"><span class="v2-lapsed-when">${esc(lapsedWords(x))}:</span> ${esc(x.a.text)}</p>`;
 }
 
 /**
@@ -570,8 +768,13 @@ function issueCell(month, fn, k, day) {
   return `<p class="v2-note">${esc(clampedNote(n.problem))}</p>${problemStatus}`;
 }
 
-function kpiRowMarkup(month, fn, k, day, { undo = false } = {}) {
+function kpiRowMarkup(month, fn, k, day, { undo = false, area = 'all' } = {}) {
   const y = dayStatus(month, k, day);
+  // The Status block and the KPI's goal follow the Area filter; the month, trend and year stay plant totals.
+  const scoped = area !== 'all';
+  const ys = scoped ? scopedDayStatus(month, k, day, area) : y;
+  const sRow = scopedRow(k, area);
+  const plantTag = scoped ? ' · Plant total' : '';
   const mo = monthStatus(month, k, day);
   const sameMeasure = plainLabel(k.kpiMonthly) === plainLabel(k.kpiDaily);
   // "as of" and "Fri, Feb 20" each stay whole; the line breaks between them only in a very narrow block.
@@ -597,25 +800,27 @@ function kpiRowMarkup(month, fn, k, day, { undo = false } = {}) {
   const label = plainLabel(k.kpiDaily);
   // Weekends and days before a Board setup KPI starts have no goal of their own: the KPI's usual one
   // (a weekend with no usual goal shows none; the block already says "No production").
-  const ownGoal = y.status !== NO_PRODUCTION && y.status !== NOT_TRACKED;
-  const goalShown = ownGoal ? y.goal : usualGoal(month, k, day);
-  const goal = y.status === NO_PRODUCTION && goalShown === null ? '' : goalLine(k.kpiDaily, goalShown);
+  const gs = sRow ? ys : y; // a KPI with no area numbers keeps its plant goal, named so
+  const ownGoal = gs.status !== NO_PRODUCTION && gs.status !== NOT_TRACKED;
+  const goalShown = ownGoal ? gs.goal : usualGoal(month, sRow ?? k, day);
+  const goalScope = !scoped ? '' : sRow ? scopeWord(area) : 'Plant total';
+  const goal = gs.status === NO_PRODUCTION && goalShown === null ? '' : goalLine(k.kpiDaily, goalShown, goalScope);
   const from = start !== null ? formatDayMedium(month, start) : null;
   // Before an added KPI's first day nothing can be entered for it yet: no entry link.
   const first = numbers || early ? '' : ` <button class="btn--text v2-first" type="button" data-enter-kpi="${esc(fn.id)}" data-enter-kpi-id="${esc(k.primary ? '' : k.kpiId)}">Enter the first one</button>`;
   // Days before an added KPI starts: its Issue and Action say so, plainly, as its blocks do.
   const untracked = y.status === NOT_TRACKED ? `<p class="v2-note is-empty">${esc(statusWord(NOT_TRACKED))}</p>` : '';
   const trend = fresh || !plotted
-    ? `<div class="v2cell v2cell--trend v2cell--fresh"><p class="v2-label">Daily trend</p><p class="mini-empty">${fresh ? `No numbers yet${first ? `.${first}` : ''}` : esc(captionFor(month, k, day))}</p></div>`
+    ? `<div class="v2cell v2cell--trend v2cell--fresh"><p class="v2-label">Daily trend${plantTag}</p><p class="mini-empty">${fresh ? `No numbers yet${first ? `.${first}` : ''}` : esc(captionFor(month, k, day))}</p></div>`
     : `<div class="v2cell v2cell--trend">
-        <p class="v2-label">Daily trend</p>
+        <p class="v2-label">Daily trend${plantTag}</p>
         <div class="mini" data-mini="daily"></div>
         <p class="mini-caption">${captionFor(month, k, day, { html: true })}</p>
       </div>`;
   const ytd = fresh
-    ? `<div class="v2cell v2cell--ytd v2cell--fresh"><p class="v2-label">Year to date</p><p class="mini-empty">${numbers ? 'No monthly results yet' : 'Shows once a month has numbers'}</p></div>`
+    ? `<div class="v2cell v2cell--ytd v2cell--fresh"><p class="v2-label">Year to date${plantTag}</p><p class="mini-empty">${numbers ? 'No monthly results yet' : 'Shows once a month has numbers'}</p></div>`
     : `<div class="v2cell v2cell--ytd">
-        <p class="v2-label">Year to date</p>
+        <p class="v2-label">Year to date${plantTag}</p>
         <div class="mini" data-mini="ytd"></div>
         <p class="mini-caption" data-ytd-caption></p>
       </div>`;
@@ -624,15 +829,15 @@ function kpiRowMarkup(month, fn, k, day, { undo = false } = {}) {
   return `
     <div class="kpirow${st.needs ? ' kpirow--needs' : ''}" data-kpi="${esc(k.id)}">
       <div class="v2cell v2cell--kpi">
-        <p class="v2-label">KPI</p>
+        <p class="v2-label">Measure</p>
         <p class="kpi-name"><a class="kpi-link" href="${detailHref(month, k.id, day)}" data-open-detail="${esc(k.id)}" aria-label="${esc(label)}, details"><span class="kpi-link-text">${esc(label)}</span></a>${termFor(month, k.kpiDaily)}</p>
         ${goal ? `<p class="kpi-goal">${goal}</p>` : ''}
       </div>
-      <div class="v2cell v2cell--block v2cell--status" data-status="${y.status}">
-        ${blockMarkup({ label: dayHeading(month, day), status: y.status, actual: y.actual, goal: y.goal, kpi: k.kpiDaily, show: y.status !== NO_PRODUCTION || weekendFigure(y.actual), from })}
+      <div class="v2cell v2cell--block v2cell--status" data-status="${ys.status}"${scoped ? ` data-area-scope="${esc(area)}"` : ''}>
+        ${blockMarkup({ label: scoped ? `${scopeWord(area)} · ${dayHeading(month, day)}` : dayHeading(month, day), status: ys.status, word: ys.word, actual: ys.actual, goal: ys.goal, kpi: k.kpiDaily, show: ys.status !== NO_PRODUCTION || weekendFigure(ys.actual), from })}
       </div>
       <div class="v2cell v2cell--block v2cell--mtd" data-status="${mo.status}">
-        ${blockMarkup({ label: monthSoFar(month), status: mo.status, actual: mo.actual, goal: mo.goal, kpi: k.kpiMonthly, show: mo.asOfDay !== null, measure: monthMeasure, from })}
+        ${blockMarkup({ label: `${monthSoFar(month)}${plantTag}`, status: mo.status, actual: mo.actual, goal: mo.goal, kpi: k.kpiMonthly, show: mo.asOfDay !== null, measure: monthMeasure, from })}
       </div>
       ${charts}
       <div class="v2cell v2cell--issue">
@@ -735,7 +940,7 @@ function mountRowCharts(month, k, day, rowEl) {
   }));
 }
 
-function groupElement(month, fn, day) {
+function groupElement(month, fn, day, area = 'all') {
   const kpis = kpiRowsFor(fn);
   const owner = ownerFor(fn);
   // After a save, Undo rides on the first "Entered by" line the save put on this function's rows.
@@ -760,15 +965,19 @@ function groupElement(month, fn, day) {
       ${avatarMarkup(owner)}
       <p class="owner-name"><span class="sr-only">Owner: </span>${esc(owner.name)}</p>
     </div>
-    ${kpis.map((k) => kpiRowMarkup(month, fn, k, day, { undo: k === undoRow })).join('')}`;
+    ${kpis.map((k) => kpiRowMarkup(month, fn, k, day, { undo: k === undoRow, area })).join('')}`;
   return li;
 }
 
 /** One-line notes under the summary: days the workbook kept no notes for, then what still needs an action (or the all-clear). */
-function boardNotes(month, day) {
+function boardNotes(month, day, area = 'all') {
   // No functions on the board: the one way back, under the line that says so.
   if (!month.functions.length) return '<p class="board-note board-note--empty"><button class="btn btn--primary" type="button" data-open-setup>Open Board setup</button></p>';
   const out = [];
+  if (getOffOnly()) {
+    const n = shownFunctions(month, day, area).length;
+    if (n) out.push(`<p class="board-note board-note--filter">${esc(offOnlyLabel(month, day))}: showing the ${n} of ${month.functions.length} functions with a KPI off goal that day. <button class="board-note-link" type="button" data-off-only-clear>Show all</button></p>`);
+  }
   const wbDay = Number(month.boardDate.slice(8, 10));
   const anyNotes = month.functions.some((fn) => kpiRowsFor(fn).some((k) => recordedOn(k, day)));
   if (!anyNotes && day !== wbDay) {
@@ -790,10 +999,16 @@ function boardNotes(month, day) {
   return out.join('');
 }
 
-function renderBoardV2(month, day) {
+function renderBoardV2(month, day, area = 'all') {
   boardCharts.forEach((c) => c.destroy());
   boardCharts = [];
-  document.querySelectorAll('[data-head-day2]').forEach((n) => { n.textContent = formatDayMedium(month, day); });
+  // With an area picked the Status column is that area's day, and every other number column says it's the plant's.
+  // The scope is its own line in the column head, in the head's full ink (css/shell.css).
+  const plantTag = area === 'all' ? '' : '<span class="h2c-scope">Plant total</span>';
+  document.querySelectorAll('[data-head-day2]').forEach((n) => {
+    n.innerHTML = `${esc(formatDayMedium(month, day))}${area === 'all' ? '' : `<span class="h2c-scope">${esc(scopeWord(area))}</span>`}`;
+  });
+  document.querySelectorAll('[data-head-ytd2]').forEach((n) => { n.innerHTML = area === 'all' ? 'Jan &ndash; Dec vs goal' : `Jan &ndash; Dec vs goal${plantTag}`; });
   // On a weekend the month blocks run to the last production day. Wherever the column heads show (1240
   // and up: laptops, desks, a TV) it's said once, here ("Month to date / as of Fri, Feb 20"), instead of on
   // every row; narrower, each block says it.
@@ -802,19 +1017,23 @@ function renderBoardV2(month, day) {
     ? `<span class="h2c-asof">as of ${esc(formatDayMedium(month, asOfDay)).replace(/ /g, '\u00a0')}</span>`
     : '';
   document.querySelectorAll('[data-head-month2]').forEach((n) => {
-    n.innerHTML = `<span class="h2c-month">${esc(formatMonthName(month))}</span>${headAsOf}`;
+    n.innerHTML = `<span class="h2c-month">${esc(formatMonthName(month))}</span>${headAsOf}${plantTag}`;
   });
   // "Feb 1 – 27"; on the 1st just "Feb 1" (not "Feb 1 – 1").
-  document.querySelectorAll('[data-head-trend]').forEach((n) => { n.textContent = day > 1 ? `${formatMonthShort(month)} 1 – ${day}` : `${formatMonthShort(month)} 1`; });
+  document.querySelectorAll('[data-head-trend]').forEach((n) => { n.innerHTML = `${esc(day > 1 ? `${formatMonthShort(month)} 1 – ${day}` : `${formatMonthShort(month)} 1`)}${plantTag}`; });
   const notes = document.querySelector('[data-board-notes]');
-  if (notes) notes.innerHTML = boardNotes(month, day);
+  if (notes) notes.innerHTML = boardNotes(month, day, area);
   const list = document.querySelector('[data-rows2]');
+  // Off goal only: just the functions off goal that day (the summary above still counts all of them).
+  const shown = shownFunctions(month, day, area);
   // No functions: the column heads and the empty list go (css/board-v2.css); the strip under them stays.
   list.closest('.board2')?.toggleAttribute('data-empty', !month.functions.length);
-  const groups = month.functions.map((fn) => groupElement(month, fn, day));
+  list.closest('.board2')?.toggleAttribute('data-filter-empty', Boolean(month.functions.length) && !shown.length);
+  renderOffEmpty(list.closest('.board2'), month, day, area, Boolean(month.functions.length) && !shown.length);
+  const groups = shown.map((fn) => groupElement(month, fn, day, area));
   list.replaceChildren(...groups);
   groups.forEach((li, gi) => {
-    const fn = month.functions[gi];
+    const fn = shown[gi];
     kpiRowsFor(fn).forEach((k, ki) => mountRowCharts(month, k, day, li.querySelectorAll('.kpirow')[ki]));
   });
   fitKpiNames(list);
@@ -825,6 +1044,22 @@ function renderBoardV2(month, day) {
   document.querySelectorAll('[data-last-updated]').forEach((n) => {
     n.textContent = last ? `Last entry: ${last.by}, ${formatEnteredAt(last.at)}` : `Numbers from the plant workbook, through ${formatDayMedium(month, Number(month.boardDate.slice(8, 10)))}`;
   });
+}
+
+/** Off goal only with nothing off goal: one honest line where the rows would be, and the way back. */
+function renderOffEmpty(host, month, day, area, show) {
+  if (!host) return;
+  let box = host.querySelector(':scope > [data-off-empty]');
+  if (!show) { box?.remove(); return; }
+  if (!box) {
+    box = document.createElement('div');
+    box.className = 'off-empty';
+    box.dataset.offEmpty = '';
+    box.setAttribute('role', 'status');
+    host.prepend(box);
+  }
+  const t = offOnlyEmptyText(month, day, area);
+  box.innerHTML = `${t.lead.startsWith('All') ? statusMarkup(ON, { tag: 'p', word: t.lead, extra: 'off-empty-lead' }) : `<p class="off-empty-lead">${esc(t.lead)}</p>`}${t.rest ? `<p class="off-empty-rest">${esc(t.rest)}</p>` : ''}<p class="off-empty-tools"><button class="btn btn--secondary" type="button" data-off-only-clear>Show all functions</button></p>`;
 }
 
 /* ---------- Focus never lands under the sticky column heads ---------- */
@@ -865,36 +1100,36 @@ function watchHead() {
 /* ---------- Clamped cells end on a clean "…" ---------- */
 
 const CLAMPED = ':is(.v2-note, .v2-assigned-text, .fn-question)';
+/** The classic ledger's Problem and Next 24 hours (`?layout=classic`). */
+const CLASSIC_CLAMPED = '.note-text';
 const ELLIPSIS = '…';
 /** Drop what shouldn't sit before the "…": spaces, a trailing . , ; : and a dangling dash ("fthts -…"). */
 const cleanEnd = (s) => s.replace(/[\s.,;:!?\-\u2013\u2014]+$/u, '');
 
 /**
  * A line clamp puts its "…" right after the last character that fits, so a clamp that lands
- * after a period reads "employee.…" and one inside a word reads "floo…". After each render
- * (and a resize), every clamped cell that overflows gets its text cut at a word, trailing
- * . , ; : dropped, and one "…". Screen readers still get the full text. One layout to
- * find the cuts, then a check or two; the stored text and Detail keep every period.
+ * after a period reads "employee.…" (four dots on screen) and one inside a word reads "floo…".
+ * After each render (and a resize), every clamped element that overflows gets its last text cut
+ * at a word, trailing . , ; : dropped, and one "…". A label before the text ("Issue:", "Problem")
+ * stays as it is; only the element's last text node is cut. Screen readers still get the full text.
+ * One layout to find the cuts, then a check or two; the stored text and Detail keep every period.
+ * `selector` picks the clamped elements (the DOR board's cells by default; the classic board, the
+ * meetings and the Weekly review pass their own).
  */
-export function fitClampedText(scope = document) {
+export function fitClampedText(scope = document, selector = CLAMPED) {
   if (!scope) return;
-  const els = [...scope.querySelectorAll(CLAMPED)];
+  const els = [...scope.querySelectorAll(selector)];
   // Back to the full text first: a wider window can give it room again.
-  for (const el of els) {
-    if (el.dataset.full !== undefined) {
-      el.textContent = el.dataset.full;
-      delete el.dataset.full;
-    }
-  }
-  // Plain-text cells only (a done action keeps its "Done:" mark and the clamp's own ellipsis).
+  els.forEach(unclamp);
   const overflows = (el) => el.scrollHeight > el.clientHeight + 1;
-  const over = els.filter((el) => el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE && el.clientHeight > 0 && overflows(el));
+  // The text to cut is the element's last child; anything before it (a label) is kept whole.
+  const over = els.filter((el) => el.lastChild?.nodeType === Node.TEXT_NODE && el.lastChild.data.trim() && el.clientHeight > 0 && overflows(el));
   if (!over.length) return;
 
   // Where each clamp cuts: the last character on a line that shows. Reads only, so one layout.
   const range = document.createRange();
   const jobs = over.map((el) => {
-    const node = el.firstChild;
+    const node = el.lastChild;
     const text = node.data;
     const box = el.getBoundingClientRect();
     const bottom = box.top + el.clientTop + el.clientHeight;
@@ -908,33 +1143,39 @@ export function fitClampedText(scope = document) {
       }
       return Infinity;
     };
+    // The label alone fills the clamp: leave the clamp's own ellipsis.
+    if (lineMid(0) > bottom) return null;
     let lo = 0;
     let hi = text.length - 1;
     while (lo < hi) {
       const mid = (lo + hi + 1) >> 1;
       if (lineMid(mid) <= bottom) lo = mid; else hi = mid - 1;
     }
-    return { el, text, shown: text.slice(0, lo + 1) };
-  });
+    return { el, node, text, shown: text.slice(0, lo + 1) };
+  }).filter(Boolean);
 
   // Try the shown text with "…"; if that spills, drop a word and try again (a few rounds at most).
   const write = (job, body) => {
     const span = document.createElement('span');
     span.setAttribute('aria-hidden', 'true');
+    span.dataset.clampPart = '';
     span.textContent = `${body}${ELLIPSIS}`;
     const full = document.createElement('span');
     full.className = 'sr-only';
+    full.dataset.clampPart = '';
     full.textContent = job.text;
+    job.el.querySelectorAll(':scope > [data-clamp-part]').forEach((n) => n.remove());
+    if (job.node.isConnected) job.node.remove();
     job.el.dataset.full = job.text;
-    job.el.replaceChildren(span, full);
+    job.el.append(span, full);
   };
   let pending = jobs;
   for (let round = 0; round < 4 && pending.length; round += 1) {
     pending = pending.filter((job) => {
       const body = cleanEnd(job.shown);
-      if (!body) {
+      if (!body.trim()) {
         // Nothing left to cut at a word: the clamp's own ellipsis stays.
-        if (job.el.dataset.full !== undefined) { job.el.textContent = job.text; delete job.el.dataset.full; }
+        unclamp(job.el);
         return false;
       }
       write(job, body);
@@ -945,7 +1186,15 @@ export function fitClampedText(scope = document) {
     pending = pending.filter((job) => overflows(job.el));
   }
   // Still spilling after a few words (very long words): the clamp's own ellipsis, never two.
-  pending.forEach((job) => { job.el.textContent = job.text; delete job.el.dataset.full; });
+  pending.forEach((job) => unclamp(job.el));
+}
+
+/** Put a clamped element's full last text back (fitClampedText). */
+function unclamp(el) {
+  if (el.dataset.full === undefined) return;
+  el.querySelectorAll(':scope > [data-clamp-part]').forEach((n) => n.remove());
+  el.append(document.createTextNode(el.dataset.full));
+  delete el.dataset.full;
 }
 
 /* ---------- A long KPI name stops at three lines ---------- */
@@ -1073,6 +1322,7 @@ if (typeof window !== 'undefined') {
       fitKpiNames(rows);
       fitOwnerNames(rows);
       fitClampedText(rows);
+      fitClampedText(document.querySelector('[data-rows]'), CLASSIC_CLAMPED);
     }, 150);
   };
   window.addEventListener('resize', refit);

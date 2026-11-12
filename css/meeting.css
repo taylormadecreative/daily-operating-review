@@ -480,3 +480,232 @@ html.is-meeting .toast { background: var(--d-raise); border: 1px solid var(--d-r
 /* A done action (closed that day or later): "Done:" in the on-track color with its glyph, word + glyph + color. */
 .m-done { color: var(--on); font-weight: 700; white-space: nowrap; }
 .m-done .glyph { display: inline-block; width: 1em; height: 1em; margin-right: 0.3em; vertical-align: -0.15em; }
+
+/* ---------- The weekly meeting (js/weekly-meeting.js): the Weekly review's agenda, same room, same sizes ----------
+   Everything is in em of the meeting's base (30px at 1920x1080). Status is the board's solid fill with
+   word + glyph; readiness stays navy and steel, apart from performance. */
+
+.wm { display: flex; flex-direction: column; gap: 0.55em; height: 100%; min-height: 0; overflow: hidden; }
+.wm-head { flex: none; display: grid; gap: 0.25em; }
+.wm-head-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.2em 1.2em; }
+.wm-week { font-size: max(0.75em, 13px); font-weight: 650; color: var(--ink-2); }
+/* Where the meeting is in its six steps: the current one in full ink with a mint underline (not a side stripe). */
+.wm-agenda { display: flex; flex-wrap: wrap; gap: 0.2em 1em; margin: 0; padding: 0; list-style: none; font-size: max(0.62em, 12px); font-weight: 650; color: var(--ink-2); }
+.wm-agenda li { display: inline-flex; align-items: baseline; gap: 0.35em; padding-bottom: 0.15em; border-bottom: 3px solid transparent; }
+.wm-agenda li.is-now { color: var(--ink); font-weight: 800; border-bottom-color: var(--lx-mint-400); }
+.wm-agenda-n { font-variant-numeric: tabular-nums; }
+.wm-head-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15em 1em; }
+.wm-title {
+  font-family: var(--font-display);
+  font-size: 3em;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: 0.012em;
+  text-transform: uppercase;
+}
+.wm-sub { font-size: 0.9em; font-weight: 650; color: var(--ink-2); }
+.wm--fn .wm-sub { color: var(--ink); }
+
+.wm-cols { flex: 1; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 0 1.4em; min-height: 0; }
+.wm-col { display: flex; flex-direction: column; gap: 0.5em; min-height: 0; overflow: hidden; }
+.wm-col--right { padding-left: 1.4em; border-left: 1px solid var(--rule-strong); margin-left: -0.7em; }
+
+.wm-fnname {
+  font-family: var(--font-display);
+  font-size: 2em;
+  font-weight: 800;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+.wm-pair, .wm-kpirow { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 0.8em; align-items: start; }
+/* Several measures: the last 4 weeks sit under days and repeat gap, beside the block. */
+.wm-kpirow { grid-template-areas: "block stack" "block weeks"; row-gap: 0.45em; }
+.wm-kpirow > .wm-block { grid-area: block; }
+.wm-kpirow > .wm-stack { grid-area: stack; }
+.wm-kpirow > .wm-weeks-box { grid-area: weeks; }
+.wm-kpirow[hidden] { display: none; }
+/* One measure (the usual slide): the last 4 weeks run the column's full width under the block, so
+   each week's figure has room to be read from the back of the room. On a landscape screen with room
+   to spare, js/weekly-meeting.js fillRoom grows the figures, the day marks and the tiles into it
+   (--wm-grow, up to 1.5x); the words keep their size, so nothing wraps that didn't. */
+.wm--solo .wm-kpirow { grid-template-areas: "block stack" "weeks weeks"; }
+.wm--solo .wm-weeks { gap: 0.45em; }
+.wm--solo .wm-wk { gap: calc(0.15em * var(--wm-grow-wk, var(--wm-grow, 1))); padding: calc(0.45em * var(--wm-grow-wk, var(--wm-grow, 1))) 0.6em calc(0.55em * var(--wm-grow-wk, var(--wm-grow, 1))); }
+.wm--solo .wm-wk-d, .wm--solo .wm-wk-st { font-size: max(0.8em, 13px); }
+.wm--solo .wm-wk-v { font-size: calc(2.2em * var(--wm-grow-wk, var(--wm-grow, 1))); }
+.wm--solo .wm-block .m-num:not(.m-num--empty) { font-size: calc(3.6em * var(--wm-grow, 1)); }
+.wm--solo .wm-day { font-size: max(0.8em, 13px); }
+.wm--solo .wm-day .glyph { width: calc(2.1em * var(--wm-grow, 1)); height: calc(2.1em * var(--wm-grow, 1)); }
+.wm--solo .wm-days { gap: calc(0.7em * var(--wm-grow, 1)); }
+.wm--solo .wm-stack > .m-section-title:not(:first-child) { margin-top: calc(0.35em * var(--wm-grow, 1)); }
+.wm--solo .wm-kpirow { row-gap: calc(0.9em * var(--wm-grow, 1)); }
+/* The secondary words on a function's slide, sized for 15 ft: 25px and up at 1080p. */
+.wm--fn .m-section-title { font-size: max(0.85em, 13px); }
+.wm--fn .wm-cap { font-size: max(0.85em, 13px); }
+.wm--fn .wm-quiet { font-size: max(0.82em, 13px); }
+.wm--fn .wm-gap-word { font-size: 0.95em; }
+.wm--fn .wm-col--right .wm-text { font-size: 1em; }
+.wm--solo .wm-col--right .wm-text { -webkit-line-clamp: 4; line-clamp: 4; }
+.wm--fn .wm-act-text { font-size: 0.95em; }
+.wm--fn .wm-act-meta { font-size: max(0.78em, 12px); }
+/* One track the block's width: a figure wider than the block shows as overflow (so fillRoom stops growing it). */
+.wm-block { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 0.1em; }
+.wm-block .m-num--empty { font-size: 0.95em; }
+.wm-tag { margin-top: 0.2em; font-size: max(0.65em, 12px); font-weight: 700; }
+.wm-stack { display: grid; align-content: start; gap: 0.25em; min-width: 0; }
+.wm-stack > .m-section-title:not(:first-child) { margin-top: 0.35em; }
+
+/* Days on goal: one big mark per production day with its letter. */
+.wm-days { display: flex; gap: 0.55em; margin: 0; padding: 0; list-style: none; }
+.wm-day { display: grid; justify-items: center; gap: 0.1em; font-size: max(0.7em, 12px); font-weight: 700; color: var(--ink-2); }
+.wm-day .glyph { width: 1.9em; height: 1.9em; color: var(--neutral); }
+.wm-day--on .glyph { color: var(--on); }
+.wm-day--off .glyph { color: var(--off); }
+.wm-cap { font-size: max(0.75em, 13px); font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.wm-cap strong { color: var(--off); font-weight: 750; }
+
+/* The last 4 weeks: four cells, solid when judged, so the trend reads across the room. */
+/* 3px of room on the right and below: this week's 2px ring is never cut by the column's edge. */
+.wm-weeks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.3em; margin: 0; padding: 0 3px 3px 0; list-style: none; }
+/* One track the tile's own width (not the figure's): a long figure can't widen the tile past its slot,
+   so fitWeekFigures sees it and steps the row down. */
+.wm-wk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.05em; min-width: 0; padding: 0.25em 0.4em 0.3em; border: 1px solid var(--rule-strong); border-radius: 6px; }
+.wm-wk:is([data-status="on"], [data-status="off"]) { border-color: transparent; color: var(--m-fill-ink); }
+.wm-wk[data-status="on"] { background: var(--m-fill-on); }
+.wm-wk[data-status="off"] { background: var(--m-fill-off); }
+.wm-wk.is-this { box-shadow: 0 0 0 2px var(--ink); }
+.wm-wk.is-none { color: var(--ink-2); border-style: dashed; }
+.wm-wk-d { font-size: max(0.62em, 12px); font-weight: 650; opacity: 0.9; }
+/* A status word or a figure is never cut short: the word wraps inside its tile, and js/weekly-meeting.js
+   fitWeekFigures steps a row's four figures down together when the widest would run past its tile. */
+.wm-wk-st { display: flex; align-items: flex-start; gap: 0.25em; font-size: max(0.62em, 12px); font-weight: 750; line-height: 1.15; overflow-wrap: anywhere; }
+.wm-wk-st .glyph { width: 1.1em; height: 1.1em; flex: none; margin-top: 0.03em; }
+.wm-wk-v { font-family: var(--font-display); font-size: 1.25em; font-weight: 800; line-height: 1; white-space: nowrap; }
+.wm-gap-word { font-size: 0.85em; font-weight: 750; text-wrap: balance; }
+
+.wm-note { display: grid; gap: 0.1em; min-width: 0; }
+.wm-text {
+  font-size: 0.9em;
+  line-height: 1.28;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+.wm-text.is-empty { color: var(--ink-2); }
+.wm-note--acts { gap: 0.3em; }
+.wm-quiet { font-size: max(0.72em, 13px); color: var(--ink-2); font-weight: 550; }
+.wm-needs { font-size: 0.95em; }
+.wm-acts { display: grid; gap: 0.35em; margin: 0; padding: 0; list-style: none; }
+.wm-act[hidden] { display: none; }
+.wm-act + .wm-act:not([hidden]) { padding-top: 0.3em; border-top: 1px solid var(--rule); }
+.wm-act-text {
+  font-size: 0.85em;
+  line-height: 1.28;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.wm-act-text .ast { margin-right: 0.3em; font-size: 0.85em; vertical-align: 0.05em; }
+.wm-act-meta { margin-top: 0.1em; font-size: max(0.68em, 12px); font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.wm-act-meta strong { color: var(--ink); }
+.wm-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45em; margin-top: 0.15em; }
+.meeting .wm-btns .btn { font-size: max(0.62em, 15px); }
+.wm-more { font-size: max(0.68em, 12px); color: var(--ink-2); }
+.wm-more[hidden] { display: none; }
+.wm-label { display: block; font-size: max(0.62em, 12px); font-weight: 650; color: var(--ink-2); }
+
+/* Safety & readiness */
+.wm-lines { display: grid; gap: 0.2em; margin: 0.2em 0 0; padding: 0.45em 0 0; list-style: none; border-top: 1px solid var(--rule-strong); font-size: 0.8em; font-weight: 600; }
+.wm-lines li { display: flex; align-items: baseline; gap: 0.45em; }
+.wm-lines .glyph { width: 1em; height: 1em; flex: none; align-self: center; color: var(--neutral); }
+.wm-lines .status--off .glyph, .wm-lines li:has(use[href="#g-off"]) .glyph { color: var(--off); }
+.wm-lines li:has(use[href="#g-on"]) .glyph { color: var(--on); }
+.wm-ready { align-self: start; padding: 0.7em 0.9em 0.8em; border: 1px solid var(--rule-strong); border-radius: 8px; }
+.wm-ready-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2em 0.7em; font-size: 1.15em; font-weight: 750; }
+.wm-ready-n { font-size: 0.75em; color: var(--ink-2); font-weight: 650; }
+.wm-ready-list { display: grid; gap: 0.5em; margin: 0.45em 0 0; padding: 0; list-style: none; }
+.wm-ready-list li { display: grid; grid-template-columns: 1.3em minmax(0, 1fr); gap: 0.55em; align-items: start; }
+.wm-ready-mark { display: grid; place-items: center; height: 1.3em; }
+.wm-check { width: 1.15em; height: 1.15em; color: var(--lx-mint-400); }
+.wm-ring { width: 0.95em; height: 0.95em; border: 2px solid var(--ink-2); border-radius: 50%; }
+.wm-ready-text { display: grid; gap: 0.05em; min-width: 0; }
+.wm-ready-name { font-size: 0.9em; font-weight: 700; }
+.wm-ready-val { font-size: max(0.72em, 13px); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+/* Top gaps & cause evidence: one row per gap, worst first. */
+.wm-gaps { flex: 1; min-height: 0; overflow: hidden; display: grid; align-content: start; margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+/* Cause evidence gets the widest column: it's the slide's point, and the words the room reads. */
+.wm-gap { display: grid; grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.05fr) minmax(0, 1.37fr) minmax(0, 1.15fr); gap: 0.9em; padding: 0.4em 0; border-bottom: 1px solid var(--rule); }
+.wm-gap[hidden] { display: none; }
+.wm-gap-fn { font-family: var(--font-display); font-size: 1.6em; font-weight: 800; line-height: 0.95; text-transform: uppercase; }
+.wm-gap-kpi { margin-top: 0.15em; font-size: max(0.72em, 13px); font-weight: 650; color: var(--ink-2); }
+.wm-gap-st { font-size: 0.85em; font-weight: 750; }
+.wm-gap-fig { margin-top: 0.1em; font-size: 1.05em; font-weight: 750; font-variant-numeric: tabular-nums; }
+.wm-gap-fig span { font-size: 0.7em; font-weight: 600; color: var(--ink-2); }
+.wm-gap-rep { margin-top: 0.1em; font-size: max(0.7em, 12px); font-weight: 750; color: var(--off); }
+.wm-gap-cause .wm-text { font-size: 0.85em; }
+.wm-gap-acts { font-size: 0.8em; line-height: 1.28; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.wm-gap-acts .ast { font-size: 0.9em; margin-right: 0.2em; }
+.wm-gap-act .m-needs-status { font-size: 0.85em; }
+
+/* Actions, escalations, forward look */
+.wm-h3 { display: flex; align-items: baseline; gap: 0.5em; font-size: 1.05em; font-weight: 750; }
+.wm-n { color: var(--ink-2); font-weight: 650; font-variant-numeric: tabular-nums; }
+.wm-h3-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.3em 1em; }
+.meeting .wm-h3-row .btn { font-size: max(0.62em, 15px); }
+.wm-decisions { display: grid; gap: 0.25em; margin: 0; padding: 0; list-style: none; font-size: 0.85em; }
+.wm-decisions--list { padding-left: 1.3em; list-style: decimal; font-size: 0.95em; line-height: 1.3; }
+.wm-decisions li[hidden], .wm-risks li[hidden] { display: none; }
+.wm-escs { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rule-strong); }
+.wm-esc { padding: 0.4em 0; border-bottom: 1px solid var(--rule); }
+.wm-esc[hidden] { display: none; }
+.wm-esc-what { font-size: 0.9em; line-height: 1.28; }
+.wm-esc-meta { margin-top: 0.1em; font-size: max(0.72em, 13px); color: var(--ink-2); font-weight: 600; }
+.wm-esc--gap { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.3em 1em; }
+.meeting .wm-esc--gap .btn { font-size: max(0.62em, 15px); }
+.wm-risks { display: grid; gap: 0.3em; margin: 0; padding: 0; list-style: none; font-size: 0.85em; line-height: 1.3; }
+.wm-decide { display: grid; gap: 0.35em; margin-top: 0.3em; padding-top: 0.5em; border-top: 1px solid var(--rule-strong); }
+.wm-decide .wm-label { font-size: max(0.75em, 14px); }
+.wm-decide .ma-textarea { min-height: 3.2em; font-size: 0.9em; }
+.meeting .wm-decide .btn { font-size: max(0.7em, 16px); }
+.wm-unsaved { font-weight: 700; color: var(--ink); }
+.wm-empty { margin-top: 1em; max-width: 30em; font-size: 1.4em; font-weight: 700; line-height: 1.25; }
+.wm-empty--left { margin-top: 0.4em; font-size: 1em; }
+
+/* The weekly agenda's Add a decision, in the controls row. */
+.wm-decide-btn[hidden] { display: none; }
+
+/* Room is short: the display type gives way first, then lists fold ("N more on the Weekly review page"). */
+.wm.is-compact .wm-title { font-size: 2.4em; }
+.wm.is-compact .m-num, .wm.is-compact .wm-block .m-num:not(.m-num--empty) { font-size: 2.6em; }
+.wm.is-compact .wm-col { gap: 0.4em; }
+.wm.is-compact .wm-text { -webkit-line-clamp: 2; line-clamp: 2; }
+
+/* Portrait or narrow: one column that scrolls (the TV is the meeting screen; this keeps a laptop tidy).
+   Stacked, every part keeps its natural height: the columns and lists stop flexing to the screen (flex: none,
+   min-height: auto), so the last 4 weeks can never paint over the words under them. */
+@media (max-aspect-ratio: 4/3) {
+  .wm { overflow-y: auto; }
+  .wm-cols { flex: none; grid-template-columns: minmax(0, 1fr); gap: 0.9em; }
+  .wm-col { overflow: visible; min-height: auto; }
+  .wm-col--right { padding-left: 0; margin-left: 0; border-left: 0; padding-top: 0.7em; border-top: 1px solid var(--rule-strong); }
+  .wm-gap { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .wm-gaps { flex: none; overflow: visible; }
+}
+
+/* The slide's change: a 160ms fade on the new slide (js/meeting.js fadeIn); none with reduced motion. */
+@keyframes m-slide-in { from { opacity: 0.25; } to { opacity: 1; } }
+.meeting-stage > .is-entering { animation: m-slide-in 160ms cubic-bezier(0.23, 1, 0.32, 1); }
+@media (prefers-reduced-motion: reduce) { .meeting-stage > .is-entering { animation: none; } }
+
+/* A phone (or any narrow meeting window): the last 4 weeks as two rows of two, so each tile's week,
+   status word and figure show whole (four across cut "Goal varies" and "Off goal" short at 390). */
+@media (max-width: 700px) {
+  .wm-weeks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

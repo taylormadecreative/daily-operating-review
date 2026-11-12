@@ -1,13 +1,14 @@
 // Export: download the selected day as CSV (built in the browser, no network),
 // or print / save as PDF with the print stylesheet in css/home.css.
 
-import { isoForDay, notesFor, AREA_IDS, kpiRowsFor } from './store.js?v=20261013-151156';
-import { dayStatus, monthStatus, NOT_TRACKED } from './status.js?v=20261013-151156';
-import { plainLabel, formatDayLong, formatDayMedium } from './format.js?v=20261013-151156';
-import { homeWord, areaName, oneLine, hasProblem } from './home.js?v=20261013-151156';
-import { actionsFor } from './actions.js?v=20261013-151156';
-import { recordedOn, issueGap, ISSUE_GAP_WORD, actionStateFor } from './board.js?v=20261013-151156';
-import { ISSUE_WORD } from './ui.js?v=20261013-151156';
+import { isoForDay, notesFor, AREA_IDS, kpiRowsFor } from './store.js?v=20261112-075602';
+import { dayStatus, monthStatus, NOT_TRACKED } from './status.js?v=20261112-075602';
+import { plainLabel, formatDayLong, formatDayMedium } from './format.js?v=20261112-075602';
+import { homeWord, areaName, oneLine, hasProblem } from './home.js?v=20261112-075602';
+import { actionsFor } from './actions.js?v=20261112-075602';
+import { isVerifiedAction, ACTION_STATE_WORD } from './action-state.js?v=20261112-075602';
+import { recordedOn, issueGap, ISSUE_GAP_WORD, actionStateFor } from './board.js?v=20261112-075602';
+import { ISSUE_WORD } from './ui.js?v=20261112-075602';
 
 /** Plain numbers for spreadsheets: no thousands separators, at most two decimals, percents as "1.19%". */
 function csvNumber(v, unit) {
@@ -36,8 +37,9 @@ const cell = (v) => {
 export function dayCsv(month, day, area = 'all') {
   const byArea = area !== 'all' && area !== 'plant' && AREA_IDS.includes(area);
   const where = byArea ? areaName(area) : '';
+  // Exports say what they are (spec §13): this one is the live board, not a finalized snapshot.
   const head = [
-    'Production day', ...(byArea ? ['Area'] : []), 'Function', 'Owner',
+    'View', 'Production day', ...(byArea ? ['Area'] : []), 'Function', 'Owner',
     'Daily measure',
     ...(byArea
       ? [where, `${where} goal`, `${where} status`]
@@ -69,9 +71,9 @@ export function dayCsv(month, day, area = 'all') {
     // The register's actions for this day, like the board's Action cell: open ones, then ones done that day or later.
     const sentence = (t) => { const one = flat(t); return /[.!?]$/.test(one) ? one : `${one}.`; };
     const register = actionsFor(fn.fnId ?? fn.id, fn.primary === false ? fn.kpiId : null, isoForDay(month, day))
-      .map((a) => (a.status === 'closed'
-        ? `Done: ${sentence(a.text)} Owner: ${a.owner || fn.owner}.${a.closedDayIso ? ` Done ${a.closedDayIso}.` : ''}`
-        : `${sentence(a.text)} Owner: ${a.owner || fn.owner}.${a.due ? ` Due ${a.due}.` : ''}`));
+      .map((a) => (isVerifiedAction(a)
+        ? `Verified: ${sentence(a.text)} Owner: ${a.owner || fn.owner}.${a.closedDayIso ? ` Verified ${a.closedDayIso}.` : ''}`
+        : `${sentence(a.text)} Owner: ${a.owner || fn.owner}. ${ACTION_STATE_WORD[a.status] ?? 'Open'}.${a.due ? ` Due ${a.due}.` : ''}`));
     // The board's words where a cell would otherwise be blank or contradict it: an off-goal KPI with
     // something recorded and no issue written reads "Off goal: issue not written yet" (never "No issue
     // reported"), and an empty action reads as the board's Action cell does ("Needs an action",
@@ -86,7 +88,7 @@ export function dayCsv(month, day, area = 'all') {
       return [actual(s, fn.kpiDaily), goal(s, fn.kpiDaily), homeWord(s.status, fn.kpiDaily)];
     };
     return [
-      isoForDay(month, day), ...(byArea ? [where] : []), fn.name, fn.owner,
+      'Live view', isoForDay(month, day), ...(byArea ? [where] : []), fn.name, fn.owner,
       plainLabel(fn.kpiDaily),
       ...(byArea ? inArea() : [actual(d, fn.kpiDaily), goal(d, fn.kpiDaily), homeWord(d.status, fn.kpiDaily), ...areas]),
       plainLabel(fn.kpiMonthly), actual(m, fn.kpiMonthly),
@@ -119,7 +121,7 @@ export function downloadCsv(month, day, area = 'all') {
 export function printDay(month, day) {
   // The tab title becomes the PDF's suggested file name.
   const before = document.title;
-  document.title = `${month.plant} plant, Daily Operating Review, ${formatDayLong(month, day)}`;
+  document.title = `${month.plant} plant, Daily Operating Review, ${formatDayLong(month, day)} (live view)`;
   window.addEventListener('afterprint', () => { document.title = before; }, { once: true });
   window.print();
 }

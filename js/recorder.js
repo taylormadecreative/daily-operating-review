@@ -12,20 +12,27 @@
 //   meeting: the slide says "Draft kept for People." and the form brings it back.
 // - openMinutes() shows the saved minutes in a right-side sheet.
 //
-// ctx = { getMonth, getDay, toast, addAction, openActions }
+// ctx = { getMonth, getDay, toast, addAction, openActions, onWeeklyEnd? }
+// The weekly meeting runs the same session (Record, Add action) with kind 'wor': when it ends, its
+// times, transcript and actions go to ctx.onWeeklyEnd (the week's draft record), not to DOR minutes.
 
-import { kpiRowsFor, ownerFor, isoForDay } from './store.js?v=20261013-151156';
-import { dayStatus, monthStatus, statusWord, ON, OFF, NO_PRODUCTION } from './status.js?v=20261013-151156';
-import { formatPair, plainLabel, formatDayMedium, formatDayLong, monthSoFar } from './format.js?v=20261013-151156';
-import { notesText, summaryParts, actionStateFor, needsSummary, ACTION_WORD, issueGap, ISSUE_GAP_WORD } from './board.js?v=20261013-151156';
-import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261013-151156';
+import { kpiRowsFor, ownerFor, isoForDay, getOrg, readWeekly } from './store.js?v=20261112-075602';
+import { getIdentity } from './identity.js?v=20261112-075602';
+import { dayStatus, monthStatus, statusWord, ON, OFF, NO_PRODUCTION } from './status.js?v=20261112-075602';
+import { formatPair, plainLabel, formatDayMedium, formatDayLong, monthSoFar } from './format.js?v=20261112-075602';
+import { notesText, summaryParts, actionStateFor, needsSummary, ACTION_WORD, issueGap, ISSUE_GAP_WORD } from './board.js?v=20261112-075602';
+import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261112-075602';
 // Namespace import: the Action register is built in parallel, and a missing
 // export must never stop the board from loading.
-import * as register from './actions.js?v=20261013-151156';
+import * as register from './actions.js?v=20261112-075602';
 // The payoff toast is shared with the Action register, so both say it the same way.
-import { ALL_CLEAR_ADDED, clearedNeeds } from './actions.js?v=20261013-151156';
+import { ALL_CLEAR_ADDED, clearedNeeds } from './actions.js?v=20261112-075602';
 // The sheet's title bar height, so Shift+Tab never leaves a control hidden under it (shared with Detail).
-import { fitSheetHead } from './detail.js?v=20261013-151156';
+import { fitSheetHead } from './detail.js?v=20261112-075602';
+import { ACTION_STATE_WORD, actionStateMarkup } from './action-state.js?v=20261112-075602';
+
+/** A verified action (older minutes kept the register's old word, 'closed'). */
+const isDoneStatus = (s) => s === 'verified' || s === 'closed';
 
 const MEETINGS_KEY = 'dor.meetings.v1';
 const SESSION_KEY = 'dor.meetingSession.v1';
@@ -248,6 +255,16 @@ function normMeeting(m) {
     actions: arr(m.actions).map(normAction).filter(Boolean),
     recorded: Boolean(m.recorded),
     snapshot: normSnapshot(m.snapshot),
+    // Draft until someone finalizes them (spec §7: production minutes have explicit Draft and Finalized states).
+    state: m.state === 'finalized' ? 'finalized' : 'draft',
+    finalizedAt: m.state === 'finalized' ? timeIso(m.finalizedAt) : null,
+    finalizedBy: m.state === 'finalized' ? str(m.finalizedBy) : '',
+    version: Number.isInteger(m.version) && m.version > 0 ? m.version : 1,
+    amendments: arr(m.amendments).filter((a) => isObj(a) && typeof a.text === 'string' && a.text.trim())
+      .map((a) => ({ text: a.text.slice(0, 2000), by: str(a.by).slice(0, 80), at: timeIso(a.at) })),
+    // Frozen when finalized (spec §13): each action as it stood then; the minutes show "now: …" beside changes.
+    actionSnapshots: m.state === 'finalized' ? arr(m.actionSnapshots).filter((x) => isObj(x) && typeof x.id === 'string')
+      .map((x) => ({ id: x.id, text: str(x.text), status: str(x.status), owner: str(x.owner), due: str(x.due) || null, fnId: str(x.fnId) || null })) : [],
   };
 }
 
@@ -300,6 +317,8 @@ function writeMeetings(list) {
 function upsertMeeting(record) {
   const list = readMeetings();
   const i = list.findIndex((m) => m.id === record.id);
+  // Finalized minutes never change (only amendments are added to them).
+  if (i >= 0 && list[i].state === 'finalized' && record.state !== 'finalized') return true;
   if (i >= 0) list[i] = record; else list.push(record);
   return writeMeetings(list);
 }
@@ -314,6 +333,15 @@ function removeMeeting(id) {
 }
 
 const findMeeting = (id) => readMeetings().find((m) => m.id === id) ?? null;
+
+/**
+ * The saved DOR minutes, newest first, read only (the Weekly review's Meeting records list them).
+ * Each is { id, dayIso, startedAt, endedAt, durationSec, actions, actionIds, recorded, snapshot }.
+ * They are device-local drafts: nothing here finalizes them.
+ */
+export function listMinutes() {
+  return newestFirst(readMeetings());
+}
 const newestFirst = (list) => list.slice().sort((a, b) => String(b.startedAt).localeCompare(String(a.startedAt)));
 
 /* ---------- The meeting in progress (sessionStorage, so a reload keeps it) ---------- */
@@ -480,16 +508,16 @@ export const recorderReady = () => Boolean(ctx);
 export const currentMeetingId = () => session?.id ?? null;
 
 /** A meeting opened. `startedAt` is the meeting timer's start, so a reload resumes the same session. */
-export function startMeetingSession(month, day, startedAt) {
+export function startMeetingSession(month, day, startedAt, { kind = 'dor', weekKey = null } = {}) {
   const saved = readSession();
   drafts.clear();
-  if (saved && saved.startedAt === startedAt) {
+  if (saved && saved.startedAt === startedAt && (saved.kind ?? 'dor') === kind) {
     // The same meeting after a reload: its kept drafts come back with it.
     const { drafts: kept = [], ...rest } = saved;
     kept.forEach(([fnId, d]) => drafts.set(fnId, d));
     session = { ...rest, month, day, dayIso: isoForDay(month, day) };
   } else {
-    session = { id: newId(), startedAt, dayIso: isoForDay(month, day), transcript: [], actions: [], recorded: false, month, day };
+    session = { id: newId(), startedAt, dayIso: isoForDay(month, day), transcript: [], actions: [], recorded: false, month, day, kind, weekKey };
   }
   persistSession();
   if (!ctx || !recRoot) return;
@@ -527,6 +555,11 @@ export function endMeetingSession({ openMinutes: openAfter = false } = {}) {
   closing = false;
   if (!ctx) return;
   const record = buildRecord(s, Date.now());
+  // The weekly meeting: its times, transcript and actions go to the week's draft record (js/wor.js).
+  if (s.kind === 'wor') {
+    try { ctx.onWeeklyEnd?.({ ...record, snapshot: null }, s.weekKey); } catch (err) { console.error(err); }
+    return;
+  }
   if (!openAfter && !worthSaving(record)) {
     removeMeeting(record.id); // a copy saved when the page was closed mid-meeting
     return;
@@ -896,6 +929,7 @@ let addFn = null;
 let addClosedAt = 0;
 let addSaving = false;
 let addSaved = false; // the form is closing because its action was saved
+let addAny = false;     // opened from the weekly Actions slide (the function is picked in the form)
 let addFromKpi = null; // opened from beside a KPI's "Needs an action" (its key: '' or a KPI id), else null (the slide's own): focus goes back there
 
 // A typed action that wasn't saved is kept for its function, as the Action
@@ -938,16 +972,21 @@ function buildAddDialog(host) {
         <h2 class="ma-title" id="ma-title"></h2>
         <p class="ma-sub" id="ma-sub"></p>
       </header>
+      <div class="ma-field" data-ma-fn-field hidden>
+        <label class="ma-label" for="ma-fn">Function</label>
+        <span class="ma-pick"><select class="ma-input ma-select" id="ma-fn" name="fnId"></select></span>
+      </div>
       <div class="ma-field" data-ma-kpi-field hidden>
         <label class="ma-label" for="ma-kpi">Measure</label>
         <span class="ma-pick"><select class="ma-input ma-select" id="ma-kpi" name="kpiId"></select></span>
       </div>
-      <div class="ma-field">
+      <fieldset class="ma-field ma-links" data-ma-link-slot hidden></fieldset>
+      <div class="ma-field" data-ma-new>
         <label class="ma-label" for="ma-text">Action</label>
         <textarea class="ma-input ma-textarea" id="ma-text" name="text" rows="3" maxlength="400" required></textarea>
         <p class="ma-error" id="ma-text-error" data-msg="Write the action first." hidden></p>
       </div>
-      <div class="ma-row">
+      <div class="ma-row" data-ma-new>
         <div class="ma-field">
           <label class="ma-label" for="ma-owner">Owner</label>
           <input class="ma-input" id="ma-owner" name="owner" type="text" list="ma-owners" maxlength="80" autocomplete="off" required>
@@ -963,7 +1002,7 @@ function buildAddDialog(host) {
       <p class="ma-form-error" data-ma-error role="alert" hidden></p>
       <div class="ma-actions">
         <button class="btn btn--secondary" type="button" data-ma-cancel>Cancel</button>
-        <button class="btn btn--primary" type="submit">Save action</button>
+        <button class="btn btn--primary" type="submit" data-ma-save>Save action</button>
       </div>
     </form>`;
   host.append(addDialog);
@@ -997,7 +1036,9 @@ function buildAddDialog(host) {
     }
     // Back to the Add action button it was opened from (the slide may have re-rendered) while it
     // still shows, else the slide's first (after a save, its "Needs an action" may be gone).
-    const sel = fn ? `#meeting [data-meeting-add="${CSS.escape(fn.id)}"]` : null;
+    const any = addAny;
+    addAny = false;
+    const sel = any ? '#meeting [data-meeting-add="*"]' : fn ? `#meeting [data-meeting-add="${CSS.escape(fn.id)}"]` : null;
     const same = !sel ? null
       : fromKpi == null ? document.querySelector(`${sel}:not([data-meeting-add-kpi])`)
         : document.querySelector(`${sel}[data-meeting-add-kpi="${CSS.escape(fromKpi)}"]`);
@@ -1020,6 +1061,16 @@ function buildAddDialog(host) {
   addForm.addEventListener('input', (e) => {
     const field = e.target.closest('.ma-field');
     if (field && e.target.value.trim()) showFieldError(e.target, false);
+  });
+  // Repeat losses: Link to the open issue, or Start a new action instead (the boxes for a new one step aside while linking).
+  addForm.addEventListener('change', (e) => {
+    if (e.target.matches('[name="ma-link"]')) syncMaLink();
+    if (e.target.matches('#ma-kpi') && addFn) renderMaLinks(addFn, e.target.value || null);
+  });
+  // The weekly Actions slide's picker: another function, its own measures and owner (typed words stay).
+  addForm.querySelector('#ma-fn').addEventListener('change', (e) => {
+    const fn = session?.month?.functions.find((f) => f.id === e.target.value);
+    if (fn) fillAddFor(fn, null, { any: true, keepText: true });
   });
 }
 
@@ -1057,16 +1108,67 @@ function showFieldError(input, on) {
   if (on) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid');
 }
 
+/**
+ * The weekly meeting's Assign action (spec §4, repeat losses): when the function and KPI already have an
+ * open action, "Link to the open issue: …" is picked by default, with "Start a new action instead".
+ * The daily meeting keeps its plain form.
+ */
+function renderMaLinks(fn, kpiId) {
+  const slot = addForm.querySelector('[data-ma-link-slot]');
+  let list = [];
+  if (session?.kind === 'wor' && typeof register.linkCandidates === 'function') {
+    try { list = register.linkCandidates(fn.id, kpiId || null, session.dayIso); } catch { list = []; }
+  }
+  slot.hidden = !list.length;
+  if (!list.length) { slot.innerHTML = ''; syncMaLink(); return; }
+  const day = medDay(session.dayIso);
+  slot.innerHTML = `<legend class="ma-label">This KPI already has an open action</legend>
+    ${list.map((a, i) => `<label class="ma-link"><input type="radio" name="ma-link" value="${esc(a.id)}"${i === 0 ? ' checked' : ''}>
+      <span><strong>Link to the open issue:</strong> ${esc(a.text)}<span class="ma-link-meta">${esc([a.owner, a.due ? `due ${medDay(a.due)}` : ''].filter(Boolean).join(' · '))}</span></span></label>`).join('')}
+    <label class="ma-link"><input type="radio" name="ma-link" value=""><span>Start a new action instead</span></label>
+    <p class="ma-link-hint">Linking adds ${esc(day)} to that action's days, so one action answers for a loss that repeats.</p>`;
+  syncMaLink();
+}
+
+function syncMaLink() {
+  const linking = Boolean(addForm.querySelector('[name="ma-link"]:checked')?.value);
+  addForm.querySelectorAll('[data-ma-new]').forEach((el) => { el.hidden = linking; });
+  const save = addForm.querySelector('[data-ma-save]');
+  if (save) save.textContent = linking && session ? `Link ${medDay(session.dayIso)}` : 'Save action';
+}
+
 function openAddAction(fnId, kpiKey = null) {
   if (!session || !addDialog || addDialog.open) return;
-  const fn = session.month?.functions.find((f) => f.id === fnId);
+  // '*': the weekly meeting's Actions slide, where the function is picked in the form.
+  const any = fnId === '*';
+  const fns = session.month?.functions ?? [];
+  const fn = any ? (fns.find((f) => kpiRowsFor(f).some((k) => { try { return actionStateFor(session.month, f, k, session.day).state === 'needs'; } catch { return false; } })) ?? fns[0]) : fns.find((f) => f.id === fnId);
   if (!fn) return;
+  const fnField = addForm.querySelector('[data-ma-fn-field]');
+  fnField.hidden = !any;
+  addAny = any;
+  if (any) addForm.querySelector('#ma-fn').innerHTML = fns.map((f) => `<option value="${esc(f.id)}"${f === fn ? ' selected' : ''}>${esc(f.name)}</option>`).join('');
+  fillAddFor(fn, kpiKey, { any });
+  addDialog.showModal();
+  (any ? addForm.querySelector('#ma-fn') : addForm.querySelector('#ma-text')).focus();
+  const text = addForm.querySelector('#ma-text');
+  // A kept draft: the cursor goes to the end of its words, ready to finish them.
+  if (!any && text.value) text.setSelectionRange(text.value.length, text.value.length);
+}
+
+/** Fill the Add action form for a function (the picker on the weekly Actions slide calls it again on change). */
+function fillAddFor(fn, kpiKey = null, { any = false, keepText = false } = {}) {
+  const typedText = keepText ? addForm.querySelector('#ma-text').value : null;
+  const typedOwner = keepText ? addForm.querySelector('#ma-owner').value : null;
+  const prevOwner = addFn ? ownerFor(addFn).name : null;
   addFn = fn;
-  addFromKpi = kpiKey;
+  addFromKpi = any ? null : kpiKey;
   addSaving = false;
   const owner = ownerFor(fn).name;
-  addDialog.querySelector('#ma-title').textContent = `Add action for ${fn.name}`;
-  addDialog.querySelector('#ma-sub').textContent = 'It goes to the Action register and these meeting minutes.';
+  addDialog.querySelector('#ma-title').textContent = any ? 'Assign an action' : `Add action for ${fn.name}`;
+  addDialog.querySelector('#ma-sub').textContent = session.kind === 'wor'
+    ? 'It goes to the Action register and this week\'s review record.'
+    : 'It goes to the Action register and these meeting minutes.';
   // "Measure" when the function has KPIs added in Board setup (as in the Action
   // register). It starts on the first one that needs an action, else the main one.
   // A draft kept from an earlier Esc or Cancel comes back as it was left.
@@ -1094,8 +1196,9 @@ function openAddAction(fnId, kpiKey = null) {
   const text = addForm.querySelector('#ma-text');
   const ownerInput = addForm.querySelector('#ma-owner');
   const due = addForm.querySelector('#ma-due');
-  text.value = draft?.text ?? '';
-  ownerInput.value = draft ? draft.owner : owner;
+  text.value = typedText ?? draft?.text ?? '';
+  // Another function picked: the owner follows it, unless someone typed a different name.
+  ownerInput.value = typedOwner !== null && typedOwner.trim() && typedOwner !== prevOwner ? typedOwner : draft ? draft.owner : owner;
   const owners = [...new Set(session.month.functions.map((f) => ownerFor(f).name).filter(Boolean))];
   addForm.querySelector('#ma-owners').innerHTML = owners.map((n) => `<option value="${esc(n)}"></option>`).join('');
   const boardDay = isoToDate(session.dayIso);
@@ -1115,14 +1218,37 @@ function openAddAction(fnId, kpiKey = null) {
   const formError = addForm.querySelector('[data-ma-error]');
   formError.hidden = true;
   formError.textContent = '';
-  addDialog.showModal();
-  text.focus();
-  // A kept draft: the cursor goes to the end of its words, ready to finish them.
-  if (draft) text.setSelectionRange(text.value.length, text.value.length);
+  // A kept draft means someone was writing a new action: it starts there, not on the link.
+  renderMaLinks(fn, kpiField.hidden ? null : (kpiSelect.value || null));
+  if (draft?.text?.trim()) {
+    const fresh = addForm.querySelector('[name="ma-link"][value=""]');
+    if (fresh) { fresh.checked = true; syncMaLink(); }
+  }
 }
 
 async function saveAction() {
   if (!addFn || !session || addSaving) return;
+  const linkId = addForm.querySelector('[name="ma-link"]:checked')?.value || '';
+  if (linkId) {
+    const fn = addFn;
+    let r = { ok: false };
+    try { r = register.linkActionDay(linkId, session.dayIso); } catch { r = { ok: false }; }
+    if (!r.ok) {
+      const formError = addForm.querySelector('[data-ma-error]');
+      formError.textContent = 'That action closed in the meantime. Start a new action instead.';
+      formError.hidden = false;
+      return;
+    }
+    // On the week's record with the actions assigned in this meeting (its action IDs).
+    session.actions.push({ id: linkId, fnId: fn.id, kpiId: r.action.kpiId ?? null, fnName: fn.name, text: r.action.text, owner: r.action.owner, due: r.action.due, status: r.action.status, linked: true });
+    drafts.delete(fn.id);
+    persistSession();
+    addSaved = true;
+    addDialog.close();
+    meetingApi?.relayout?.();
+    ctx.toast(`Linked ${medDay(session.dayIso)} to the open action for ${fn.name}. One action now answers for the repeat loss.`, { duration: 5000 });
+    return;
+  }
   const text = addForm.querySelector('#ma-text');
   const ownerInput = addForm.querySelector('#ma-owner');
   const due = addForm.querySelector('#ma-due');
@@ -1148,6 +1274,7 @@ async function saveAction() {
     source: 'meeting',
     meetingId: session.id,
     dayIso: session.dayIso,
+    weekly: session.kind === 'wor',
   };
   addSaving = true;
   // Did this action clear the last off-goal KPI with no action? Then the toast says so.
@@ -1172,12 +1299,14 @@ async function saveAction() {
   persistSession();
   renderCount();
   addSaved = true;
-  // The slide lists the function's actions: redraw it now, so the new one shows.
-  meetingApi?.relayout?.();
   addDialog.close();
+  // The slide lists the function's actions: redraw it now, so the new one shows. After the form has
+  // closed: a slide drawn while the modal form is still open stays unclickable in full screen (Chromium).
+  meetingApi?.relayout?.();
   // Kept for this visit only when this browser isn't saving: said the way the Action register says it.
   const stored = id == null || storedInRegister(id);
-  if (clearedNeeds(before, needsNow())) {
+  // The daily needs list is about the board day: the weekly meeting just names what was added.
+  if (session.kind !== 'wor' && clearedNeeds(before, needsNow())) {
     ctx.toast(stored ? ALL_CLEAR_ADDED : `${ALL_CLEAR_ADDED} ${NOT_SAVING}`, { duration: stored ? 6000 : 8000 });
     return;
   }
@@ -1229,6 +1358,10 @@ function buildSheet() {
   sheet.setAttribute('aria-labelledby', 'mn-title');
   document.body.append(sheet);
   sheet.addEventListener('cancel', (e) => { e.preventDefault(); closeMinutes(); });
+  sheet.addEventListener('submit', (e) => {
+    if (e.target.matches('[data-mn-finalize-form]')) { e.preventDefault(); finalizeMinutes(e.target); }
+    else if (e.target.matches('[data-mn-amend-form]')) { e.preventDefault(); amendMinutes(e.target); }
+  });
   sheet.addEventListener('click', (e) => {
     if (e.target === sheet) { closeMinutes(); return; } // the dimmed area beside the panel
     const btn = e.target.closest('button, a');
@@ -1241,6 +1374,7 @@ function buildSheet() {
     else if (btn.matches('[data-mn-delete]')) deleteMinutes(shownId);
     else if (btn.matches('[data-mn-register]')) openRegister();
     else if (btn.matches('[data-run-meeting]')) closeMinutes({ restore: false }); // app.js starts the meeting
+    else if (btn.matches('[data-mn-record]')) closeMinutes({ restore: false }); // the link opens it on the Weekly review
   });
   // Run meeting from a sheet (the minutes' empty state): every sheet steps aside
   // first, so the meeting is on top and its keys work. app.js then starts the
@@ -1355,27 +1489,48 @@ function metaLine(r) {
   return parts.join('\u00a0· ');
 }
 
+/**
+ * Meeting records: one list everywhere (the sidebar, the Action register, the Weekly review's tab). The
+ * weekly reviews (each opens on the Weekly review page) and the daily meetings' minutes, newest first.
+ */
 function showList(focusId = null) {
   shownId = null;
   const list = newestFirst(readMeetings());
+  let weekly = [];
+  try { weekly = (readWeekly().records ?? []).slice().sort((a, b) => String(b.weekKey).localeCompare(String(a.weekKey)) || String(b.updatedAt).localeCompare(String(a.updatedAt))); } catch { weekly = []; }
   const items = list.map((r) => {
     const n = Math.max(r.actions.length, r.actionIds.length);
-    const meta = [metaLine(r), plural(n, 'action', 'actions')].join('\u00a0· ');
+    const meta = [r.state === 'finalized' ? 'Finalized' : 'Draft', metaLine(r), plural(n, 'action', 'actions')].join('\u00a0· ');
     const board = boardDayText(r.dayIso);
     return `<li><button class="mn-item" type="button" data-mn-open="${esc(r.id)}">
-        <span class="mn-item-text"><span class="mn-item-date">${esc(board ? `${board} board` : 'Meeting')}</span><span class="mn-item-meta">${esc(meta)}</span></span>${NEXT_ICON}
+        <span class="mn-type mn-type--dor" aria-hidden="true">DOR</span>
+        <span class="mn-item-text"><span class="mn-item-date">Daily meeting, ${esc(board ? `${board} board` : 'a day')}</span><span class="mn-item-meta">${esc(meta)}</span></span>${NEXT_ICON}
       </button></li>`;
   }).join('');
+  const weeks = weekly.map((r) => {
+    // The weekly records' words (js/wor.js): a version a later finalized one replaced says so; a note never changes the state.
+    const later = r.state === 'finalized' ? weekly.filter((x) => x.weekKey === r.weekKey && x.state === 'finalized' && x.version > r.version).sort((a, b) => a.version - b.version)[0] : null;
+    const state = later ? `Replaced by v${later.version}` : r.state === 'finalized' ? 'Finalized' : r.basedOn ? 'Revised version, draft' : 'Draft';
+    const href = `./?view=wor&date=${encodeURIComponent(r.asOfIso ?? r.weekEnd ?? '')}&week=${encodeURIComponent(r.weekKey)}#record/${encodeURIComponent(r.id)}`;
+    return `<li><a class="mn-item" href="${esc(href)}" data-mn-record="${esc(r.id)}">
+        <span class="mn-type" aria-hidden="true">WOR</span>
+        <span class="mn-item-text"><span class="mn-item-date">Weekly review, week of ${esc(medDay(r.weekStart))}</span><span class="mn-item-meta">${esc([state, `version ${r.version}`, plural(r.decisions?.length ?? 0, 'decision', 'decisions')].join('\u00a0· '))}</span></span>${NEXT_ICON}
+      </a></li>`;
+  }).join('');
+  const any = list.length || weekly.length;
   paintSheet(`
     <div class="sheet-panel">
-      ${sheetHead('Meeting minutes', 'Close meeting minutes')}
+      ${sheetHead('Meeting records', 'Close meeting records')}
       <div class="sheet-body mn-body">
-        ${list.length
-          ? `<p class="mn-intro">Saved on this device, newest first. Each opens its minutes.</p>
-             <ul class="mn-list" aria-label="Saved meetings">${items}</ul>`
+        ${any
+          ? `<p class="mn-intro">Weekly reviews and daily meetings saved on this device, each a Draft until it's finalized.</p>
+             ${weeks ? `<h3 class="mn-list-title">Weekly reviews <span class="mn-count">${weekly.length}</span></h3><ul class="mn-list" aria-label="Weekly reviews">${weeks}</ul>` : ''}
+             ${items ? `<h3 class="mn-list-title">Daily meetings <span class="mn-count">${list.length}</span></h3><ul class="mn-list" aria-label="Daily meetings">${items}</ul>`
+               : '<p class="mn-quiet">No daily meeting minutes yet: Run daily meeting saves them here when it ends.</p>'}`
           : `<div class="mn-empty">
-               <p class="mn-empty-text">No meetings yet. Run meeting records the minutes here.</p>
-               <a class="btn btn--primary mn-empty-run" href="#meeting/0" data-run-meeting>Run meeting</a>
+               <p class="mn-empty-text">No meeting records yet.</p>
+               <p class="mn-quiet">Run daily meeting saves its minutes here when it ends; the Weekly review's Save review draft adds a weekly record.</p>
+               <a class="btn btn--primary mn-empty-run" href="#meeting/0" data-run-meeting>Run daily meeting</a>
              </div>`}
       </div>
     </div>`);
@@ -1435,10 +1590,10 @@ function rowAction(row, legacyAssigned = []) {
     : { state: 'none', text: null, word: ACTION_WORD.none, assigned: [] };
 }
 
-/** "Done Fri, Feb 27" for a done action, as the board and the register say it ('' when the day isn't known). */
-const closedWords = (a) => (isoToDate(a.closedDayIso) ? `Done ${medDay(a.closedDayIso)}` : '');
-/** "Done:" with the on-track glyph, before a closed action's words. */
-const doneMark = () => `<span class="mn-done">${glyphMarkup(ON)}Done:</span> `;
+/** "Verified Fri, Feb 27" for a verified action, as the board and the register say it ('' when the day isn't known). */
+const closedWords = (a) => (isoToDate(a.closedDayIso) ? `Verified ${medDay(a.closedDayIso)}` : '');
+/** "Verified:" with the on-track glyph, before a verified action's words. */
+const doneMark = () => `<span class="mn-done">${glyphMarkup(ON)}Verified:</span> `;
 
 /**
  * One assigned action in the minutes: the words, then owner and due date
@@ -1447,8 +1602,8 @@ const doneMark = () => `<span class="mn-done">${glyphMarkup(ON)}Done:</span> `;
 function assignedItem(a, meetingId) {
   const mine = Boolean(meetingId) && a.meetingId === meetingId;
   const sep = '<span aria-hidden="true"> · </span><span class="sr-only">, </span>';
-  const done = a.status === 'closed';
-  const when = done ? closedWords(a) : dueWords(a.due);
+  const done = isDoneStatus(a.status);
+  const when = done ? closedWords(a) : a.status === 'completed' ? 'Completed, awaiting verification' : dueWords(a.due);
   return `<li><span class="mn-alist-text">${done ? doneMark() : ''}${esc(a.text)}</span> <span class="mn-alist-meta">${esc(a.owner || 'No owner named')}${when ? `${sep}${esc(when)}` : ''}${mine ? `${sep}<span class="mn-alist-mine">Added in this meeting</span>` : ''}</span></li>`;
 }
 
@@ -1516,8 +1671,8 @@ function functionHtml(s, f, i, byRow = new Map(), meetingId = null) {
     </li>`;
 }
 
-// The register's words: Open, In progress, Done (a done action is stored as 'closed'; its date line reads "Done Fri, Feb 27").
-const REG_STATUS_WORD = { open: 'Open', 'in-progress': 'In progress', done: 'Done', closed: 'Done' };
+// The register's words (js/action-state.js); older minutes kept 'closed', which reads Verified.
+const REG_STATUS_WORD = { ...ACTION_STATE_WORD, done: 'Verified', closed: 'Verified' };
 const actionWord = (status) => REG_STATUS_WORD[status] ?? (status ? String(status).charAt(0).toUpperCase() + String(status).slice(1) : 'Open');
 
 /** Actions from the register for this meeting, plus any it doesn't have. */
@@ -1595,6 +1750,96 @@ function needsHtml(needs) {
 const NO_FUNCTIONS = 'Every function was hidden in Board setup, so there was nothing to review.';
 const noFunctions = (s) => Boolean(s) && !s.functions.length;
 
+/** "Draft minutes · not finalized" or "Finalized minutes v1": what a copy or printout of these minutes is. */
+const minutesLabel = (r) => (r.state === 'finalized'
+  ? `Finalized minutes v${r.version}${r.finalizedBy ? `, finalized by ${r.finalizedBy}` : ''}${r.amendments.length ? ` · ${plural(r.amendments.length, 'note', 'notes')}` : ''}`
+  : 'Draft minutes · not finalized');
+
+/** Who may finalize minutes: the organization's Administrators and Facilitators (roles are a demo here). */
+function finalizers() {
+  try { return getOrg(ctx.getMonth()).active.people.filter((p) => p.name.trim() && (p.roles.includes('admin') || p.roles.includes('facilitator'))); } catch { return []; }
+}
+
+/**
+ * Draft → Finalized for these minutes: Finalize (an Administrator or Facilitator); after that a note can be
+ * added (append-only, with its author and reason), which doesn't move them. Minutes have no revised version
+ * (a weekly review does: Draft → Finalized → Revised). Entering and leaving the meeting never finalizes anything.
+ */
+function stateSection(r) {
+  const stage = r.state !== 'finalized' ? 0 : 1;
+  const tick = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>';
+  const steps = ['Draft', 'Finalized'].map((n, i) => `<li class="${i < stage ? 'is-done' : i === stage ? 'is-current' : ''}"${i === stage ? ' aria-current="step"' : ''}><span class="org-step-n" aria-hidden="true">${i < stage ? tick : i + 1}</span>${n}${i < stage ? '<span class="sr-only">, done</span>' : ''}</li>`).join('');
+  const who = finalizers();
+  const me = (() => { try { return getIdentity(ctx.getMonth())?.name ?? ''; } catch { return ''; } })();
+  if (r.state !== 'finalized') {
+    return `<section class="mn-section mn-state" aria-labelledby="mn-sec-state">
+      <h3 class="section-title" id="mn-sec-state" tabindex="-1">Draft minutes</h3>
+      <ol class="org-steps" aria-label="Minutes lifecycle">${steps}</ol>
+      <p class="mn-quiet">Saved as a draft when the meeting ended. Finalize them once the room agrees they're right; after that they don't change, and a note can be added with its author and reason.</p>
+      <form class="mn-final" data-mn-finalize-form novalidate>
+        <label class="mn-label" for="mn-final-by">Finalized by</label>
+        <select class="mn-select" id="mn-final-by">${who.map((p) => `<option value="${esc(p.name)}"${p.name === me ? ' selected' : ''}>${esc(p.name)}${p.title ? ` (${esc(p.title)})` : ''}</option>`).join('') || '<option value="">Nobody has the role yet</option>'}</select>
+        <p class="mn-quiet">An Administrator or Facilitator (Board setup, Organization).</p>
+        <button class="btn btn--primary" type="submit"${who.length ? '' : ' aria-disabled="true"'}>Finalize minutes</button>
+      </form>
+    </section>`;
+  }
+  return `<section class="mn-section mn-state" aria-labelledby="mn-sec-state">
+      <h3 class="section-title" id="mn-sec-state" tabindex="-1">Finalized minutes</h3>
+      <ol class="org-steps" aria-label="Minutes lifecycle">${steps}</ol>
+      <p class="mn-quiet">Finalized ${esc(whenStarted(r.finalizedAt) || '')}${r.finalizedBy ? ` by ${esc(r.finalizedBy)}` : ''} · version ${r.version}. They don't change; a note is added at the end, with its author and reason.</p>
+      ${r.amendments.length ? `<ol class="mn-amends">${r.amendments.map((a) => `<li>${esc(a.text)} <span class="mn-quiet">${esc([a.by ? `by ${a.by}` : '', whenStarted(a.at)].filter(Boolean).join(' · '))}</span></li>`).join('')}</ol>` : ''}
+      <form class="mn-final" data-mn-amend-form novalidate>
+        <label class="mn-label" for="mn-amend-text">Note: what it adds, and why</label>
+        <textarea class="ma-input ma-textarea mn-textarea" id="mn-amend-text" rows="2" maxlength="2000"></textarea>
+        <label class="mn-label" for="mn-amend-by">Added by</label>
+        <select class="mn-select" id="mn-amend-by"><option value="">${who.length ? 'Choose who is adding it' : 'Nobody has the role yet'}</option>${who.map((p) => `<option value="${esc(p.name)}"${p.name === me ? ' selected' : ''}>${esc(p.name)}${p.title ? ` (${esc(p.title)})` : ''}</option>`).join('')}</select>
+        <p class="mn-quiet">An Administrator or Facilitator, as for finalizing.</p>
+        <p class="ma-error" id="mn-amend-err" role="alert" hidden></p>
+        <button class="btn btn--secondary" type="submit">Add a note</button>
+      </form>
+    </section>`;
+}
+
+/** Finalize the minutes on screen: the record is sealed (Delete goes; notes only). */
+function finalizeMinutes(form) {
+  const r = findMeeting(shownId);
+  if (!r || r.state === 'finalized') return;
+  const by = form.querySelector('#mn-final-by')?.value ?? '';
+  if (!by) { ctx.toast('Give someone the Administrator or Facilitator role in Board setup first.'); return; }
+  let live = [];
+  try { live = typeof register.listActions === 'function' ? register.listActions() : []; } catch { live = []; }
+  const ids = [...new Set([...r.actionIds, ...r.actions.map((a) => a.id)].filter(Boolean).map(String))];
+  const actionSnapshots = ids.map((id) => live.find((a) => String(a.id) === id)).filter(Boolean)
+    .map((a) => ({ id: String(a.id), text: a.text, status: a.status, owner: a.owner, due: a.due ?? null, fnId: a.fnId ?? null }));
+  const kept = upsertMeeting({ ...r, state: 'finalized', finalizedAt: new Date().toISOString(), finalizedBy: by, actionSnapshots });
+  showMeeting(r.id);
+  sheet.querySelector('#mn-sec-state')?.focus?.();
+  ctx.toast(`Minutes finalized by ${by}. They don't change now; a note can be added with its author and reason.${kept ? '' : ` ${NOT_SAVING}`}`);
+}
+
+function amendMinutes(form) {
+  const r = findMeeting(shownId);
+  if (!r || r.state !== 'finalized') return;
+  const text = form.querySelector('#mn-amend-text').value.trim();
+  const by = form.querySelector('#mn-amend-by').value.trim();
+  const err = form.querySelector('#mn-amend-err');
+  if (!text || !by || !finalizers().some((p) => p.name === by)) {
+    err.textContent = !text ? 'Say what the note adds, and why.' : 'Choose who is adding it: an Administrator or a Facilitator.';
+    err.hidden = false;
+    form.querySelector(!text ? '#mn-amend-text' : '#mn-amend-by').focus();
+    return;
+  }
+  const list = readMeetings();
+  const i = list.findIndex((m) => m.id === r.id);
+  if (i < 0) return;
+  list[i] = { ...list[i], amendments: [...list[i].amendments, { text, by, at: new Date().toISOString() }] };
+  const kept = writeMeetings(list);
+  showMeeting(r.id);
+  sheet.querySelector('#mn-amend-text')?.focus();
+  ctx.toast(`Note added at the end of the minutes.${kept ? '' : ` ${NOT_SAVING}`}`);
+}
+
 function minutesBody(r, { print = false } = {}) {
   const s = r.snapshot;
   const actions = actionsFor(r);
@@ -1607,13 +1852,14 @@ function minutesBody(r, { print = false } = {}) {
   const kpiTag = (a) => (a.kpiName ? `<span class="mn-action-kpi">${esc(a.kpiName)}</span>${SEP}` : '');
 
   return `
-    <p class="mn-meta">Length: ${esc(durationWords(r.durationSec))}</p>
+    <p class="mn-meta"><span class="mn-state-word">${esc(minutesLabel(r))}</span> · Length: ${esc(durationWords(r.durationSec))}</p>
     <p class="mn-honest">${esc(honestLine(r))}</p>
     ${print ? '' : `<div class="mn-tools">
       <button class="btn btn--secondary" type="button" data-mn-copy>Copy as text</button>
       <button class="btn btn--secondary" type="button" data-mn-print>Print</button>
-      <button class="btn btn--secondary mn-delete" type="button" data-mn-delete>Delete<span class="sr-only"> these minutes</span></button>
+      ${r.state === 'finalized' ? '' : '<button class="btn btn--secondary mn-delete" type="button" data-mn-delete>Delete<span class="sr-only"> these minutes</span></button>'}
     </div>`}
+    ${print ? '' : stateSection(r)}
 
     <section class="mn-section" aria-labelledby="mn-sec-summary">
       <h3 class="section-title" id="mn-sec-summary">Summary</h3>
@@ -1634,14 +1880,15 @@ function minutesBody(r, { print = false } = {}) {
         <h3 class="section-title" id="mn-sec-actions">Actions assigned in this meeting</h3>
         ${print ? '' : '<button class="btn btn--secondary" type="button" data-mn-register>Open the Action register</button>'}
       </div>
-      ${actions.length
+      ${r.state === 'finalized' && r.actionSnapshots.length ? frozenActionsHtml(r)
+        : actions.length
         ? `<ul class="mn-actions">${actions.map((a) => `
             <li class="mn-action">
-              <p class="mn-action-text">${a.fromRegister && a.statusKey === 'closed' ? doneMark() : ''}${esc(a.text)}</p>
-              <p class="mn-action-meta">${a.fnName ? `<span class="mn-action-fn">${esc(a.fnName)}</span>${SEP}` : ''}${kpiTag(a)}Owner: ${esc(a.owner || 'Not set')}${SEP}${a.fromRegister && a.statusKey === 'closed'
-                // Done: the day it was closed says it all.
-                ? esc(closedWords(a) || 'Done')
-                : `${esc(dueWords(a.due))}${SEP}${a.fromRegister && REG_STATUS_WORD[a.statusKey] && a.statusKey !== 'done' ? issueStatusMarkup(a.statusKey) : `<span class="mn-action-status${a.fromRegister ? '' : ' is-quiet'}">${esc(a.status)}</span>`}`}</p>
+              <p class="mn-action-text">${a.fromRegister && isDoneStatus(a.statusKey) ? doneMark() : ''}${esc(a.text)}</p>
+              <p class="mn-action-meta">${a.fnName ? `<span class="mn-action-fn">${esc(a.fnName)}</span>${SEP}` : ''}${kpiTag(a)}Owner: ${esc(a.owner || 'Not set')}${SEP}${a.fromRegister && isDoneStatus(a.statusKey)
+                // Verified: the day it was closed says it all.
+                ? esc(closedWords(a) || 'Verified')
+                : `${esc(dueWords(a.due))}${SEP}${a.fromRegister && ACTION_STATE_WORD[a.statusKey] ? actionStateMarkup(a.statusKey) : `<span class="mn-action-status${a.fromRegister ? '' : ' is-quiet'}">${esc(a.status)}</span>`}`}</p>
             </li>`).join('')}</ul>`
         : '<p class="mn-quiet">No actions were added in this meeting.</p>'}
     </section>
@@ -1656,6 +1903,22 @@ function minutesBody(r, { print = false } = {}) {
     </section>`;
 }
 
+/** A finalized meeting's actions as they stood when it was finalized, with "now: …" beside what changed since. */
+function frozenActionsHtml(r) {
+  let live = [];
+  try { live = typeof register.listActions === 'function' ? register.listActions() : []; } catch { live = []; }
+  const names = new Map((r.snapshot?.functions ?? []).map((f) => [f.id, f.name]));
+  const now = (a, x, field, words) => (a && (a[field] ?? null) !== (x[field] ?? null) ? ` <span class="wr-now">now: ${esc(words(a))}</span>` : '');
+  return `<ul class="mn-actions">${r.actionSnapshots.map((x) => {
+    const a = live.find((y) => String(y.id) === x.id) ?? null;
+    return `<li class="mn-action">
+        <p class="mn-action-text">${esc(x.text)}${now(a, x, 'text', (y) => y.text)}</p>
+        <p class="mn-action-meta">${names.get(x.fnId) ? `<span class="mn-action-fn">${esc(names.get(x.fnId))}</span>${SEP}` : ''}Owner: ${esc(x.owner || 'Not set')}${now(a, x, 'owner', (y) => y.owner || 'not set')}${SEP}${esc(dueWords(x.due))}${now(a, x, 'due', (y) => dueWords(y.due))}${SEP}${ACTION_STATE_WORD[x.status] ? actionStateMarkup(x.status) : esc(x.status)}${now(a, x, 'status', (y) => ACTION_STATE_WORD[y.status] ?? y.status)}${a ? '' : ' <span class="wr-now">now: no longer in the Action register on this device</span>'}</p>
+      </li>`;
+  }).join('')}</ul>
+    <p class="mn-quiet">As they stood when the minutes were finalized.</p>`;
+}
+
 function showMeeting(id) {
   const r = findMeeting(id);
   if (!r) {
@@ -1665,7 +1928,7 @@ function showMeeting(id) {
         ${sheetHead('Meeting minutes', 'Close meeting minutes')}
         <div class="sheet-body mn-body">
           <p class="mn-empty-text">These minutes aren't on this device. They may have been deleted.</p>
-          <p class="mn-back-row"><button class="btn btn--secondary" type="button" data-mn-back>${PREV_ICON}See all meetings</button></p>
+          <p class="mn-back-row"><button class="btn btn--secondary" type="button" data-mn-back>${PREV_ICON}See all meeting records</button></p>
         </div>
       </div>`);
     focusTitle();
@@ -1679,7 +1942,7 @@ function showMeeting(id) {
     <div class="sheet-panel">
       ${sheetHead('Meeting minutes', 'Close minutes', recordedLine(r), note)}
       <div class="sheet-body mn-body">
-        <p class="mn-back-row"><button class="btn btn--text mn-back" type="button" data-mn-back>${PREV_ICON}Back to all meetings</button></p>
+        <p class="mn-back-row"><button class="btn btn--text mn-back" type="button" data-mn-back>${PREV_ICON}Back to all meeting records</button></p>
         ${minutesBody(r)}
       </div>
     </div>`);
@@ -1712,6 +1975,7 @@ function minutesText(r) {
   const plantLine = plantWords(s?.plant);
   out.push(`${plantLine ? `${plantLine}, ` : ''}Daily Operating Review`);
   out.push('Meeting minutes');
+  out.push(minutesLabel(r));
   const recorded = recordedLine(r);
   if (recorded) out.push(recorded);
   out.push(`Length: ${durationWords(r.durationSec)}`);
@@ -1746,9 +2010,9 @@ function minutesText(r) {
         if (act.state === 'has') {
           out.push(`${pad}${ACTION_LABEL}:${act.text ? ` ${indent(act.text, `${pad}  `)}` : ''}`);
           act.assigned.forEach((a) => {
-            const done = a.status === 'closed';
+            const done = isDoneStatus(a.status);
             const when = done ? closedWords(a) : dueWords(a.due);
-            out.push(`${pad}  - ${done ? 'Done: ' : ''}${a.text} (${a.owner || 'No owner named'}${when ? `, ${when}` : ''}${a.meetingId && a.meetingId === r.id ? ', added in this meeting' : ''})`);
+            out.push(`${pad}  - ${done ? 'Verified: ' : ''}${a.text} (${a.owner || 'No owner named'}${when ? `, ${when}` : ''}${a.meetingId && a.meetingId === r.id ? ', added in this meeting' : ''})`);
           });
         } else {
           out.push(`${pad}${ACTION_LABEL}: ${act.state === 'needs' ? ACTION_WORD.needs : act.word || ACTION_WORD.nothing}`);
@@ -1763,9 +2027,9 @@ function minutesText(r) {
   const actions = actionsFor(r);
   if (actions.length) {
     actions.forEach((a) => {
-      const done = a.fromRegister && a.statusKey === 'closed';
-      const tail = done ? `${closedWords(a) || 'Done'}.` : `${dueWords(a.due)}. ${a.status}.`;
-      out.push(`- ${a.fnName ? `${a.fnName}${a.kpiName ? ` (${a.kpiName})` : ''}: ` : ''}${done ? 'Done: ' : ''}${sentence(a.text)} Owner: ${a.owner || 'Not set'}. ${tail}`);
+      const done = a.fromRegister && isDoneStatus(a.statusKey);
+      const tail = done ? `${closedWords(a) || 'Verified'}.` : `${dueWords(a.due)}. ${a.status}.`;
+      out.push(`- ${a.fnName ? `${a.fnName}${a.kpiName ? ` (${a.kpiName})` : ''}: ` : ''}${done ? 'Verified: ' : ''}${sentence(a.text)} Owner: ${a.owner || 'Not set'}. ${tail}`);
     });
   } else out.push('No actions were added in this meeting.');
   out.push('');
@@ -1811,6 +2075,7 @@ function printMinutes(id) {
   page.innerHTML = `
     <p class="mn-print-kicker">${esc(plantWords(r.snapshot?.plant) ? `${plantWords(r.snapshot.plant)}, Daily Operating Review` : 'Daily Operating Review')}</p>
     <h1 class="mn-print-title">Meeting minutes</h1>
+    <p class="mn-print-when">${esc(minutesLabel(r))}</p>
     ${recordedLine(r) ? `<p class="mn-print-when">${esc(recordedLine(r))}</p>` : ''}
     ${minutesBody(r, { print: true })}`;
   document.body.append(page);
@@ -1833,6 +2098,7 @@ function printMinutes(id) {
 }
 
 function deleteMinutes(id) {
+  if (findMeeting(id)?.state === 'finalized') { ctx.toast("Finalized minutes can't be deleted. Add a note instead."); return; }
   const result = id ? removeMeeting(id) : null;
   if (!result) {
     ctx.toast("These minutes aren't on this device anymore.");
@@ -1899,7 +2165,7 @@ export function initRecorder(c) {
   // Closing the tab mid-meeting still keeps the minutes; a reload resumes the
   // same meeting (the copy is replaced when it ends).
   window.addEventListener('pagehide', () => {
-    if (!session) return;
+    if (!session || session.kind === 'wor') return; // a reload resumes the weekly meeting; its saves are already made
     if (interim.trim()) { addLine(interim); interim = ''; }
     persistSession();
     const record = buildRecord(session, Date.now());

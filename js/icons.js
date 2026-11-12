@@ -40,6 +40,10 @@ const P = {
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
   // Boxes on a belt between two rollers: Operations (the factory stays the plant brand).
   conveyor: '<rect x="2" y="14" width="20" height="6" rx="3"/><circle cx="6.5" cy="17" r="1"/><circle cx="17.5" cy="17" r="1"/><rect x="4" y="5" width="6" height="6" rx="1"/><rect x="13" y="7" width="5" height="4" rx="1"/>',
+  calendarRange: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M17 14h-6M13 18H7M7 14h.01M17 18h.01"/>',
+  network: '<rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/>',
+  sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
   userSwitch: '<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4"/><path d="m16 15 3-3 3 3"/><path d="M19 12v9"/>',
 };
 

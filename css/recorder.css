@@ -300,3 +300,34 @@ html.mn-printing .mn-sheet, html.mn-printing .mn-sheet::backdrop { transition: n
 /* A done action (closed that day or later): "Done:" in the on-track color with its glyph. */
 .mn-done { color: var(--on); font-weight: 700; white-space: nowrap; }
 .mn-done .glyph { display: inline-block; width: 1em; height: 1em; margin-right: 0.3em; vertical-align: -0.15em; }
+
+/* ---------- Minutes: Draft → Finalized → Amended (spec §7) ---------- */
+.mn-state .org-steps { margin: var(--s-2) 0; }
+.mn-state-word { color: var(--ink); font-weight: 700; }
+.mn-final { display: grid; gap: var(--s-2); max-width: 36rem; margin-top: var(--s-3); }
+.mn-final .btn { justify-self: start; }
+.mn-final .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+.mn-label { font-size: var(--fs-small); font-weight: 650; }
+.mn-select {
+  min-height: 48px;
+  padding: 0 var(--s-3);
+  border: 2px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 650;
+}
+.mn-select:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.mn-amends { display: grid; gap: var(--s-1); margin: var(--s-2) 0 0; padding-left: 1.3em; font-size: var(--fs-small); }
+.mn-textarea { min-height: 4.5em; }
+
+/* Meeting records: weekly reviews and daily meetings in one list, each with its type tag (the Weekly review's tab look). */
+.mn-list-title { margin-top: var(--s-5); font-size: var(--fs-lead); font-weight: 750; line-height: 1.2; }
+.mn-list-title .mn-count { margin-left: 4px; color: var(--ink-2); font-weight: 650; }
+a.mn-item { text-decoration: none; }
+.mn-item { justify-content: flex-start; }
+.mn-item .mn-item-text { flex: 1; }
+.mn-type { display: inline-grid; place-items: center; flex: none; min-width: 52px; height: 30px; padding: 0 8px; border-radius: 4px; background: var(--ink); color: var(--surface); font-size: 0.8125rem; font-weight: 800; letter-spacing: 0.05em; }
+.mn-type--dor { background: var(--lx-steel-600); }
+.mn-select { max-width: 28rem; }

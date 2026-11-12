@@ -3,12 +3,19 @@
 // function tracks, with their goals and units. Everything applies to the board
 // as it's changed and stays on this device (store.js readSetup / writeSetup).
 
-import { readSetup, writeSetup, resetSetup, UNITS, kpiRowsFor, ownerFor, scaleExtraValues, scalePrimaryValues, getMonth, NAME_MAX } from './store.js?v=20261013-151156';
-import { parseInput, toInputValue, plainLabel } from './format.js?v=20261013-151156';
-import { esc } from './ui.js?v=20261013-151156';
-import { icon, DEPT_ICON } from './icons.js?v=20261013-151156';
-import { avatarMarkup, plantName } from './board.js?v=20261013-151156';
-import { fitSheetHead } from './detail.js?v=20261013-151156';
+import {
+  readSetup, writeSetup, resetSetup, UNITS, kpiRowsFor, ownerFor, scaleExtraValues, scalePrimaryValues, getMonth, NAME_MAX,
+  getOrg, editOrgDraft, checkOrgDraft, activateOrgDraft, discardOrgDraft, snapshotOrg, restoreOrg, ROLES, WEEKDAYS,
+  dailyMeasuresOf, measureLoad, DAILY_MEASURE_MAX, ORG_NAME_MAX,
+} from './store.js?v=20261112-075602';
+import { formatEnteredAt } from './format.js?v=20261112-075602';
+import { glyphMarkup, statusMarkup } from './ui.js?v=20261112-075602';
+import { parseInput, toInputValue, plainLabel } from './format.js?v=20261112-075602';
+import { esc } from './ui.js?v=20261112-075602';
+import { icon, DEPT_ICON } from './icons.js?v=20261112-075602';
+import { avatarMarkup, plantName } from './board.js?v=20261112-075602';
+import { fitSheetHead } from './detail.js?v=20261112-075602';
+import { RULES, RULE_IDS, defaultRule } from './weekly.js?v=20261112-075602';
 
 /** The name a new function's owner starts with: not a person yet. */
 const PLACEHOLDER_OWNER = /^\s*(owner name)?\s*$/i;
@@ -150,12 +157,22 @@ function notKeptMessage(list) {
   return `Daily questions not changed: ${list.map(([id, v]) => `${nameOf(id)} ${count(v)}`.trim()).join(', ')}.`;
 }
 
-export function openSetup() {
+/**
+ * Open the sheet. { section: 'org' } lands on the Organization section; { focus } on one of its boxes:
+ * 'person:<id>' (that person's name), 'area:<id>' (that area's lead), 'owner:<fnId>' or 'leader:<fnId>'.
+ */
+export function openSetup({ section = null, focus = null } = {}) {
   opener = document.activeElement;
   render();
   if (!dlg.open) dlg.showModal();
   fitSheetHead(dlg); // measured once it's showing (render() measures too, while it's open)
-  requestAnimationFrame(() => dlg.querySelector('#setup-title')?.focus({ preventScroll: true }));
+  requestAnimationFrame(() => {
+    const target = section === 'org' ? (focus && orgTarget(focus)) || dlg.querySelector('#su-org') : null;
+    if (target) {
+      scrollPanelTo(target, { center: Boolean(focus) });
+      target.focus({ preventScroll: true });
+    } else dlg.querySelector('#setup-title')?.focus({ preventScroll: true });
+  });
   fitQuestions();
 }
 
@@ -243,6 +260,13 @@ const ARROW_DOWN = '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="curre
 
 const unitOptions = (sel) => UNITS.map((u) => `<option value="${u.id}"${u.id === sel ? ' selected' : ''}>${esc(u.name)}</option>`).join('');
 
+/** The Weekly review's rules as options; the first says which one the KPI uses by default. */
+function weeklyRuleOptions(row, picked) {
+  const def = defaultRule(row);
+  return `<option value=""${picked ? '' : ' selected'}>${esc(`Default: ${RULES[def].name.toLowerCase()}`)}</option>`
+    + RULE_IDS.map((id) => `<option value="${id}"${picked === id ? ' selected' : ''}>${esc(RULES[id].name)}</option>`).join('');
+}
+
 function goalText(v, unit) {
   if (typeof v !== 'number') return '';
   return toInputValue(v, { unit });
@@ -286,6 +310,10 @@ function kpiCard(fnId, k, { first = false, only = false } = {}) {
             <option value="average"${(k.rollup ?? UNITS.find((u) => u.id === k.unit)?.rollup) === 'average' ? ' selected' : ''}>Averages the days</option>
           </select>
         </div>
+        <div class="su-field su-field--wide">
+          <label for="${pre}-wrule">Weekly rule</label>
+          <select id="${pre}-wrule" data-k="weeklyRule">${weeklyRuleOptions({ custom: true, kpiDaily: { unit: k.unit } }, k.weeklyRule)}</select>
+        </div>
       </div>
       ${only ? '' : `<button class="btn btn--text su-remove" type="button" data-remove-kpi="${esc(k.id)}">Remove this KPI</button>`}
     </fieldset>`;
@@ -326,6 +354,10 @@ function workbookKpi(fn, f) {
             ${moPct ? '<span aria-hidden="true">%</span>' : ''}
           </div>
           <p class="su-error" id="${pre}-mgoal-err" hidden></p>
+        </div>
+        <div class="su-field su-field--wide">
+          <label for="${pre}-wrule">Weekly rule</label>
+          <select id="${pre}-wrule" data-wbrule>${weeklyRuleOptions({ id: fn.id, primary: true, kpiDaily: day }, f.weeklyRule)}</select>
         </div>
       </div>
       <p class="su-note" id="${pre}-goal-note">Leave a goal empty to use the plant plan's goals, which can change day by day. Units come from the workbook.</p>
@@ -395,6 +427,11 @@ function editor(month, fn, setup) {
   const owner = ownerFor(fn);
   const kpis = setup.kpis[fn.id] ?? [];
   const pre = `fn-${fn.id}`;
+  // Once an organization is active, it names the owner: the box gives way to the name and a way there.
+  const orgDoc = getOrg(month);
+  const fromOrg = orgDoc.stored && orgDoc.active.people.some((p) => p.id === orgDoc.active.functions?.[fn.id]?.responsible);
+  const load = measureLoad(month, fn.id);
+  const full = load.count >= load.max;
   return `
     <div class="su-editor" id="${pre}-editor">
       <div class="su-grid">
@@ -412,11 +449,15 @@ function editor(month, fn, setup) {
       <div class="su-owner">
         ${ownerAvatar(owner, 'avatar su-avatar')}
         <div class="su-owner-fields">
-          <div class="su-field">
+          ${fromOrg ? `<div class="su-field">
+            <p class="su-fixed-label">Owner</p>
+            <p class="su-fixed">${esc(fn.owner)}</p>
+            <p class="su-note">The active organization names the owner. <button class="btn--text su-inline-link" type="button" data-org-go="owner:${esc(fn.id)}">Change it under Organization</button></p>
+          </div>` : `<div class="su-field">
             <label for="${pre}-owner">Owner</label>
             <input id="${pre}-owner" type="text" data-f="owner" value="${esc(fn.owner)}" ${capAttrs(`${pre}-owner`, NAME_MAX.owner)} autocomplete="off">
             ${capNote(`${pre}-owner`)}
-          </div>
+          </div>`}
           <div class="su-photo">
             <label class="btn btn--secondary su-photo-btn" for="${pre}-photo">${owner.photo ? 'Change photo' : 'Add a photo'}</label>
             <input class="sr-only" id="${pre}-photo" type="file" accept="image/*" data-photo="${esc(fn.id)}">
@@ -428,7 +469,11 @@ function editor(month, fn, setup) {
       <h4 class="su-subhead">KPIs</h4>
       ${fn.custom ? '' : workbookKpi(fn, f)}
       ${kpis.map((k, i) => kpiCard(fn.id, k, { first: fn.custom && i === 0, only: fn.custom && i === 0 })).join('')}
-      <button class="btn btn--secondary su-add" type="button" data-add-kpi="${esc(fn.id)}">${icon('clipboard', 'i')}Add a KPI to ${esc(fn.name)}</button>
+      <div class="su-cap">
+        <button class="btn btn--secondary su-add" type="button" data-add-kpi="${esc(fn.id)}"${full ? ' aria-disabled="true"' : ''} aria-describedby="${pre}-cap">${icon('clipboard', 'i')}Add a KPI to ${esc(fn.name)}</button>
+        <p class="su-note su-cap-count" id="${pre}-cap">Daily measures${load.name ? ` for ${esc(load.name)}` : ''}: ${load.count} of ${load.max}.${full ? ' That\'s the most the DOR shows for one owner.' : ''}</p>
+        <p class="su-error su-cap-msg" id="${pre}-cap-msg" role="alert" hidden></p>
+      </div>
 
       <div class="su-editor-foot">
         <button class="btn btn--text su-danger" type="button" data-hide-fn="${esc(fn.id)}">${fn.custom ? 'Delete this function' : 'Remove from the board'}</button>
@@ -457,6 +502,397 @@ function fnRow(month, fn, setup, i, total) {
       </div>
       ${open ? editor(month, fn, setup) : ''}
     </li>`;
+}
+
+/* ---------- Organization (spec §3): Draft, Validate, Activate ---------- */
+
+/** The organization this section shows: the draft being edited, else the active one. */
+function orgShown(month) {
+  const doc = getOrg(month);
+  return { doc, org: doc.draft ?? doc.active };
+}
+
+/** The box a validation line or a page link points at. */
+function orgTarget(key) {
+  const [kind, id] = String(key ?? '').split(':');
+  const sel = {
+    person: `#org-p-${CSS.escape(id ?? '')}-name`,
+    reports: `#org-p-${CSS.escape(id ?? '')}-reports`,
+    area: `#org-area-${CSS.escape(id ?? '')}-lead`,
+    owner: `#org-fn-${CSS.escape(id ?? '')}-owner`,
+    leader: `#org-fn-${CSS.escape(id ?? '')}-leader`,
+  }[kind];
+  return sel ? dlg.querySelector(sel) : null;
+}
+
+/** "Jane Doe"; the title is added only to tell two people of the same name apart. */
+const personLabel = (people, p) => {
+  const name = p.name.trim() || 'No name yet';
+  const twin = people.some((x) => x !== p && x.name.trim().toLowerCase() === p.name.trim().toLowerCase());
+  return twin && p.title ? `${name} (${p.title})` : name;
+};
+const personOptions = (people, sel, { none = 'Not set', except = null } = {}) => `<option value=""${sel ? '' : ' selected'}>${esc(none)}</option>`
+  + people.filter((p) => p.id !== except).map((p) => `<option value="${esc(p.id)}"${p.id === sel ? ' selected' : ''}>${esc(personLabel(people, p))}</option>`).join('');
+
+const CHECK = '<svg class="org-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>';
+
+/** Where the lifecycle stands: 'active' (no draft), 'draft', 'issues' (validated, something to fix), 'ready'. */
+function orgStage(doc) {
+  if (!doc.draft) return 'active';
+  if (!doc.checked || doc.checked.rev !== doc.rev) return 'draft';
+  return doc.checked.ok ? 'ready' : 'issues';
+}
+
+/** Draft → Validate → Activate, the status line, the validation result and the buttons. */
+function orgStateMarkup(month) {
+  const { doc } = orgShown(month);
+  const stage = orgStage(doc);
+  const step = { active: -1, draft: 0, issues: 1, ready: 2 }[stage];
+  const steps = ['Draft', 'Validate', 'Activate'].map((name, i) => `<li class="${i < step ? 'is-done' : i === step ? 'is-current' : ''}"${i === step ? ' aria-current="step"' : ''}><span class="org-step-n" aria-hidden="true">${i < step ? CHECK : i + 1}</span>${name}${i < step ? '<span class="sr-only">, done</span>' : ''}</li>`).join('');
+  const since = doc.stored ? `Active since ${esc(formatEnteredAt(doc.activatedAt))}.` : "Active: read from the board's function owners.";
+  const count = doc.checked?.issues.length ?? 0;
+  const line = {
+    active: `${since} Change anything below to start a draft. The pages keep the active organization until you activate the draft.`,
+    draft: 'Draft: not active yet. Validate it to check for gaps, then activate it.',
+    issues: `Draft: ${count === 1 ? '1 thing' : `${count} things`} to fix before it can be activated.`,
+    ready: 'Draft: ready to activate. Nothing is missing.',
+  }[stage];
+  const issues = stage === 'issues' ? `<ul class="org-issues">${doc.checked.issues.map((i) => `<li>${statusMarkup('off', { tag: 'span', word: i.text, extra: 'org-issue' })}${i.focus ? ` <button class="btn--text su-inline-link" type="button" data-org-go="${esc(i.focus)}">Fix this</button>` : ''}</li>`).join('')}</ul>` : '';
+  const buttons = stage === 'active' ? '' : `
+    <div class="org-buttons">
+      ${stage === 'ready'
+        ? '<button class="btn btn--primary" type="button" data-org-activate>Activate</button>'
+        : `<button class="btn btn--primary" type="button" data-org-validate>${stage === 'issues' ? 'Validate again' : 'Validate'}</button>`}
+      <button class="btn btn--text" type="button" data-org-discard>Discard draft</button>
+    </div>`;
+  return `<ol class="org-steps" aria-label="Organization lifecycle">${steps}</ol>
+    <p class="org-state">${line}</p>${issues}${buttons}`;
+}
+
+/** Redraw just the lifecycle parts (top and bottom), keeping focus on the button that had it. */
+function syncOrgState(month = ctx.getMonth(), { box = null } = {}) {
+  const html = orgStateMarkup(month);
+  const boxes = [...dlg.querySelectorAll('[data-org-state]')];
+  const active = document.activeElement;
+  const at = box ?? boxes.findIndex((b) => b.contains(active));
+  const key = at >= 0 && active && boxes[at]?.contains(active)
+    ? ['data-org-validate', 'data-org-activate', 'data-org-discard'].find((a) => active.hasAttribute(a)) : null;
+  boxes.forEach((n) => { if (n.innerHTML !== html) n.innerHTML = html; });
+  dlg.querySelectorAll('[data-org-badge]').forEach((n) => { n.textContent = orgStage(orgShown(month).doc) === 'active' ? 'Active' : 'Draft'; });
+  if (key) (boxes[at].querySelector(`[${key}]`) ?? boxes[at].querySelector('[data-org-validate], [data-org-activate]'))?.focus({ preventScroll: true });
+}
+
+function orgSection(month) {
+  const { doc, org } = orgShown(month);
+  const people = org.people;
+  const days = new Set(org.productionDays);
+  const plantLabel = plantName(month);
+  const tz = org.timeZone || '';
+  const fnRows = month.functions.map((fn) => {
+    const a = org.functions?.[fn.id] ?? {};
+    const pid = a.responsible;
+    const load = pid ? dailyMeasuresOf(month, org, pid).count : kpiRowsFor(fn).length;
+    const over = load > DAILY_MEASURE_MAX;
+    return `<tr>
+      <th scope="row">${esc(fn.name)}</th>
+      <td><label class="sr-only" for="org-fn-${esc(fn.id)}-owner">Responsible owner for ${esc(fn.name)}</label>
+        <select id="org-fn-${esc(fn.id)}-owner" data-org-fn="${esc(fn.id)}" data-org-k="responsible">${personOptions(people, pid)}</select></td>
+      <td><label class="sr-only" for="org-fn-${esc(fn.id)}-leader">Accountable leader for ${esc(fn.name)}</label>
+        <select id="org-fn-${esc(fn.id)}-leader" data-org-fn="${esc(fn.id)}" data-org-k="accountable">${personOptions(people, a.accountable)}</select></td>
+      <td class="org-load${over ? ' is-over' : ''}">${over ? glyphMarkup('off') : ''}${load} of ${DAILY_MEASURE_MAX}</td>
+    </tr>`;
+  }).join('');
+  const personCards = people.map((p) => {
+    const pre = `org-p-${p.id}`;
+    return `<fieldset class="org-person" data-org-person="${esc(p.id)}">
+      <legend class="sr-only">${esc(p.name || 'New person')}</legend>
+      <div class="su-grid">
+        <div class="su-field"><label for="${pre}-name">Name</label>
+          <input id="${pre}-name" type="text" data-org-p="name" value="${esc(p.name)}" maxlength="${NAME_MAX.owner}" autocomplete="off"></div>
+        <div class="su-field"><label for="${pre}-title">Title</label>
+          <input id="${pre}-title" type="text" data-org-p="title" value="${esc(p.title)}" maxlength="${NAME_MAX.owner}" autocomplete="off"></div>
+        <div class="su-field"><label for="${pre}-reports">Reports to</label>
+          <select id="${pre}-reports" data-org-p="reportsTo">${personOptions(people, p.reportsTo, { none: 'Nobody (top of the chart)', except: p.id })}</select></div>
+      </div>
+      <fieldset class="org-roles"><legend>Roles</legend>
+        ${ROLES.map((r) => `<label class="org-role"><input type="checkbox" data-org-role="${r.id}"${p.roles.includes(r.id) ? ' checked' : ''}><span>${esc(r.name)}</span></label>`).join('')}
+      </fieldset>
+      <button class="btn btn--text su-danger org-remove" type="button" data-org-remove="${esc(p.id)}">Remove ${esc(p.name || 'this person')}</button>
+    </fieldset>`;
+  }).join('');
+  return `
+        <section class="su-section su-org" aria-labelledby="su-org">
+          <h3 class="su-head" id="su-org" tabindex="-1">Organization <span class="org-badge" data-org-badge>${orgStage(doc) === 'active' ? 'Active' : 'Draft'}</span></h3>
+          <p class="su-note">Who answers for each function, and the plant's calendar. Changes here make a draft; every page keeps the active organization until you activate it.</p>
+          <div class="org-state-box" data-org-state>${orgStateMarkup(month)}</div>
+
+          <h4 class="su-subhead">Organization and site</h4>
+          <div class="su-grid">
+            <div class="su-field su-field--wide"><label for="org-name">Organization name</label>
+              <input id="org-name" type="text" data-org-field="name" value="${esc(org.name)}" maxlength="${ORG_NAME_MAX}" placeholder="Not set" autocomplete="off"></div>
+            <div class="su-field"><p class="su-fixed-label">Site</p><p class="su-fixed">${esc(plantLabel)}</p></div>
+            <div class="su-field su-field--wide"><label for="org-tz">Time zone</label>
+              <input id="org-tz" type="text" data-org-field="timeZone" value="${esc(tz)}" maxlength="60" autocomplete="off"></div>
+            <div class="su-field"><label for="org-week">Week</label>
+              <select id="org-week" data-org-field="weekStart"><option value="mon"${org.weekStart === 'mon' ? ' selected' : ''}>Mon to Sun</option><option value="sun"${org.weekStart === 'sun' ? ' selected' : ''}>Sun to Sat</option></select></div>
+            <div class="su-field"><label for="org-cutoff">Production-day cutoff</label>
+              <input id="org-cutoff" type="time" data-org-field="cutoff" value="${esc(org.cutoff)}" aria-describedby="org-cutoff-note"></div>
+            <p class="su-note su-field--wide org-cutoff-note" id="org-cutoff-note">${org.cutoff ? 'The time a production day ends.' : 'Not set. The time a production day ends, for numbers entered after midnight.'}</p>
+          </div>
+          <fieldset class="org-days"><legend>Production days</legend>
+            ${WEEKDAYS.map(([d, name]) => `<label class="org-role"><input type="checkbox" data-org-day="${d}"${days.has(d) ? ' checked' : ''}><span>${name}</span></label>`).join('')}
+          </fieldset>
+          <p class="su-note">Departments are the ${month.functions.length} functions above, in meeting order. The workbook's calendar decides which days have production goals.</p>
+
+          <h4 class="su-subhead">Areas</h4>
+          <table class="org-table">
+            <thead><tr><th scope="col">Area</th><th scope="col">Lead</th></tr></thead>
+            <tbody>${org.areas.map((a) => `<tr><th scope="row">${esc(a.name)}</th><td><label class="sr-only" for="org-area-${esc(a.id)}-lead">Lead for ${esc(a.name)}</label>
+              <select id="org-area-${esc(a.id)}-lead" data-org-area="${esc(a.id)}">${personOptions(people, a.lead)}</select></td></tr>`).join('')}</tbody>
+          </table>
+          <p class="su-note">From the workbook's area columns. Add a person below to make them an area's lead.</p>
+
+          <h4 class="su-subhead">Shifts</h4>
+          <ul class="org-shifts">${org.shifts.map((sh) => `<li><label class="sr-only" for="org-shift-${esc(sh.id)}">Shift name</label>
+            <input id="org-shift-${esc(sh.id)}" type="text" data-org-shift="${esc(sh.id)}" value="${esc(sh.name)}" maxlength="40" autocomplete="off">
+            <button class="btn btn--text" type="button" data-org-shift-remove="${esc(sh.id)}">Remove<span class="sr-only"> ${esc(sh.name)}</span></button></li>`).join('')}</ul>
+          <button class="btn btn--secondary" type="button" data-org-shift-add>${icon('plus', 'i')}Add a shift</button>
+
+          <h4 class="su-subhead">People</h4>
+          <p class="su-note org-roles-note">Roles are a demo here: anyone on this device can act as any role. The connected version checks sign-in.</p>
+          <div class="org-people">${personCards}</div>
+          <button class="btn btn--secondary" type="button" data-org-person-add>${icon('plus', 'i')}Add a person</button>
+
+          <h4 class="su-subhead">Who answers for each function</h4>
+          <p class="su-note">The responsible owner does the work and enters the numbers. The accountable leader answers for the result. Each owner has at most ${DAILY_MEASURE_MAX} daily measures.</p>
+          <div class="org-table-wrap">
+            <table class="org-table org-table--fns">
+              <thead><tr><th scope="col">Function</th><th scope="col">Responsible owner</th><th scope="col">Accountable leader</th><th scope="col">Owner's daily measures</th></tr></thead>
+              <tbody>${fnRows}</tbody>
+            </table>
+          </div>
+
+          <h4 class="su-subhead">Action rules</h4>
+          <label class="org-role org-flag"><input type="checkbox" id="org-self-verify" data-org-flag="allowSelfVerify" aria-describedby="org-self-verify-note"${org.allowSelfVerify ? ' checked' : ''}><span>Allow self-verification</span></label>
+          <p class="su-note" id="org-self-verify-note">${org.allowSelfVerify
+            ? 'On: an action\'s owner may verify it, if they have the Verifier role.'
+            : 'Off: a completed action is verified by someone with the Verifier role who doesn\'t own it.'}</p>
+
+          <div class="org-state-box org-state-box--end" data-org-state>${orgStateMarkup(month)}</div>
+        </section>`;
+}
+
+/**
+ * Bring a box into view inside the sheet's own scrolling panel, clear of its sticky title bar
+ * (scrollIntoView would also shift the sheet itself, which clips its overflow, and hide the title bar).
+ */
+function scrollPanelTo(el, { center = false } = {}) {
+  const panel = dlg.querySelector('.sheet-panel');
+  if (!panel || !el) return;
+  const head = panel.querySelector(':scope > .sheet-head')?.getBoundingClientRect().height ?? 0;
+  const r = el.getBoundingClientRect();
+  const p = panel.getBoundingClientRect();
+  const room = p.height - head;
+  const offset = center ? Math.max(12, (room - r.height) / 2) : 12;
+  panel.scrollTop += r.top - p.top - head - offset;
+}
+
+/** Change the draft, then redraw (`redraw`) or just the lifecycle parts. Focus stays where it was. */
+function orgEdit(change, { redraw = false } = {}) {
+  const month = ctx.getMonth();
+  const ok = saved(editOrgDraft(month, change).ok);
+  if (redraw) redrawKeepingFocus();
+  else syncOrgState(month);
+  return ok;
+}
+
+/** Redraw the sheet and put focus back on the box with the same id (a select, a name, a checkbox). */
+function redrawKeepingFocus(fallback = '#su-org') {
+  const a = document.activeElement;
+  const id = a && dlg.contains(a) ? a.id : null;
+  const role = a?.dataset?.orgRole ?? a?.dataset?.orgDay;
+  const personId = a?.closest?.('[data-org-person]')?.dataset.orgPerson;
+  render();
+  const again = (id && dlg.querySelector(`#${CSS.escape(id)}`))
+    || (role && personId && dlg.querySelector(`[data-org-person="${CSS.escape(personId)}"] [data-org-role="${CSS.escape(role)}"]`))
+    || (role && dlg.querySelector(`[data-org-day="${CSS.escape(role)}"]`))
+    || dlg.querySelector(fallback);
+  again?.focus({ preventScroll: true });
+}
+
+function onOrgInput(el) {
+  if (el.dataset.orgField && el.type !== 'time' && el.tagName === 'INPUT') {
+    orgEdit((o) => { o[el.dataset.orgField] = el.value; });
+    return true;
+  }
+  if (el.dataset.orgP === 'name' || el.dataset.orgP === 'title') {
+    const pid = el.closest('[data-org-person]')?.dataset.orgPerson;
+    let person = null;
+    orgEdit((o) => { const p = o.people.find((x) => x.id === pid); if (p) { p[el.dataset.orgP] = el.value; person = { ...p }; } });
+    // Every list of people follows as it's typed (no redraw, so the box keeps its focus and caret).
+    if (person) {
+      const label = personLabel(orgShown(ctx.getMonth()).org.people, person);
+      dlg.querySelectorAll(`.su-org option[value="${CSS.escape(pid)}"]`).forEach((o) => { o.textContent = label; });
+      const remove = dlg.querySelector(`[data-org-remove="${CSS.escape(pid)}"]`);
+      if (remove) remove.textContent = `Remove ${person.name || 'this person'}`;
+    }
+    return true;
+  }
+  if (el.dataset.orgShift) {
+    orgEdit((o) => { const sh = o.shifts.find((x) => x.id === el.dataset.orgShift); if (sh) sh.name = el.value; });
+    return true;
+  }
+  return false;
+}
+
+function onOrgChange(el) {
+  const pid = el.closest('[data-org-person]')?.dataset.orgPerson;
+  if (el.dataset.orgP === 'name' || el.dataset.orgP === 'title' || el.dataset.orgShift || (el.dataset.orgField && el.type === 'text')) return true; // saved as typed
+  if (el.dataset.orgField === 'cutoff' || (el.tagName === 'SELECT' && el.dataset.orgField)) {
+    orgEdit((o) => { o[el.dataset.orgField] = el.value; }, { redraw: el.dataset.orgField === 'cutoff' });
+    return true;
+  }
+  if (el.dataset.orgFlag) {
+    orgEdit((o) => { o[el.dataset.orgFlag] = el.checked; }, { redraw: true });
+    return true;
+  }
+  if (el.dataset.orgDay) {
+    orgEdit((o) => {
+      const set = new Set(o.productionDays);
+      if (el.checked) set.add(el.dataset.orgDay); else set.delete(el.dataset.orgDay);
+      o.productionDays = WEEKDAYS.map(([d]) => d).filter((d) => set.has(d));
+    });
+    return true;
+  }
+  if (el.dataset.orgP === 'reportsTo') {
+    orgEdit((o) => { const p = o.people.find((x) => x.id === pid); if (p) p.reportsTo = el.value || null; }, { redraw: true });
+    return true;
+  }
+  if (el.dataset.orgRole) {
+    orgEdit((o) => {
+      const p = o.people.find((x) => x.id === pid);
+      if (!p) return;
+      const set = new Set(p.roles);
+      if (el.checked) set.add(el.dataset.orgRole); else set.delete(el.dataset.orgRole);
+      p.roles = [...set];
+    });
+    return true;
+  }
+  if (el.dataset.orgArea) {
+    orgEdit((o) => { const a = o.areas.find((x) => x.id === el.dataset.orgArea); if (a) a.lead = el.value || null; }, { redraw: true });
+    return true;
+  }
+  if (el.dataset.orgFn) {
+    orgEdit((o) => {
+      o.functions[el.dataset.orgFn] ??= { responsible: null, accountable: null };
+      o.functions[el.dataset.orgFn][el.dataset.orgK] = el.value || null;
+    }, { redraw: true });
+    return true;
+  }
+  return false;
+}
+
+/** Undo for a change to the stored organization: put the record back and redraw the pages. */
+function orgUndo(before, focusSel) {
+  return () => {
+    restoreOrg(before);
+    ctx.onChange();
+    if (!dlg.open) return;
+    render();
+    focusAfter(dlg.querySelector(focusSel), '#su-org');
+  };
+}
+
+function onOrgClick(btn) {
+  const month = ctx.getMonth();
+  if (btn.dataset.orgGo) {
+    const t = orgTarget(btn.dataset.orgGo);
+    if (t) { scrollPanelTo(t, { center: true }); t.focus({ preventScroll: true }); }
+    return true;
+  }
+  if (btn.matches('[data-org-validate]')) {
+    const boxes = [...dlg.querySelectorAll('[data-org-state]')];
+    const at = Math.max(0, boxes.findIndex((b) => b.contains(btn)));
+    const r = checkOrgDraft(month);
+    syncOrgState(month, { box: at });
+    // The result is read out; focus stays on the lifecycle (Activate when it's ready).
+    const next = boxes[at]?.querySelector(r.ok ? '[data-org-activate]' : '[data-org-validate]');
+    next?.focus({ preventScroll: true });
+    const live = dlg.querySelector('[data-limit-live]');
+    if (live) {
+      live.textContent = '';
+      setTimeout(() => { live.textContent = r.ok ? 'Ready to activate. Nothing is missing.' : `${r.issues.length === 1 ? '1 thing' : `${r.issues.length} things`} to fix: ${r.issues.map((i) => i.text).join(' ')}`; }, 60);
+    }
+    return true;
+  }
+  if (btn.matches('[data-org-activate]')) {
+    const before = activateOrgDraft();
+    if (!before) { syncOrgState(month); return true; }
+    ctx.onChange();
+    render();
+    focusAfter(dlg.querySelector('#su-org'), '#setup-title');
+    ctx.toast('Organization activated. Every page now uses it.', { actionLabel: 'Undo', onAction: orgUndo(before, '[data-org-state] [data-org-activate]') });
+    return true;
+  }
+  if (btn.matches('[data-org-discard]')) {
+    const before = discardOrgDraft();
+    render();
+    focusAfter(dlg.querySelector('#su-org'), '#setup-title');
+    ctx.toast('Draft discarded. The active organization is unchanged.', { actionLabel: 'Undo', onAction: orgUndo(before, '[data-org-state] [data-org-discard]') });
+    return true;
+  }
+  if (btn.matches('[data-org-person-add]')) {
+    const id = newId('p');
+    orgEdit((o) => { o.people.push({ id, name: '', title: '', roles: ['contributor'], reportsTo: null }); }, { redraw: true });
+    const input = dlg.querySelector(`#org-p-${CSS.escape(id)}-name`);
+    scrollPanelTo(input, { center: true });
+    input?.focus({ preventScroll: true });
+    return true;
+  }
+  if (btn.dataset.orgRemove) {
+    const pid = btn.dataset.orgRemove;
+    const shown = orgShown(month).org;
+    const i = shown.people.findIndex((p) => p.id === pid);
+    const gone = shown.people[i];
+    const before = snapshotOrg();
+    orgEdit((o) => {
+      o.people = o.people.filter((p) => p.id !== pid);
+      // Nobody points at someone who isn't there: their places read "Not set" (Validate says what's missing).
+      for (const p of o.people) if (p.reportsTo === pid) p.reportsTo = null;
+      for (const f of Object.values(o.functions)) { if (f.responsible === pid) f.responsible = null; if (f.accountable === pid) f.accountable = null; }
+      for (const a of o.areas) if (a.lead === pid) a.lead = null;
+    }, { redraw: true });
+    const near = shown.people[i - 1] ?? shown.people[i + 1];
+    focusAfter(near && dlg.querySelector(`#org-p-${CSS.escape(near.id)}-name`), '[data-org-person-add]');
+    done(true, `${gone?.name || 'Person'} removed from the draft.`, { actionLabel: 'Undo', onAction: orgUndo(before, `#org-p-${CSS.escape(pid)}-name`) });
+    return true;
+  }
+  if (btn.matches('[data-org-shift-add]')) {
+    const id = newId('s');
+    orgEdit((o) => { o.shifts.push({ id, name: `${o.shifts.length + 1}${['st', 'nd', 'rd'][o.shifts.length] ?? 'th'} shift` }); }, { redraw: true });
+    const input = dlg.querySelector(`#org-shift-${CSS.escape(id)}`);
+    input?.focus();
+    input?.select();
+    return true;
+  }
+  if (btn.dataset.orgShiftRemove) {
+    const before = snapshotOrg();
+    const name = orgShown(month).org.shifts.find((x) => x.id === btn.dataset.orgShiftRemove)?.name ?? 'Shift';
+    orgEdit((o) => { o.shifts = o.shifts.filter((x) => x.id !== btn.dataset.orgShiftRemove); }, { redraw: true });
+    focusAfter(dlg.querySelector('[data-org-shift-add]'), '#su-org');
+    done(true, `${name} removed from the draft.`, { actionLabel: 'Undo', onAction: orgUndo(before, '[data-org-shift-add]') });
+    return true;
+  }
+  if (btn.matches('[data-reset-org]')) {
+    const before = snapshotOrg();
+    restoreOrg(null);
+    ctx.onChange();
+    render();
+    focusAfter(dlg.querySelector('#su-org'), '#su-reset');
+    ctx.toast("The organization is back to the board's function owners.", { actionLabel: 'Undo', onAction: orgUndo(before, '[data-reset-org]') });
+    return true;
+  }
+  return false;
 }
 
 function render() {
@@ -495,10 +931,14 @@ function render() {
             <ul class="su-hidden">${hidden.map((fn) => `<li><span>${esc(fn.name)} <span class="su-fn-meta">${esc(fn.owner)}</span></span><button class="btn btn--secondary" type="button" data-restore="${esc(fn.id)}">Put back</button></li>`).join('')}</ul>` : ''}
         </section>
 
+        ${orgSection(month)}
+
         <section class="su-section su-section--reset" aria-labelledby="su-reset">
           <h3 class="su-head" id="su-reset" tabindex="-1">Start over</h3>
           <p class="su-note">Go back to the plant workbook's setup. Numbers people entered stay.</p>
           <button class="btn btn--secondary" type="button" data-reset-setup>Reset board setup</button>
+          ${getOrg(month).stored || getOrg(month).draft ? `<p class="su-note su-reset-org">Or go back to the organization read from the board's owners.</p>
+          <button class="btn btn--secondary" type="button" data-reset-org>Reset the organization</button>` : ''}
         </section>
       </div>
     </div>`;
@@ -551,6 +991,7 @@ function onInput(e) {
   // Only while the sheet is open: the page's undo can fire input on a closed sheet's boxes.
   if (!dlg.open) return;
   const el = e.target;
+  if (el.closest?.('.su-org') && onOrgInput(el)) return;
   if (el.matches('input[data-max]')) updateCap(el);
   if (el.matches('textarea[data-f="question"]')) {
     // One line on the board: a pasted line break becomes a space.
@@ -644,9 +1085,19 @@ function onInput(e) {
 function onChange(e) {
   if (!dlg.open) return;
   const el = e.target;
+  if (el.closest?.('.su-org') && onOrgChange(el)) return;
   if (el.matches('[data-photo]')) { addPhoto(el.dataset.photo, el.files?.[0]); return; }
   const { fnId, kpiId } = kpiTarget(el);
-  if (!fnId || !kpiId || !['unit', 'better', 'rollup'].includes(el.dataset.k)) return;
+  if (el.matches('[data-wbrule]') && fnId) {
+    // The workbook KPI's weekly rule (the Weekly review); empty = its default.
+    const setup = readSetup();
+    const f = fnSetup(setup, fnId);
+    if (el.value) f.weeklyRule = el.value; else delete f.weeklyRule;
+    commit(setup);
+    dlg.querySelector(`[data-fn="${CSS.escape(fnId)}"] [data-wbrule]`)?.focus();
+    return;
+  }
+  if (!fnId || !kpiId || !['unit', 'better', 'rollup', 'weeklyRule'].includes(el.dataset.k)) return;
   const setup = readSetup();
   const k = (setup.kpis[fnId] ?? []).find((x) => x.id === kpiId);
   if (!k) return;
@@ -662,6 +1113,8 @@ function onChange(e) {
     }
     k.unit = el.value;
     delete k.rollup; // follows the unit unless picked
+  } else if (el.dataset.k === 'weeklyRule') {
+    if (el.value) k.weeklyRule = el.value; else delete k.weeklyRule;
   } else {
     k[el.dataset.k] = el.value;
   }
@@ -677,6 +1130,7 @@ function onClick(e) {
   const setup = readSetup();
 
   if (btn.matches('[data-close]')) { closeSetup(); return; }
+  if (onOrgClick(btn)) return;
 
   if (btn.dataset.toggle) {
     flush();
@@ -712,6 +1166,18 @@ function onClick(e) {
 
   if (btn.dataset.addKpi) {
     const fnId = btn.dataset.addKpi;
+    // At most 3 daily measures per owner (spec §1, §4): a 4th is refused, in plain words, beside the button.
+    const load = measureLoad(month, fnId);
+    if (load.count >= load.max) {
+      const msg = dlg.querySelector(`#fn-${CSS.escape(fnId)}-cap-msg`);
+      if (msg) {
+        msg.hidden = false;
+        msg.textContent = '';
+        // Filled a moment later, so a screen reader hears it on every press.
+        setTimeout(() => { msg.textContent = `${load.name || 'This owner'} already has ${load.max} daily measures, the most the DOR shows for one owner. Remove one first, or give this function to someone else under Organization.`; }, 40);
+      }
+      return;
+    }
     // It starts on the board day it's added, so earlier days don't read as misses.
     const k = { id: newId('k'), name: 'New KPI', unit: 'count', better: 'higher', goal: null, startDay: ctx.getDay() };
     (setup.kpis[fnId] ??= []).push(k);

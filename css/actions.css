@@ -354,3 +354,95 @@
 .v2-done { display: inline; font-size: inherit; font-weight: 700; }
 .v2-done .glyph { display: inline-block; margin-right: 0.3em; vertical-align: -0.2em; }
 .v2-assigned--done .v2-assigned-text { font-weight: 550; }
+
+/* ---------- Action states (spec §12; js/action-state.js) ----------
+   Each state is a word with a mark of its own shape, so it never rests on color:
+   Open a ring, In progress a half-filled ring, Completed a ring with a center (waiting
+   for its verifier), Verified the on-track green dot, Cancelled a struck ring in gray.
+   Shared by the register, Detail, the minutes and the Weekly review. */
+.ast { display: inline-flex; align-items: center; gap: 0.4em; font-weight: 700; white-space: nowrap; color: var(--ink); }
+.ast-mark {
+  position: relative;
+  box-sizing: border-box;
+  width: 0.75em;
+  height: 0.75em;
+  flex: none;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.ast--in-progress .ast-mark::after { content: ""; position: absolute; inset: 0 50% 0 0; background: currentColor; }
+.ast--completed .ast-mark::after { content: ""; position: absolute; inset: 22%; border-radius: 50%; background: currentColor; }
+.ast--verified { color: var(--on); }
+.ast--verified .ast-mark { background: currentColor; }
+.ast--cancelled { color: var(--ink-2); }
+.ast--cancelled .ast-mark { overflow: visible; }
+.ast--cancelled .ast-mark::after { content: ""; position: absolute; left: 50%; top: -25%; width: 2px; height: 150%; margin-left: -1px; background: currentColor; transform: rotate(45deg); }
+
+.ar-state { display: grid; gap: 2px; min-height: 28px; outline: none; }
+.ar-state:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
+.ar-state-note { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
+.ar-steps { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.ar-steps .btn { min-height: var(--tap); }
+.ar-item-tools { flex-wrap: wrap; }
+.ar-item.is-closed .ar-text { color: var(--ink-2); font-weight: 550; }
+/* An action closed as cancelled reads as history, not as done. */
+.ar-item[data-status="cancelled"] .ar-text { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+.ar-age { color: var(--ink-mid); }
+.ar-meta--due { display: flex; flex-wrap: wrap; align-items: center; margin-top: 0; }
+.ar-meta + .ar-meta { margin-top: 2px; }
+.ar-days { margin-top: var(--s-1); }
+.ar-days-note { color: var(--ink-2); }
+.ar-esc, .ar-proof { margin-top: var(--s-2); max-width: 60ch; font-size: var(--fs-small); line-height: 1.4; overflow-wrap: anywhere; }
+.ar-esc-lead { font-weight: 750; }
+.ar-esc.is-past { color: var(--ink-2); }
+.ar-proof-lead { font-weight: 700; }
+
+/* History: folded under each action, oldest step first. */
+.ar-history { margin-top: var(--s-2); font-size: var(--fs-small); }
+.ar-history > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  color: var(--ink);
+  font-weight: 650;
+  cursor: pointer;
+}
+.ar-history > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
+.ar-history-n { margin-left: 0.3em; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ar-history-list { display: grid; gap: var(--s-1); margin: 0 0 var(--s-2); padding-left: 1.2em; list-style: decimal; color: var(--ink-mid); }
+.ar-h-what { color: var(--ink); font-weight: 650; }
+.ar-h-when { color: var(--ink-2); }
+
+/* The step form under an action spans both columns. */
+.ar-form--tx { grid-column: 1 / -1; margin-top: 0; }
+.ar-item.has-tx { background: var(--surface-quiet); }
+.ar-field[hidden] { display: none; }
+
+/* Repeat losses: link the day to the open action (picked by default) or start a new one. */
+.ar-link-set { display: grid; gap: var(--s-2); margin: 0; padding: 0; border: 0; min-width: 0; }
+.ar-link-opt {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--s-3);
+  min-height: var(--tap);
+  padding: var(--s-2) var(--s-3);
+  border: 2px solid var(--rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.ar-link-opt:has(input:checked) { border-color: var(--ink); }
+.ar-link-opt input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--lx-navy-900); }
+.ar-link-opt input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.ar-link-lead { font-weight: 750; }
+.ar-link-text { font-weight: 600; overflow-wrap: anywhere; }
+.ar-link-meta { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
+
+@container (min-width: 540px) {
+  .ar-who { white-space: nowrap; }
+  .ar-item-side { align-items: flex-end; }
+  .ar-steps { justify-content: flex-end; }
+  .ar-item-tools { justify-content: flex-end; }
+}

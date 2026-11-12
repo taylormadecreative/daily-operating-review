@@ -2,8 +2,7 @@
    white cards with a hairline and a very soft shadow, Archivo only.
    The DOR board (?view=dor) keeps its own look in board.css. */
 
-[data-view="home"] .app { display: none; }
-[data-view="dor"] .home-app { display: none; }
+/* Which page shows is css/shell.css's job (one shell, four pages). */
 html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 
 .home-app {
@@ -31,12 +30,9 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   --h-side-ink-2: #c5d3e2;   /* 9.9:1 on the sidebar */
   --h-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
   --h-radius: 8px;
-  --side-w: 168px;
   --focus: var(--h-blue);
 
   position: relative;
-  display: grid;
-  grid-template-columns: var(--side-w) minmax(0, 1fr);
   min-height: 100vh;
   background: var(--h-bg);
   color: var(--h-ink);
@@ -49,8 +45,7 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 
 /* ---------- Sidebar ---------- */
 
- /* The sidebar's navy runs the full page height; its contents stay sticky. */
-.home-app::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--side-w); background: var(--h-side); }
+ /* The sidebar's navy runs the full page height (css/shell.css .shell::before); its contents stay sticky. */
 .side {
   position: sticky;
   z-index: 1;
@@ -148,7 +143,7 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   .side-brand-icon { width: 22px !important; height: 22px !important; }
   .side-brand-name { font-size: 14px; } /* a longer plant name wraps rather than being cut */
   .side-group { margin: 4px 10px 2px; }
-  .side-bottom { grid-template-columns: 44px 44px minmax(0, 1fr); gap: 4px 8px; padding-top: 4px; }
+  .side-bottom { grid-template-columns: 44px 44px 44px minmax(0, 1fr); gap: 4px 8px; padding-top: 4px; }
   .side-bottom .side-link { justify-content: center; width: 44px; padding: 0; }
   .side-bottom .side-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .side-powered { grid-column: 1 / -1; grid-auto-flow: column; justify-content: center; align-items: center; gap: 10px; padding: 4px 8px; }
@@ -182,57 +177,58 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
    Links keep 44px. The icons-only sidebar (below 1280px) has no room for two in a row. */
 .side.is-tight .side-powered { display: none; }
 @media (min-width: 1280px) {
-  .side.is-tighter .side-bottom { grid-template-columns: repeat(2, 44px); gap: 0 8px; padding-top: 4px; }
+  .side.is-tighter .side-bottom { grid-template-columns: repeat(3, 44px); gap: 0 8px; padding-top: 4px; }
   .side.is-tighter .side-bottom .side-link { justify-content: center; width: 44px; padding: 0; }
   .side.is-tighter .side-bottom .side-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 
-/* ---------- Header ---------- */
+/* ---------- Header: the shared navy page header (css/shell.css .pg-brand), as on every page ---------- */
 
-.h-wrap { min-width: 0; padding: 8px 18px 4px; }
-.h-header {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
-  grid-template-areas: "titles date . actions chip";
+.h-header { background: var(--h-side); color: #fbfcfd; }
+.h-header :focus-visible { outline-color: var(--lx-mint-400); }
+.h-head-inner {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px 16px;
+  gap: 10px 20px;
+  min-height: 76px;
+  padding: 6px 24px;
 }
-.h-titles { grid-area: titles; }
-.h-date { grid-area: date; }
-.h-actions { grid-area: actions; }
-.h-chip { grid-area: chip; }
-@media (max-width: 1599px) {
-  .h-header {
-    grid-template-columns: auto auto minmax(0, 1fr) auto;
-    grid-template-areas: "titles date . chip" "actions actions actions actions";
-  }
-  .h-actions { justify-self: end; }
-}
-.h-titles { min-width: 0; margin-right: 12px; }
-.h-title { font-size: 25px; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; }
-/* 1600 to 1639 wide the header is one row, and at 25px the title broke after the dot
-   ("… plant ·" / "Daily Operating Review"): a step smaller keeps it on one line. */
-@media (min-width: 1600px) and (max-width: 1639px) { .h-title { font-size: 22px; } }
+.h-wrap { min-width: 0; padding: 4px 24px 4px; }
+.h-titles { min-width: 0; }
+.h-header .h-title { font-size: 1.125rem; font-weight: 700; line-height: 1.15; letter-spacing: 0; }
 /* No functions on the board: the one way back, under the line that says so. */
 .h-needs .h-setup-btn { margin-top: 6px; }
 .h-sub { color: var(--h-ink-2); font-size: 13.5px; }
-/* The one-line answer: count first (ink), then who is off goal, each a link to Detail. */
-.h-summary { margin-top: 2px; line-height: 1.35; }
-.h-summary strong { color: var(--h-ink); font-weight: 700; }
-.h-sum-link { color: var(--h-ink); font-weight: 600; text-decoration: underline; text-decoration-color: #b8c3d1; text-underline-offset: 3px; }
+/* The one-line answer, first in the page under the scope line: count first (ink), then who is off goal,
+   each a link to Detail; the needs line and this week's line under it. */
+.h-answer { display: grid; gap: 4px; padding: 6px 0 6px; }
+/* The answer line in the headline type every page uses (the DOR board, the Weekly review, the Organization:
+   Big Shoulders 800); the rest of Home keeps its Archivo. */
+.h-summary { max-width: 40em; color: var(--h-ink); font-family: var(--font-display); font-size: 2.125rem; font-weight: 800; line-height: 1.04; letter-spacing: 0.004em; text-wrap: balance; }
+.h-summary strong { color: var(--h-ink); font-weight: 800; }
+.h-summary .h-sum-sep { color: var(--h-ink-2); }
+.h-sum-link { color: var(--h-ink); font-weight: 800; text-decoration: underline; text-decoration-color: #b8c3d1; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 @media (hover: hover) and (pointer: fine) { .h-sum-link:hover { text-decoration-color: currentColor; } }
 /* The board's needs line under the answer: red with the off glyph, or the green all-clear. */
-.h-needs { margin-top: 2px; line-height: 1.35; }
+.h-needs { line-height: 1.35; font-size: 14px; }
 .h-needs[hidden] { display: none; }
 .h-needs-lead { font-weight: 700; }
 .h-needs .mdot { width: 13px; height: 13px; margin-right: 5px; vertical-align: -0.15em; }
+/* This week so far, one line linking to the Weekly review. */
+.h-week { color: var(--h-ink-2); font-size: 14px; line-height: 1.35; }
+.h-week:empty { display: none; }
+.h-week strong { color: var(--h-ink); font-weight: 700; }
+.h-week a { color: var(--h-ink); font-weight: 650; text-decoration: underline; text-decoration-color: #b8c3d1; text-underline-offset: 3px; }
+.h-week .mdot { width: 13px; height: 13px; margin-right: 5px; vertical-align: -0.15em; }
 .h-date {
   display: flex;
   align-items: center;
-  border: 1px solid var(--h-line);
+  margin-left: auto;
+  border: 1px solid var(--bar-line);
   border-radius: var(--h-radius);
-  background: var(--h-card);
-  box-shadow: var(--h-shadow);
+  background: transparent;
+  color: #fbfcfd;
 }
 .h-date-btn {
   display: grid;
@@ -241,12 +237,12 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   height: 44px;
   border: 0;
   background: none;
-  color: var(--h-ink);
+  color: #fbfcfd;
   cursor: pointer;
 }
-.h-date-btn:first-child { border-right: 1px solid var(--h-line); border-radius: var(--h-radius) 0 0 var(--h-radius); }
-.h-date-btn:last-child { border-left: 1px solid var(--h-line); border-radius: 0 var(--h-radius) var(--h-radius) 0; }
-.h-date-btn:disabled { color: #b4bfcc; cursor: not-allowed; }
+.h-date-btn:first-child { border-right: 1px solid var(--bar-line); border-radius: var(--h-radius) 0 0 var(--h-radius); }
+.h-date-btn:last-child { border-left: 1px solid var(--bar-line); border-radius: 0 var(--h-radius) var(--h-radius) 0; }
+.h-date-btn:disabled, .h-date-btn[aria-disabled="true"] { color: #8fa6bf; cursor: not-allowed; }
 .h-date-pick { position: relative; display: flex; align-self: stretch; }
 .h-date-label {
   display: flex;
@@ -265,7 +261,7 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   white-space: nowrap;
   cursor: pointer;
 }
-@media (hover: hover) and (pointer: fine) { .h-date-label:hover { background: #f6f8fb; } }
+@media (hover: hover) and (pointer: fine) { .h-date-label:hover, .h-date-btn:hover:not([aria-disabled="true"]) { background: var(--h-side-hover); } }
 /* The native picker sits under the button so it opens there; on touch screens it
    covers the button, so a tap opens the phone's own date wheel or calendar. */
 .h-date-input {
@@ -290,8 +286,10 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 .h-date-input::-webkit-datetime-edit-day-field,
 .h-date-input::-webkit-datetime-edit-year-field { background: transparent; color: transparent; }
 .h-date-input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
-.h-date-label .i { color: var(--h-icon); }
-.h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-left: auto; }
+.h-date-label .i { color: #c5d3e2; }
+.h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.h-export .i--chev { width: 16px; height: 16px; margin-left: -2px; }
+/* Buttons on the light page (Open Board setup when every function is hidden). */
 .hbtn {
   display: inline-flex;
   align-items: center;
@@ -313,24 +311,9 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 }
 .hbtn:active { transform: scale(0.97); }
 .hbtn--primary { border-color: var(--h-blue); background: var(--h-blue); color: #fff; }
-.hbtn .i--chev { width: 16px; height: 16px; margin-left: -2px; }
 @media (hover: hover) and (pointer: fine) {
   .hbtn:hover { border-color: #c9d3df; }
   .hbtn--primary:hover { background: var(--h-blue-hover); border-color: var(--h-blue-hover); }
-}
-.h-filter { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; }
-.h-filter .i { color: var(--h-icon); }
-.h-select {
-  min-width: 156px;
-  min-height: 44px;
-  padding: 0 10px;
-  border: 1px solid var(--h-line);
-  border-radius: 6px;
-  background: var(--h-card);
-  color: var(--h-ink);
-  font: inherit;
-  font-weight: 500;
-  box-shadow: var(--h-shadow);
 }
 .h-chip {
   display: inline-flex;
@@ -341,7 +324,7 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   border: 0;
   border-radius: 24px;
   background: none;
-  color: var(--h-ink);
+  color: #fbfcfd;
   font: inherit;
   font-weight: 650;
   cursor: pointer;
@@ -358,8 +341,9 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   font-weight: 700;
 }
 .chip-initials .i { width: 18px; height: 18px; }
-.chip-initials--none { background: #e7ecf3; color: var(--h-icon); }
-.chip-chev { width: 16px !important; height: 16px !important; color: var(--h-ink-2); }
+.h-chip .chip-initials { background: var(--lx-mint-400); color: var(--h-side); }
+.chip-initials--none, .h-chip .chip-initials--none { background: var(--h-side-active); color: #c5d3e2; }
+.chip-chev { width: 16px !important; height: 16px !important; color: #c5d3e2; }
 
 /* ---------- Main ---------- */
 
@@ -780,7 +764,7 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
 
 /* Medium: sidebar collapses to icons */
 @media (max-width: 1279px) {
-  .home-app { --side-w: 68px; }
+  .shell { --side-w: 68px; }
   .side { padding: 12px 8px; }
   .side-brand { display: flex; justify-content: center; padding: 4px 0 14px; }
   .side-brand-text { display: block; }
@@ -818,7 +802,7 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   }
   /* Top bar, page, Enter numbers bar: a short page (every function hidden) gives its spare
      height to the page, never to the two bars. */
-  .home-app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto; }
+  .home-app { display: grid; grid-template-rows: 1fr auto; min-height: calc(100dvh - var(--home-top-h, 56px)); }
   .side {
     position: sticky;
     z-index: 30;
@@ -828,7 +812,6 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
     padding: 6px 8px 6px 14px;
     overflow: visible;
   }
-  .home-app::before { display: none; }
   /* A long plant name (Board setup allows 60 characters) ends in an ellipsis, so the menu
      button always stays on screen; the page title under it shows the whole name. */
   .side-brand { flex: 1; min-width: 0; justify-content: flex-start; padding: 0; }
@@ -847,22 +830,29 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   .drawer .side-link { justify-content: flex-start; padding: 0 10px; }
   .drawer .side-badge { width: 74px; }
   .drawer .side-bottom { margin-top: auto; padding-top: 16px; }
-  .h-wrap { padding: 12px 14px 16px; }
-  .h-title { font-size: 22px; }
-  .h-header { gap: 10px; }
-  .h-header {
+  .h-wrap { padding: 4px 14px 16px; }
+  /* Under the top bar (which carries the badge): the page's name and the chip, then the day and Export. */
+  .h-head-inner {
+    display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "titles chip" "date date" "actions actions";
+    grid-template-areas: "brand chip" "date actions";
+    gap: 6px 10px;
+    min-height: 0;
+    padding: 8px 14px 10px;
+    border-top: 1px solid #1c3653;
   }
-  .h-titles { margin-right: 0; }
+  .h-header .pg-brand { grid-area: brand; }
+  .h-header .h-title { font-size: 1.0625rem; }
+  .h-header .pg-sub { display: none; }
+  .h-chip { grid-area: chip; justify-self: end; }
+  .h-date { grid-area: date; margin-left: 0; }
+  .h-actions { grid-area: actions; }
   .h-chip .chip-name, .h-chip .chip-chev { display: none; }
   .h-date-pick { flex: 1; min-width: 0; }
   .h-date-label { flex: 1; min-width: 0; }
-  .h-actions { justify-self: stretch; margin-left: 0; }
-  .h-actions > .hbtn--primary { display: none; }
-  .h-actions > .hbtn { flex: none; }
-  .h-filter { flex: 1; min-width: 0; }
-  .h-select { flex: 1; min-width: 0; }
+  .h-actions > .h-enter { display: none; }
+  .h-export { padding: 0 12px; }
+  .h-summary { font-size: 1.75rem; line-height: 1.08; }
   .h-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .kc-value { font-size: 24px; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -912,7 +902,7 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
     padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
     background: var(--h-side);
   }
-  .h-mobilebar .hbtn { flex: 1; justify-content: center; min-height: 48px; box-shadow: none; }
+  .h-mobilebar .btn { flex: 1; justify-content: center; min-height: 48px; }
 }
 @media (min-width: 761px) { .h-mobilebar { display: none; } }
 
@@ -938,9 +928,17 @@ html[data-view="home"], html[data-view="home"] body { background: #f2f4f7; }
   [data-view="home"] dialog,
   [data-view="home"] .popover { display: none !important; }
   [data-view="home"] .home-app { display: block; background: #fff; }
-  [data-view="home"] .home-app::before { display: none; }
+  [data-view="home"] .shell { display: block; }
+  [data-view="home"] .shell::before { display: none; }
   [data-view="home"] .h-wrap { padding: 0; }
-  [data-view="home"] .h-date { border: 0; box-shadow: none; }
+  [data-view="home"] .h-header { background: none; color: var(--h-ink); }
+  [data-view="home"] .h-head-inner { min-height: 0; padding: 0; }
+  [data-view="home"] .pg-badge { display: none; }
+  [data-view="home"] .h-main > .scope .scope-area { display: none; } /* the printout says "Area: …" under the title */
+  [data-view="home"] .h-week-go { display: none; }
+  [data-view="home"] .h-header .pg-sub { color: var(--h-ink-2); }
+  [data-view="home"] .h-date { border: 0; box-shadow: none; color: var(--h-ink); }
+  [data-view="home"] .h-date-label .i { color: var(--h-icon); }
   [data-view="home"] .print-meta { display: block; margin: 4px 0 0; color: #56657a; font-size: 12px; }
   [data-view="home"] .h-kpis { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
   [data-view="home"] .kcard, [data-view="home"] .tile, [data-view="home"] .panel { box-shadow: none; break-inside: avoid; }

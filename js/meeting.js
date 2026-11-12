@@ -7,22 +7,31 @@
 // the workbook's action and that day's Action register actions, "Needs an
 // action" in red for a miss nobody has picked up, or the quiet word. The last
 // slide's Next is End meeting: it saves the minutes and opens them.
+//
+// Two modes, one runner: 'dor' (the daily board, above) and 'wor' (the weekly review's agenda, drawn
+// by js/weekly-meeting.js: Safety & readiness, one Performance slide per function, Top gaps, Actions,
+// Escalations, Forward look). Both share the keys, the place line ("3 of 13"), the timer (it never
+// blocks anything), Record and Esc. The weekly meeting's last Next is Finish review.
 
-import { dailySeries, kpiRowsFor, notesFor, hasProblem, isoForDay } from './store.js?v=20261013-151156';
-import { dayStatus, monthStatus, boardSummary, isProductionDay, compareToGoal, ON, OFF, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261013-151156';
+import { dailySeries, kpiRowsFor, notesFor, hasProblem, isoForDay } from './store.js?v=20261112-075602';
+import { dayStatus, monthStatus, boardSummary, isProductionDay, compareToGoal, ON, OFF, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261112-075602';
 import {
   formatPair, plainLabel, formatDayLong, formatDayMedium, formatMonthName, formatMonthShort,
   monthSoFar, dayHeading, weekday,
-} from './format.js?v=20261013-151156';
-import { notesText, recordText, actionStateFor, needsSummary, ACTION_WORD, clampedNote, issueGap, ISSUE_GAP_WORD } from './board.js?v=20261013-151156';
-import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261013-151156';
-import { barChart } from './charts.js?v=20261013-151156';
+} from './format.js?v=20261112-075602';
+import { notesText, recordText, actionStateFor, needsSummary, ACTION_WORD, clampedNote, issueGap, ISSUE_GAP_WORD, fitClampedText } from './board.js?v=20261112-075602';
+import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261112-075602';
+import { barChart } from './charts.js?v=20261112-075602';
 import {
   connectMeeting, startMeetingSession, updateMeetingSession, endMeetingSession,
   recorderReady, recorderHoldsEscape, addActionIcon, currentMeetingId, meetingDraftFor, draftWords, addTargetName,
-} from './recorder.js?v=20261013-151156';
-import { actionDayText } from './actions.js?v=20261013-151156';
-import { dismissAll } from './toast.js?v=20261013-151156';
+} from './recorder.js?v=20261112-075602';
+import { actionDayText } from './actions.js?v=20261112-075602';
+import { isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261112-075602';
+import { dismissAll } from './toast.js?v=20261112-075602';
+import {
+  buildWeeklyAgenda, weeklySlideMarkup, fitWeeklySlide, slidePlace, initWeeklyMeeting, weeklyHoldsEscape,
+} from './weekly-meeting.js?v=20261112-075602';
 
 /** Clear any message showing, without moving focus (the meeting decides where it goes). */
 const dismissToast = () => dismissAll({ refocus: false });
@@ -40,7 +49,13 @@ let wentFullscreen = false;
 let timerId = null;
 let chart = null;
 let endWithMinutes = false; // End meeting (the last slide) opens the minutes once they're saved
+let mode = 'dor';           // 'dor' (the daily board) or 'wor' (the weekly review's agenda)
+let agenda = null;          // the weekly agenda (js/weekly-meeting.js), drawn again on every render
+
+/** The last slide's index: the summary plus one per function, or the weekly agenda's last item. */
+const lastIndex = () => (mode === 'wor' ? Math.max(0, (agenda?.slides.length ?? 1) - 1) : month.functions.length);
 let openedAt = -Infinity;   // when the meeting opened (Exit ignores the click that opened it)
+let reachedLastAt = -Infinity; // when a Next press reached the last slide (its End meeting ignores that run's next press)
 const EXIT_GRACE_MS = 400;
 
 export function initMeeting(h) {
@@ -52,10 +67,25 @@ export function initMeeting(h) {
     if (e.currentTarget.getAttribute('aria-disabled') === 'true') return;
     go(slide - 1);
   });
-  // Next on the last slide is End meeting.
-  root.querySelector('[data-next-slide]').addEventListener('click', () => {
-    if (month && slide >= month.functions.length) endMeeting();
-    else go(slide + 1);
+  // Next on the last slide is End meeting. Quick presses on Next and Previous each step a slide (the app's
+  // double-click guard leaves them alone), so a press that lands on End meeting (or Finish review) within
+  // 400ms of reaching the last slide is the end of that run, not a request to end.
+  root.querySelector('[data-next-slide]').addEventListener('click', (e) => {
+    if (month && slide >= lastIndex()) {
+      if (e.detail && performance.now() - reachedLastAt < EXIT_GRACE_MS) return;
+      endMeeting();
+    } else {
+      go(slide + 1);
+      if (slide >= lastIndex()) reachedLastAt = performance.now();
+    }
+  });
+  // The weekly meeting's decisions and escalations: small forms over the slides (js/weekly-meeting.js).
+  initWeeklyMeeting({
+    host: root,
+    getMonth: () => month,
+    getDay: () => day,
+    relayout: () => { if (open) render({ animate: false }); },
+    context: () => (mode === 'wor' && agenda?.slides[slide] ? slidePlace(agenda.slides[slide]).replace(/\u00a0/g, ' ') : ''),
   });
   // A double click on Run meeting lands its second click here: Exit waits until the meeting has been open 400ms.
   root.querySelector('[data-exit]').addEventListener('click', (e) => {
@@ -66,8 +96,8 @@ export function initMeeting(h) {
   document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && open && wentFullscreen) {
       wentFullscreen = false;
-      // Esc while typing an action only leaves full screen; the meeting goes on.
-      if (recorderHoldsEscape()) return;
+      // Esc while typing an action (or a decision) only leaves full screen; the meeting goes on.
+      if (recorderHoldsEscape() || weeklyHoldsEscape()) return;
       handlers.onExit(currentFnId()); // Esc in full screen lands here
     }
   });
@@ -76,7 +106,10 @@ export function initMeeting(h) {
 }
 
 export const isMeetingOpen = () => open;
-export const currentFnId = () => (slide > 0 ? month?.functions[slide - 1]?.id ?? null : null);
+export const currentFnId = () => (mode === 'wor' ? agenda?.slides[slide]?.fnId ?? null
+  : slide > 0 ? month?.functions[slide - 1]?.id ?? null : null);
+/** Which meeting is open: 'dor' or 'wor'. */
+export const meetingMode = () => mode;
 
 /** Must be called from the Run meeting click so the browser allows it. */
 export function requestFullscreen() {
@@ -87,16 +120,27 @@ export function requestFullscreen() {
     .catch(() => { wentFullscreen = false; }); // not allowed: the overlay still fills the window
 }
 
-export function openMeeting(m, d, s) {
+export function openMeeting(m, d, s, { mode: want = 'dor' } = {}) {
+  const nextMode = want === 'wor' ? 'wor' : 'dor';
+  // The other meeting is open: it ends (and saves) first.
+  if (open && nextMode !== mode) closeMeeting();
   month = m;
   day = d;
+  mode = nextMode;
+  agenda = mode === 'wor' ? buildWeeklyAgenda(m, d) : null;
+  if (mode === 'wor' && !agenda) mode = 'dor'; // no week in the data: the daily meeting
+  root.dataset.mode = mode;
+  const decide = root.querySelector('[data-wm-decide]');
+  if (decide) decide.hidden = mode !== 'wor';
+  const hint = root.querySelector('.meeting-hint');
+  if (hint) hint.textContent = mode === 'wor' ? 'Arrow keys or a presenter clicker move through the agenda.' : 'Arrow keys or a presenter clicker move between functions.';
   if (!open) {
     open = true;
     openedAt = performance.now();
     // A message from the board ("Saved…", "Added…") doesn't follow onto the TV.
     dismissToast();
     root.hidden = false;
-    document.querySelectorAll('.app, .home-app').forEach((n) => { n.inert = true; });
+    document.querySelectorAll('.shell').forEach((n) => { n.inert = true; });
     document.documentElement.classList.add('is-meeting');
     let started = null;
     try { started = Number(sessionStorage.getItem(START_KEY)); } catch { started = null; }
@@ -106,7 +150,7 @@ export function openMeeting(m, d, s) {
     }
     tick(started);
     timerId = setInterval(() => tick(started), 1000);
-    startMeetingSession(m, d, started);
+    startMeetingSession(m, d, started, { kind: mode, weekKey: agenda?.m.week.key ?? null });
   } else {
     updateMeetingSession(m, d);
   }
@@ -123,8 +167,8 @@ export function leaveFullscreen() {
 
 /** End meeting: the same way out as Exit, then the minutes open over the board. */
 function endMeeting() {
-  endWithMinutes = true;
-  handlers.onExit(currentFnId(), { ended: true });
+  endWithMinutes = mode === 'dor';
+  handlers.onExit(currentFnId(), { ended: true, finish: mode === 'wor' });
 }
 
 export function closeMeeting() {
@@ -138,7 +182,7 @@ export function closeMeeting() {
   endMeetingSession({ openMinutes: openAfter });
   open = false;
   root.hidden = true;
-  document.querySelectorAll('.app, .home-app').forEach((n) => { n.inert = false; });
+  document.querySelectorAll('.shell').forEach((n) => { n.inert = false; });
   document.documentElement.classList.remove('is-meeting');
   clearInterval(timerId);
   chart?.destroy();
@@ -171,7 +215,7 @@ function onKey(e) {
       if (onButton) return; // Space on a focused button presses that button
       e.preventDefault(); go(slide + (e.shiftKey ? -1 : 1)); break;
     case 'Home': e.preventDefault(); go(0); break;
-    case 'End': e.preventDefault(); go(month.functions.length); break;
+    case 'End': e.preventDefault(); go(lastIndex()); break;
     case 'Escape':
       e.preventDefault(); handlers.onExit(currentFnId()); break;
     default:
@@ -179,15 +223,77 @@ function onKey(e) {
 }
 
 function go(n, { force = false } = {}) {
-  const last = month.functions.length;
+  const last = lastIndex();
   const next = Math.max(0, Math.min(last, n));
   if (next === slide && !force) return;
   slide = next;
   render();
-  handlers.onSlide(slide);
+  handlers.onSlide(slide, mode);
+}
+
+/**
+ * The slide's 160ms opacity fade, so the room sees the change (none with reduced motion). Once it ends the
+ * animation is cancelled, not left finished: in full screen Chromium can keep a finished one's layer
+ * in front of the slide's buttons, which then can't be clicked or focused.
+ */
+function fadeIn() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  // A CSS animation on the slide's own article (css/meeting.css .is-entering), dropped when it ends.
+  const art = stage.firstElementChild;
+  if (!art) return;
+  art.classList.add('is-entering');
+  art.addEventListener('animationend', () => art.classList.remove('is-entering'), { once: true });
+}
+
+/** A control on the slide that had focus, by what identifies it, so a redraw can put focus back. */
+function focusKeyOf(el) {
+  if (!el || !stage.contains(el)) return null;
+  if (el.id) return `#${CSS.escape(el.id)}`;
+  for (const a of ['data-meeting-add', 'data-wm-escalate']) {
+    if (el.hasAttribute(a)) {
+      const kpi = el.getAttribute(a === 'data-meeting-add' ? 'data-meeting-add-kpi' : 'data-wm-kpi');
+      return `[${a}="${CSS.escape(el.getAttribute(a))}"]${kpi !== null ? `[${a === 'data-meeting-add' ? 'data-meeting-add-kpi' : 'data-wm-kpi'}="${CSS.escape(kpi)}"]` : ''}`;
+    }
+  }
+  return null;
+}
+
+/** The weekly agenda's slide: the place line, the slide, the fit; focus stays on the control it was on. */
+function renderWeekly({ animate }) {
+  const keep = focusKeyOf(document.activeElement);
+  const caret = keep && typeof document.activeElement.selectionStart === 'number' ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
+  const focusInStage = stage.contains(document.activeElement);
+  agenda = buildWeeklyAgenda(month, day) ?? agenda;
+  const total = agenda.slides.length;
+  slide = Math.min(slide, total - 1);
+  const s = agenda.slides[slide];
+  root.querySelector('[data-progress-text]').textContent = `${slide + 1} of ${total}\u00a0·\u00a0${slidePlace(s)}`;
+  root.querySelector('[data-progress-fill]').style.transform = `scaleX(${(slide + 1) / total})`;
+  const prev = root.querySelector('[data-prev-slide]');
+  const next = root.querySelector('[data-next-slide]');
+  prev.disabled = false;
+  if (slide === 0) prev.setAttribute('aria-disabled', 'true'); else prev.removeAttribute('aria-disabled');
+  const last = slide === total - 1;
+  next.disabled = false;
+  next.toggleAttribute('data-end', last);
+  const nextLabel = next.querySelector('[data-next-label]');
+  if (nextLabel) nextLabel.textContent = last ? 'Finish review' : 'Next';
+  next.querySelector('[data-next-icon]')?.toggleAttribute('hidden', last);
+  stage.innerHTML = weeklySlideMarkup(agenda, slide);
+  stage.dataset.slide = String(slide);
+  if (animate) fadeIn();
+  fitWeeklySlide(stage);
+  const again = keep ? stage.querySelector(keep) : null;
+  if (again && !again.closest('[hidden]')) {
+    again.focus({ preventScroll: true });
+    if (caret) { try { again.setSelectionRange(...caret); } catch { /* not a text box */ } }
+  } else if (focusInStage || !document.activeElement || document.activeElement === document.body || !document.activeElement.isConnected) {
+    next.focus({ preventScroll: true });
+  }
 }
 
 function render({ animate = true } = {}) {
+  if (mode === 'wor') { chart?.destroy(); chart = null; renderWeekly({ animate }); return; }
   // Keep keyboard focus on the slide's Add action button through a re-render: the same one
   // (the slide's own, or the one beside that KPI's "Needs an action") while it still shows,
   // else the slide's first.
@@ -224,9 +330,7 @@ function render({ animate = true } = {}) {
   stage.innerHTML = fn ? fnSlide(fn) : summarySlide();
   stage.dataset.slide = String(slide);
   // A short fade so the room sees the change; none with reduced motion.
-  if (animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    stage.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 160, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
-  }
+  if (animate) fadeIn();
   // Added KPIs share the right column with the chart: fit them first, then draw the chart in the room left.
   if (fn) { fitExtras(); keepAddReachable(fn); mountChart(fn); fitSlide(); }
   if (focusedAdd) {
@@ -256,6 +360,12 @@ function render({ animate = true } = {}) {
  * are the last to go.
  */
 function fitSlide() {
+  fitSlideBody();
+  // Whatever the clamps settled on ends on one clean "…" ("2/02/2026…", never "2/02/2026.…").
+  fitClampedText(stage, '.m-note-text, .m-action-text');
+}
+
+function fitSlideBody() {
   const art = stage.querySelector('.m-fn');
   if (!art) return;
   fitName(art);
@@ -575,16 +685,16 @@ function draftPlace(fn, keys) {
 const dueDay = (iso) => actionDayText(iso, month).replace(/ /g, '\u00a0');
 /** "Due Mon, Mar 2" (one piece when it wraps), or "No due date". */
 const dueWords = (iso) => (iso ? `Due\u00a0${dueDay(iso)}` : 'No due date');
-/** A done action (closed that day or later): "Done Fri, Feb 27", as the board says it, or '' when the day isn't known. */
-const closedWords = (a) => (a.closedDayIso ? `Done\u00a0${dueDay(a.closedDayIso)}` : '');
-const isDone = (a) => a.status === 'closed';
-/** "Done:" with the on-track glyph, before a done action's words. */
-const doneMark = () => `<span class="m-done">${glyphMarkup(ON)}Done:</span> `;
+/** A verified action (closed that day or later): "Verified Fri, Feb 27", as the board says it, or '' when the day isn't known. */
+const closedWords = (a) => (a.closedDayIso ? `Verified\u00a0${dueDay(a.closedDayIso)}` : '');
+const isDone = (a) => isVerifiedAction(a);
+/** "Verified:" with the on-track glyph, before a verified action's words. */
+const doneMark = () => `<span class="m-done">${glyphMarkup(ON)}Verified:</span> `;
 
-/** "Jane Doe · Due Mon, Mar 2" for one register action ("Jane Doe · Done Fri, Feb 27" once it's done). */
+/** "Jane Doe · Due Mon, Mar 2" for one register action ("Jane Doe · Verified Fri, Feb 27" once it's verified). */
 function metaText(a) {
   if (!a) return '';
-  return [a.owner, isDone(a) ? closedWords(a) : dueWords(a.due)].filter(Boolean).join(' · ');
+  return [a.owner, isDone(a) ? closedWords(a) : isCompletedAction(a) ? 'Completed, awaiting verification' : dueWords(a.due), isEscalatedAction(a) ? 'Escalated' : ''].filter(Boolean).join(' · ');
 }
 
 /** The action state for one KPI row (the register can't be read: as if it had no actions). */
@@ -656,7 +766,8 @@ function actionNote(fn, st, addFor) {
       // Done: the day it was closed. Open: its due date, "Overdue" first when it's past.
       const when = done
         ? esc(closedWords(a))
-        : `${a.due && a.due < boardIso ? `<span class="m-over">${glyphMarkup(OFF)}Overdue</span><span class="m-dot"> · </span>` : ''}${esc(dueWords(a.due))}`;
+        : isCompletedAction(a) ? 'Completed, awaiting verification'
+          : `${a.due && a.due < boardIso ? `<span class="m-over">${glyphMarkup(OFF)}Overdue</span><span class="m-dot"> · </span>` : ''}${esc(dueWords(a.due))}`;
       const meta = [a.owner ? esc(a.owner) : '', when, mine ? '<span class="m-from">Added in this meeting</span>' : ''].filter(Boolean);
       return `<li class="m-action${done ? ' is-done' : ''}"${mine ? ' data-this-meeting' : ''}>
           <p class="m-action-text">${done ? doneMark() : ''}${esc(a.text)}</p>

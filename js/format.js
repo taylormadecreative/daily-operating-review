@@ -357,6 +357,14 @@ export function daySentence(month, day, prep = 'for') {
 }
 
 /** "6:41 AM", or "Oct 9, 6:41 AM" when it was not today. */
+/** "Thu, Nov 12, 12:16 AM": a record's own timestamp always says its date (the year when it isn't this one). */
+export function formatStamp(iso, now = new Date()) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const opts = { weekday: 'short', month: 'short', day: 'numeric', ...(d.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }) };
+  return `${d.toLocaleDateString('en-US', opts)}, ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+}
+
 export function formatEnteredAt(iso, now = new Date()) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';

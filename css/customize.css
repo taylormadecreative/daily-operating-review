@@ -15,7 +15,7 @@
 :root[data-view="dor"][data-cz-notes="off"] :is(.cell--notes, .head--notes) { display: none; }
 :root[data-view="dor"][data-cz-question="off"] .fn-question { display: none; }
 
-@media (min-width: 1180px) {
+@container dorpage (min-width: 1180px) {
   :root[data-view="dor"][data-cz-trend="off"] .board {
     --cols-desktop: minmax(270px, 1.25fr) minmax(190px, 0.9fr) minmax(190px, 0.9fr) minmax(260px, 2fr);
   }
@@ -29,12 +29,12 @@
   }
   :root[data-view="dor"][data-cz-trend="off"][data-cz-notes="off"] .row { grid-template-areas: "fn day month"; }
 }
-@media (min-width: 760px) and (max-width: 1179px) {
+@container dorpage (min-width: 760px) and (max-width: 1179px) {
   :root[data-view="dor"][data-cz-trend="off"] .row { --cols: repeat(2, minmax(0, 1fr)); grid-template-areas: "fn fn" "day month" "notes notes"; }
   :root[data-view="dor"][data-cz-notes="off"] .row { grid-template-areas: "fn fn fn" "day month trend"; }
   :root[data-view="dor"][data-cz-trend="off"][data-cz-notes="off"] .row { grid-template-areas: "fn fn" "day month"; }
 }
-@media (max-width: 759px) {
+@container dorpage (max-width: 759px) {
   :root[data-view="dor"][data-cz-trend="off"] .row { grid-template-areas: "fn fn" "day month" "notes notes"; }
   :root[data-view="dor"][data-cz-notes="off"] .row { grid-template-areas: "fn fn" "day month" "trend trend"; }
   :root[data-view="dor"][data-cz-trend="off"][data-cz-notes="off"] .row { grid-template-areas: "fn fn" "day month"; }
@@ -46,7 +46,7 @@
   :root[data-view="dor"][data-cz-size="large"] { font-size: 118.75%; }
 }
 /* …and the masthead takes its two-row layout so the bigger brand never squeezes. */
-@media (min-width: 1340px) {
+@container dorpage (min-width: 1340px) {
   :root[data-view="dor"][data-cz-size="large"] .topbar-inner { flex-wrap: wrap; row-gap: var(--s-2); }
   :root[data-view="dor"][data-cz-size="large"] .brand { flex: 1 1 calc(100% - 340px); }
   :root[data-view="dor"][data-cz-size="large"] .topbar-home { order: 1; }
@@ -60,7 +60,7 @@
 
 /* Phone masthead: two lines at most (the title and the plant), at any text size.
    Large text grows the board; the masthead keeps standard type and spacing. */
-@media (max-width: 759px) {
+@container dorpage (max-width: 759px) {
   .brand-title, .brand-plant { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   :root[data-view="dor"][data-cz-size="large"] .brand { padding: 8px 108px 8px 16px; }
   :root[data-view="dor"][data-cz-size="large"] .brand-badge { height: 48px; }
@@ -70,7 +70,7 @@
   :root[data-view="dor"][data-cz-size="large"] .date-label { font-size: 18px; }
 }
 /* Narrow phones: the Menu button keeps its icon only, so the title has room. */
-@media (max-width: 419px) {
+@container dorpage (max-width: 419px) {
   .topbar-more { padding: 0 10px !important; }
   .topbar-more-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .topbar .brand, :root[data-view="dor"][data-cz-size="large"] .brand { padding-right: 70px; }

@@ -460,8 +460,15 @@ export function toast(message, { actionLabel, onAction, duration = 10000, near =
   watchRegion(true);
   // On a TV-sized board the toast sits above the footer legend.
   liftAboveFoot();
-  const keep = near ?? (region.parentElement !== document.body ? () => rowOf(document.activeElement) : null);
-  if (keep) {
+  // What it keeps clear of: the row it reports on, and always the control that has focus (the button just
+  // used, or the next step focus moved to: Verify and close, Reopen), so a message never sits on it.
+  const base = near ?? (region.parentElement !== document.body ? () => rowOf(document.activeElement) : null);
+  const focusTarget = () => {
+    const a = document.activeElement;
+    return a && a !== document.body && !el.contains(a) && shown(a) ? a : null;
+  };
+  const keep = () => [...targetsOf(base ?? []), focusTarget()].filter(Boolean);
+  if (base || focusTarget()) {
     // After the page has settled (the row was just revealed, a sheet just closed).
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (current?.el !== el) return;

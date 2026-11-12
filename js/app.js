@@ -2,23 +2,25 @@
 // URL = ?date=YYYY-MM-DD (production day) + hash for the open view:
 //   (none) board · #safety detail · #enter[/fn] enter numbers · #meeting[/n] meeting
 
-import * as store from './store.js?v=20261013-151156';
-import { renderBoard, revealRow, setUndoable } from './board.js?v=20261013-151156';
-import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261013-151156';
-import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261013-151156';
-import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261013-151156';
-import { initToast, toast, dismissAll } from './toast.js?v=20261013-151156';
-import { formatDayMedium, formatMonthShort, formatMonthName, termName } from './format.js?v=20261013-151156';
-import { renderHome, revealHomeRow, AREA_OPTIONS } from './home.js?v=20261013-151156';
-import { renderNav, wireShell, setNavState, toggleMenu, showPopoverFrom } from './shell.js?v=20261013-151156';
-import { downloadCsv, printDay } from './export.js?v=20261013-151156';
-import { esc, statusMarkup } from './ui.js?v=20261013-151156';
-import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261013-151156';
-import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261013-151156';
-import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261013-151156';
-import { initActions, openActions, addAction, listActions, refreshActions } from './actions.js?v=20261013-151156';
-import { initRecorder, openMinutes } from './recorder.js?v=20261013-151156';
-import { initSetup, openSetup } from './setup.js?v=20261013-151156';
+import * as store from './store.js?v=20261112-075602';
+import { renderBoard, revealRow, setUndoable, getOffOnly, setOffOnly, shownFunctions, offOnlyLabel } from './board.js?v=20261112-075602';
+import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261112-075602';
+import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261112-075602';
+import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261112-075602';
+import { initToast, toast, dismissAll } from './toast.js?v=20261112-075602';
+import { formatDayMedium, formatMonthShort, formatMonthName, termName } from './format.js?v=20261112-075602';
+import { renderHome, revealHomeRow, AREA_OPTIONS, fitSide } from './home.js?v=20261112-075602';
+import { renderNav, wireShell, setNavState, toggleMenu, showPopoverFrom, renderScope, PAGES, pageHref } from './shell.js?v=20261112-075602';
+import { initOrg, renderOrg, openPerson, closePerson, isPersonOpen, refreshPerson } from './org.js?v=20261112-075602';
+import { initWor, renderWor, openWorSheet, closeWorSheet, isWorSheetOpen, refreshWorSheet, worDay, attachMeetingSession, syncWorTab, sayWorNote, weekOfDay } from './wor.js?v=20261112-075602';
+import { downloadCsv, printDay } from './export.js?v=20261112-075602';
+import { esc, statusMarkup } from './ui.js?v=20261112-075602';
+import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261112-075602';
+import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261112-075602';
+import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261112-075602';
+import { initActions, openActions, addAction, listActions, refreshActions } from './actions.js?v=20261112-075602';
+import { initRecorder, openMinutes } from './recorder.js?v=20261112-075602';
+import { initSetup, openSetup } from './setup.js?v=20261112-075602';
 
 // We decide where the page scrolls after views close (the saved row).
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -31,13 +33,15 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
  * meeting's Exit, the next row's Delete. The second click of a double click (the browser's own
  * count, or a click on the same spot within 350ms) is dropped on buttons, links,
  * summaries and a dialog's dimmed area. Text boxes aren't touched, so a double click still selects
- * a word. The day arrows (‹ ›) are left alone: clicking them quickly steps several days.
+ * a word. Stepping controls are left alone: the day arrows (‹ ›), the meeting's Previous and Next and the
+ * Weekly review's week arrows; clicking them quickly steps several (meeting.js keeps End meeting safe).
  * A click on a sheet's dimmed area in the first 400ms after it opened is dropped too.
  */
 // Rows and cells that open something on a click count too: the home's grid rows, a board row's
 // charts and its owner cell (the second click would land on whatever the first one drew there).
 const ACTIVATORS = 'button, a, summary, [role="button"], input[type="submit"], input[type="button"], [data-home-row], .kpirow .mini, .v2cell--owner';
-const REPEAT_OK = '[data-prev], [data-next], [data-home-prev], [data-home-next]';
+// Stepping controls: each press is a step (the day, the meeting's slides, the Weekly review's weeks).
+const REPEAT_OK = '[data-prev], [data-next], [data-home-prev], [data-home-next], [data-org-prev], [data-org-next], [data-prev-slide], [data-next-slide], [data-wk-step]';
 // The second click of a double click comes 100 to 250ms after the first; a person reading a card
 // and pressing its Next again takes longer, so a same-spot click counts as a double click within 350ms.
 const DOUBLE_MS = 350;
@@ -100,7 +104,7 @@ document.addEventListener('mousedown', (e) => {
 
 let month;
 let day;
-let view = 'home'; // 'home' (dashboard) or 'dor' (ledger board)
+let view = 'home'; // the page: 'home' (dashboard), 'dor' (DOR board), 'wor' (Weekly review), 'org' (Organization)
 let area = 'all';
 let enterHash = 'enter';
 const narrow = () => matchMedia('(max-width: 599px)').matches;
@@ -114,10 +118,15 @@ function parseRoute() {
   const parsed = store.dayFromIso(month, raw);
   const d = parsed ?? store.boardDay(month);
   const badDate = raw !== null && parsed === null;
-  const page = params.get('view') === 'dor' ? 'dor' : 'home';
+  const page = PAGES.includes(params.get('view')) ? params.get('view') : 'home';
   const a = params.get('area');
   const pickedArea = AREA_OPTIONS.some((o) => o.id === a) ? a : 'all';
-  const base = { day: d, badDate, page, area: pickedArea };
+  // The Weekly review looks from a day inside its week (?week=), so the scope line, the sidebar's
+  // links and "open this day on the DOR board" agree with the week on screen.
+  let wd = { day: d, badWeek: false };
+  if (page === 'wor') wd = worDay(month, params.get('week'), d);
+  const weekFix = page === 'wor' && (wd.day !== d || wd.badWeek || Boolean(wd.snappedFrom));
+  const base = { day: wd.day, badDate, page, area: pickedArea, weekFix, badWeek: wd.badWeek, snappedFrom: wd.snappedFrom ?? null, snappedWeek: wd.weekKey ?? null };
   // A hash that isn't valid percent-encoding ("#people%") is read as typed, so the board still draws.
   let hash = location.hash.slice(1);
   try { hash = decodeURIComponent(hash); } catch { /* malformed: keep the raw hash */ }
@@ -131,8 +140,18 @@ function parseRoute() {
       focus: ['status', 'issue', 'numbers'].includes(extra) || String(extra ?? '').startsWith('kpi:') ? extra : null,
     };
   }
-  if (v === 'meeting') return { ...base, view: 'meeting', slide: Math.max(0, Math.min(month.functions.length, Number(arg) || 0)) };
+  if (v === 'meeting') return { ...base, view: 'meeting', mode: 'dor', slide: Math.max(0, Math.min(month.functions.length, Number(arg) || 0)) };
+  // The weekly meeting (the Weekly review's agenda): #wmeeting/<n> on the Weekly review page.
+  if (v === 'wmeeting' && page === 'wor') return { ...base, view: 'meeting', mode: 'wor', slide: Math.max(0, Number(arg) || 0) };
   if (v === 'customize' && page === 'dor') return { ...base, view: 'customize' };
+  // A person's sheet on the Organization page: #person/<id>.
+  if (v === 'person' && page === 'org' && arg) return { ...base, view: 'person', personId: arg };
+  // The Weekly review's sheet: a weekly value's calculation (#calc/<key>) or a review record (#record/<id>).
+  if ((v === 'calc' || v === 'record') && page === 'wor' && arg) return { ...base, view: 'wor-sheet', sheetKind: v, sheetId: arg };
+  // Finish review (the week on screen).
+  if (v === 'finish' && page === 'wor') return { ...base, view: 'wor-sheet', sheetKind: 'finish', sheetId: 'week' };
+  // Add action for one KPI and the week on screen (#add/<fnId>[/<kpiId>]).
+  if (v === 'add' && page === 'wor' && arg) return { ...base, view: 'wor-sheet', sheetKind: 'add', sheetId: `${arg}|${extra ?? ''}` };
   if (store.kpiRowById(month, v)) return { ...base, view: 'detail', fnId: v };
   return { ...base, view: 'board' };
 }
@@ -205,12 +224,12 @@ function showDateNote(text) {
  * resize measures again from the TV size; rows that change size on their own (fonts arriving) can
  * only tighten it. After that decision the space left under the board goes back to the rows
  * (fillTv), so the board fills the TV instead of leaving an empty band. The source line under the
- * board is hidden on a TV (its Start the demo over moves into the strip), so the page never scrolls.
+ * board is hidden on a TV (Start the demo over is in its Menu), so the page never scrolls.
  */
 const TV = matchMedia('(min-width: 1800px) and (max-height: 1200px)');
 const TV_SHORT = matchMedia('(min-width: 1800px) and (max-height: 1000px)');
 /** The DOR board on a TV-sized window. */
-const onTvBoard = () => TV.matches && view !== 'home' && document.documentElement.dataset.layout === 'v2';
+const onTvBoard = () => TV.matches && view === 'dor' && document.documentElement.dataset.layout === 'v2';
 /** The one place the dense fit is measured (a short window is always dense). */
 const fitByMeasure = () => onTvBoard() && !TV_SHORT.matches;
 /**
@@ -269,7 +288,7 @@ function fitDensity() {
   clearFill();
   if (fitByMeasure() && !document.documentElement.hasAttribute('data-tv-dense') && boardSpills()) {
     document.documentElement.setAttribute('data-tv-dense', '');
-    renderBoard(month, day);
+    renderBoard(month, day, area);
   }
   fillTv();
 }
@@ -277,7 +296,7 @@ function fitDensity() {
 function refitDensity() {
   if (!month || !onTvBoard()) return;
   syncDensity();
-  renderBoard(month, day);
+  renderBoard(month, day, area);
   fitDensity();
 }
 let rowsWatch = null;
@@ -297,7 +316,7 @@ function watchRows() {
       clearFill();
       if (fitByMeasure() && !document.documentElement.hasAttribute('data-tv-dense') && boardSpills()) {
         document.documentElement.setAttribute('data-tv-dense', '');
-        renderBoard(month, day);
+        renderBoard(month, day, area);
       }
       fillTv();
     }, 150);
@@ -318,15 +337,33 @@ document.fonts?.addEventListener?.('loadingdone', () => {
   fitResizeTimer = setTimeout(refitDensity, 150);
 });
 
+/**
+ * Each page's name in the tab (the same words as its header) and its skip link's words. One naming scheme:
+ * the header and the tab say "Daily Operating Review (DOR)", the sidebar says it short, "Daily review (DOR)".
+ */
+const PAGE_NAME = { home: 'Home', dor: 'Daily Operating Review (DOR)', wor: 'Weekly Operating Review (WOR)', org: 'Organization' };
+const SKIP = { home: ['#home', 'Skip to Home'], dor: ['#board', 'Skip to the board'], wor: ['#wor', 'Skip to the weekly review'], org: ['#org', 'Skip to the organization'] };
+
 function renderView() {
   document.documentElement.dataset.view = view;
   syncDensity();
-  // The tab and bookmarks carry the brand: "Daily Operating Review, <plant> · LinkedXL OS".
-  document.title = `Daily Operating Review, ${String(month.plant ?? '').replace(/\s+plant$/i, '')} · LinkedXL OS`;
+  // The tab and bookmarks: the page's header name, the plant, the brand ("Weekly Operating Review (WOR), <plant> · LinkedXL OS").
+  const plant = String(month.plant ?? '').replace(/\s+plant$/i, '');
+  document.title = `${PAGE_NAME[view] ?? PAGE_NAME.home}, ${plant} · LinkedXL OS`;
+  const skip = document.querySelector('[data-skip]');
+  if (skip) { [skip.href, skip.textContent] = [SKIP[view][0], SKIP[view][1]]; }
   setNavState({ area, view }); // every link built below keeps the day and area
   if (view === 'home') renderHome(month, day, area);
-  else renderBoard(month, day);
+  else if (view === 'dor') renderBoard(month, day, area);
+  else if (view === 'org') renderOrg(month, day);
+  else renderWor(month, day);
+  renderScope(month, day, { area, offOnly: getOffOnly() });
+  document.querySelectorAll('[data-off-only-menu]').forEach((b) => {
+    b.setAttribute('aria-checked', String(getOffOnly()));
+    b.textContent = offOnlyLabel(month, day);
+  });
   renderNav(month, day, view);
+  fitSide(); // the sidebar, on every page, drops its extras before it would scroll
   fitDensity();
   syncDayButtons();
 }
@@ -338,7 +375,7 @@ function renderView() {
  * disabled; this turns that into aria-disabled after every draw, including the
  * redraws that happen on their own (a resize, fonts arriving).
  */
-const DAY_BUTTONS = [['[data-prev]', -1], ['[data-home-prev]', -1], ['[data-next]', 1], ['[data-home-next]', 1]];
+const DAY_BUTTONS = [['[data-prev]', -1], ['[data-home-prev]', -1], ['[data-org-prev]', -1], ['[data-next]', 1], ['[data-home-next]', 1], ['[data-org-next]', 1]];
 /** Why an arrow does nothing: "Feb 28 is the last day of February's data." (read with the button). */
 function dayEdgeNote(dir) {
   const id = dir < 0 ? 'day-edge-first' : 'day-edge-last';
@@ -409,7 +446,9 @@ if ('MutationObserver' in window) {
   }));
 }
 
-[TV, TV_SHORT].forEach((m) => m.addEventListener('change', () => { if (view !== 'home') renderView(); }));
+[TV, TV_SHORT].forEach((m) => m.addEventListener('change', () => { if (view === 'dor') renderView(); }));
+// The sidebar became the icon rail or full again: the page's column changed width, so its charts redraw.
+window.addEventListener('dor:side', () => { if (month) renderView(); });
 
 /**
  * Bring a department into view after a save, an undo or the meeting. The DOR board fitted to
@@ -417,6 +456,7 @@ if ('MutationObserver' in window) {
  */
 function revealFunction(fnId, opts = {}) {
   if (view === 'home') { revealHomeRow(fnId, { target: opts.notesChanged ? 'issue' : 'matrix' }); return; }
+  if (view !== 'dor') return; // the Organization and the Weekly review have no function rows
   const y = window.scrollY;
   const r = onTvBoard() ? document.getElementById(`fn-${fnId}`)?.getBoundingClientRect() : null;
   const inView = Boolean(r) && r.top >= 0 && r.bottom <= window.innerHeight;
@@ -431,6 +471,7 @@ function revealFunction(fnId, opts = {}) {
  * (a phone), the KPI row that was saved. The department's row on the dashboard.
  */
 function savedRow(fnId, { notesChanged = false, kpiRowId = null } = {}) {
+  if (view !== 'home' && view !== 'dor') return null;
   if (view === 'home') {
     return document.querySelector(notesChanged
       ? `.home-app tr.iss-row.is-first[data-fn="${CSS.escape(fnId)}"]`
@@ -474,6 +515,26 @@ function applyRoute() {
     showDateNote(`That date isn't in this month's data. Showing ${formatDayMedium(month, r.day)}.`);
     history.replaceState(history.state, '', urlFor(r.day, location.hash.slice(1)));
   }
+  let weekNote = null;
+  if (r.weekFix) {
+    // The Weekly review's date follows its week; a week that isn't in this month's data is dropped.
+    const params = new URLSearchParams(location.search);
+    if (r.badWeek) {
+      params.delete('week');
+      // Named by its Monday, as the week picker names it ("the week of Feb 23"), never by the day it shows.
+      const wk = weekOfDay(month, r.day);
+      weekNote = `That week isn't in this month's data. Showing the week of ${wk ? new Date(`${wk.start}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) : formatDayMedium(month, r.day)}.`;
+    } else if (r.snappedFrom) {
+      // A day in the middle of a week: that week, from its Monday, and the note names both.
+      params.set('week', r.snappedWeek);
+      const held = store.dayFromIso(month, r.snappedFrom);
+      const monday = store.dayFromIso(month, r.snappedWeek);
+      const short = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+      weekNote = `Showing the week of ${monday !== null ? formatDayMedium(month, monday).replace(/^\w+, /, '') : short(r.snappedWeek)}, which holds ${held !== null ? formatDayMedium(month, held) : short(r.snappedFrom)}.`;
+    }
+    params.set('date', store.isoForDay(month, r.day));
+    history.replaceState(history.state, '', `${location.pathname}?${params}${location.hash}`);
+  }
 
   // Anything opening on top of the board (Detail, Enter, Meeting, Customize: by a
   // link, the URL or Forward) ends the tour without counting it as seen.
@@ -486,6 +547,16 @@ function applyRoute() {
     renderView();
   }
 
+  if (r.view === 'person') openPerson(month, r.personId, r.day);
+  else if (isPersonOpen()) closePerson({ restoreFocus: r.view === 'board' });
+
+  if (view === 'wor') {
+    syncWorTab(); // Back or Forward between tabs
+    if (weekNote) sayWorNote(weekNote);
+  }
+  if (r.view === 'wor-sheet') openWorSheet(month, r.sheetKind, r.sheetId, r.day);
+  else if (isWorSheetOpen()) closeWorSheet({ restoreFocus: r.view === 'board' });
+
   if (r.view === 'enter') {
     const hash = enterHashFor(r);
     // Already open on another function's form (the URL changed): that form takes its place.
@@ -496,12 +567,12 @@ function applyRoute() {
     if (!isEnterOpen() || switching) openEnter(month, { fnId: r.fnId, day: r.day, mode: r.mode, focus: r.focus });
   } else if (isEnterOpen()) closeEnter();
 
-  if (r.view === 'detail') openDetail(month, r.fnId, r.day);
+  if (r.view === 'detail') openDetail(month, r.fnId, r.day, area);
   else if (isDetailOpen()) closeDetail({ restoreFocus: r.view === 'board' });
 
   if (r.view === 'meeting') {
     if (!isMeetingOpen()) scrollBeforeMeeting = window.scrollY; // End meeting puts the board back here
-    openMeeting(month, r.day, r.slide);
+    openMeeting(month, r.day, r.slide, { mode: r.mode });
   } else if (isMeetingOpen()) closeMeeting();
 
   if (r.view === 'customize') openCustomize();
@@ -520,6 +591,8 @@ function refreshAll() {
   renderView();
   refreshDetail(month);
   refreshActions(); // an open register redraws after an Undo
+  refreshPerson(month);
+  refreshWorSheet(month);
 }
 
 /* ---------- Sheets over the board keep its place ---------- */
@@ -604,8 +677,8 @@ function wireBoard() {
     if (b.getAttribute('aria-disabled') === 'true') sayDayEdge(delta);
     else stepDay(delta, b);
   };
-  document.querySelectorAll('[data-prev], [data-home-prev]').forEach((b) => b.addEventListener('click', step(b, -1)));
-  document.querySelectorAll('[data-next], [data-home-next]').forEach((b) => b.addEventListener('click', step(b, 1)));
+  document.querySelectorAll('[data-prev], [data-home-prev], [data-org-prev]').forEach((b) => b.addEventListener('click', step(b, -1)));
+  document.querySelectorAll('[data-next], [data-home-next], [data-org-next]').forEach((b) => b.addEventListener('click', step(b, 1)));
 
   // Matrix rows open Detail from anywhere in the row (the name is the keyboard target).
   document.addEventListener('click', (e) => {
@@ -615,6 +688,13 @@ function wireBoard() {
 
   document.addEventListener('click', (e) => {
     if (e.target.closest('.term-btn')) return; // definitions never open the row
+    // A person on the Organization page: their sheet (one sheet at a time: a person's link inside it swaps it).
+    const person = e.target.closest('[data-open-person]');
+    if (person && !e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0) {
+      e.preventDefault();
+      navigate(`person/${person.dataset.openPerson}`, { replace: isPersonOpen() });
+      return;
+    }
     const open = e.target.closest('[data-open-detail]');
     if (open && !e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0) {
       e.preventDefault();
@@ -627,6 +707,8 @@ function wireBoard() {
     const jump = e.target.closest('[data-jump]');
     if (jump) {
       e.preventDefault();
+      // A function Off goal only has left out (one with no goal set, say): show them all, then go there.
+      if (!document.getElementById(`fn-${jump.dataset.jump}`) && getOffOnly()) { setOffOnly(false); renderView(); }
       const row = document.getElementById(`fn-${jump.dataset.jump}`);
       row?.scrollIntoView({ block: 'center', behavior: reduceMotion() ? 'auto' : 'smooth' });
       row?.querySelector('.fn-link')?.focus({ preventScroll: true });
@@ -635,6 +717,20 @@ function wireBoard() {
       return;
     }
     if (e.target.closest('[data-undo-save]')) { e.preventDefault(); undoSave(); return; }
+    // Off goal only: the Menu's item (the TV's way to it), and Show all under the board.
+    if (e.target.closest('[data-off-only-menu]')) {
+      e.preventDefault();
+      document.getElementById('dor-menu')?.hidePopover?.();
+      toggleOffOnly(!getOffOnly());
+      document.querySelector('[data-topbar-more]')?.focus({ preventScroll: true });
+      return;
+    }
+    if (e.target.closest('[data-off-only-clear]')) {
+      e.preventDefault();
+      toggleOffOnly(false);
+      document.querySelector('.board-page [data-off-only]')?.focus({ preventScroll: true });
+      return;
+    }
     const setStatus = e.target.closest('[data-set-status]');
     if (setStatus) { e.preventDefault(); navigate(`enter/${setStatus.dataset.setStatus}/status`); return; }
     if (e.target.closest('[data-enter]')) { e.preventDefault(); navigate('enter'); return; }
@@ -642,7 +738,8 @@ function wireBoard() {
       e.preventDefault();
       document.getElementById('dor-menu')?.hidePopover?.(); // the phone's Menu has it too
       requestFullscreen(); // needs the click's user activation
-      navigate('meeting/0');
+      // The Weekly review's Run weekly meeting runs the weekly agenda; every other Run meeting, the daily board.
+      navigate(e.target.closest('[data-weekly-meeting]') && view === 'wor' ? 'wmeeting/0' : 'meeting/0');
       return;
     }
     const reset = e.target.closest('[data-reset]');
@@ -671,7 +768,13 @@ function wireBoard() {
     if (chartRow) { e.preventDefault(); navigate(chartRow.closest('.kpirow').dataset.kpi); return; }
     if (e.target.closest('[data-open-actions]')) { e.preventDefault(); document.getElementById('dor-menu')?.hidePopover?.(); openActions(); return; }
     if (e.target.closest('[data-open-minutes]')) { e.preventDefault(); document.getElementById('dor-menu')?.hidePopover?.(); openMinutes(); return; }
-    if (e.target.closest('[data-open-setup]')) { e.preventDefault(); document.getElementById('dor-menu')?.hidePopover?.(); openSetup(); return; }
+    const setupBtn = e.target.closest('[data-open-setup]');
+    if (setupBtn) {
+      e.preventDefault();
+      document.getElementById('dor-menu')?.hidePopover?.();
+      openSetup({ section: setupBtn.dataset.setupSection, focus: setupBtn.dataset.setupFocus });
+      return;
+    }
     if (e.target.closest('[data-customize]')) {
       e.preventDefault();
       document.getElementById('dor-menu')?.hidePopover?.();
@@ -744,15 +847,32 @@ function goToAddAction(kpiId) {
  * (where it lives in the Menu or the drawer) the button that opens that menu; else the page.
  */
 function runMeetingReturn() {
-  const home = view === 'home';
-  const sels = home ? ['.home-app [data-run-meeting]', '[data-open-drawer]'] : ['.app [data-run-meeting]', '[data-topbar-more]'];
+  const sels = view === 'dor'
+    ? ['.app [data-run-meeting]', '.side [data-run-meeting]', '[data-topbar-more]', '[data-open-drawer]']
+    : view === 'wor'
+      ? ['.wk-pg-head [data-weekly-meeting]', '.wk-pg-head [data-run-meeting]', '.side [data-run-meeting]', '[data-open-drawer]']
+      : ['.side [data-run-meeting]', '[data-open-drawer]'];
   return sels.map((sel) => [...document.querySelectorAll(sel)].find(shownEl)).find(Boolean)
-    ?? document.getElementById(home ? 'home' : 'board');
+    ?? document.getElementById(SKIP[view][0].slice(1));
 }
 
 /** Start this view's tour; its last card can open the form straight away. */
 function runTour() {
-  startTour(view, { month, day, onTry: () => navigate('enter') });
+  const onTry = view === 'org' ? () => openSetup({ section: 'org' })
+    // The Weekly review's tour ends on its own page, with its meeting (the button's click allows full screen).
+    : view === 'wor' ? () => { requestFullscreen(); navigate('wmeeting/0'); }
+      : () => navigate('enter');
+  startTour(view, { month, day, onTry });
+}
+
+/** Off goal only on or off: the board redraws, and the toast says what it shows (the summary still counts every function). */
+function toggleOffOnly(on) {
+  setOffOnly(on);
+  renderView();
+  if (on) {
+    const n = shownFunctions(month, day, area).length;
+    toast(n ? `${offOnlyLabel(month, day)}: ${n} of ${month.functions.length} functions shown.` : `${offOnlyLabel(month, day)}: nothing is off goal that day.`);
+  } else toast(`Showing all ${month.functions.length} functions.`);
 }
 
 /** Show another day (the ‹ › buttons and the date picker). */
@@ -764,10 +884,27 @@ function goToDay(next) {
   renderView();
 }
 
+/**
+ * The Weekly review's week picker: that week, looking from its last production day. A history step
+ * (as a tab is), so Back returns to the week before instead of leaving the app; the state object is
+ * kept, so sheets still close by one step back.
+ */
+function goToWeek(key) {
+  const params = new URLSearchParams(location.search);
+  params.set('week', key);
+  const next = worDay(month, key, day).day;
+  params.set('date', store.isoForDay(month, next));
+  const url = `${location.pathname}?${params}${location.hash}`;
+  if (url !== `${location.pathname}${location.search}${location.hash}`) history.pushState(history.state, '', url);
+  day = next;
+  showDateNote(null);
+  renderView();
+}
+
 /** The date text opens the browser's own date picker, limited to the month's data. */
 function wireDatePicker() {
   // The dashboard's picker and the DOR board's picker work the same way.
-  for (const [btnSel, inputSel] of [['[data-date-pick]', '[data-date-input]'], ['[data-board-date-pick]', '[data-board-date-input]']]) {
+  for (const [btnSel, inputSel] of [['[data-date-pick]', '[data-date-input]'], ['[data-board-date-pick]', '[data-board-date-input]'], ['[data-org-date-pick]', '[data-org-date-input]']]) {
     const input = document.querySelector(inputSel);
     const btn = document.querySelector(btnSel);
     if (!input || !btn) continue;
@@ -806,17 +943,15 @@ let resetting = false;
 const RESET_FROM_KEY = 'dor.reset.from';
 const RESET_FROM = {
   menu: ['[data-topbar-more]'],
-  // The line under the board, or the board's footer strip (where a TV shows it); the one pressed
-  // first, the other if that one doesn't show after the reload.
-  foot: ['.board-foot [data-reset]', '.board2-foot [data-reset]'],
-  strip: ['.board2-foot [data-reset]', '.board-foot [data-reset]'],
+  // The line under the board (a TV has it in the Menu only).
+  foot: ['.board-foot [data-reset]', '[data-topbar-more]'],
   settings: ['[data-settings]', '[data-chip]', '[data-open-drawer]'],
 };
 function resetDemo(from = null) {
   // A double click must not run twice: the second pass would find nothing and overwrite Undo with nothing.
   if (resetting) return;
   resetting = true;
-  const where = from?.closest('#dor-menu') ? 'menu' : from?.closest('#settings-pop') ? 'settings' : from?.closest('.board2-foot') ? 'strip' : from?.closest('.board-foot') ? 'foot' : null;
+  const where = from?.closest('#dor-menu') ? 'menu' : from?.closest('#settings-pop') ? 'settings' : from?.closest('.board-foot') ? 'foot' : null;
   const snapshot = store.resetEverything();
   const saved = Object.keys(snapshot.local).length + Object.keys(snapshot.session).length > 0;
   let undoKept = !saved; // nothing saved: nothing to undo
@@ -830,7 +965,10 @@ function resetDemo(from = null) {
     } catch { undoKept = false; }
   }
   // Without its snapshot the fresh page can't offer Undo: the URL says so once (it's read and removed on load).
-  const params = new URLSearchParams(view === 'dor' ? 'view=dor' : '');
+  // The page stays where it was: its view, and on the Weekly review its week and tab (Undo reloads this URL too).
+  const params = new URLSearchParams(view !== 'home' ? `view=${view}` : '');
+  const was = new URLSearchParams(location.search);
+  for (const k of ['week', 'tab']) if (view === 'wor' && was.get(k)) params.set(k, was.get(k));
   if (!undoKept) params.set(RESET_NO_UNDO_PARAM, '1');
   location.replace(`${location.pathname}${params.size ? `?${params}` : ''}`);
 }
@@ -912,6 +1050,9 @@ const PART_WORDS = [
   ['dor.actions.', 'the Action register'],
   ['dor.meetings.', 'the meeting minutes'],
   ['dor.customize.', 'Customize'],
+  ['dor.org.', 'the Organization'],
+  ['dor.weekly.', 'the Weekly review'],
+  ['dor.side.', 'the menu layout'],
   ['dor.identity.', "who's entering"],
 ];
 const partOf = (key) => PART_WORDS.find(([prefix]) => key.startsWith(prefix))?.[1] ?? 'other settings';
@@ -1250,8 +1391,8 @@ async function init() {
     },
   });
   initMeeting({
-    onSlide: (n) => history.replaceState(history.state, '', urlFor(day, `meeting/${n}`)),
-    onExit: (fnId, { ended = false } = {}) => {
+    onSlide: (n, mode = 'dor') => history.replaceState(history.state, '', urlFor(day, `${mode === 'wor' ? 'wmeeting' : 'meeting'}/${n}`)),
+    onExit: (fnId, { ended = false, finish = false } = {}) => {
       // Already on its way out (Esc then Exit, a double click): one step back, never two.
       if (afterPop || backPending) return;
       // A message from the meeting never carries into the minutes or back onto the board.
@@ -1259,6 +1400,12 @@ async function init() {
       // Leaving full screen resizes the window, so scroll once it has settled.
       const settled = leaveFullscreen();
       const scrollTo = () => settled.then(() => requestAnimationFrame(() => {
+        if (finish) {
+          // The weekly meeting's last Next: Finish review opens over the Weekly review.
+          window.scrollTo({ top: scrollBeforeMeeting, behavior: 'instant' });
+          navigate('finish');
+          return;
+        }
         if (ended) {
           // End meeting: the minutes open over the board, which is back where it was
           // before the meeting (its headline in view), with focus on Run meeting.
@@ -1268,10 +1415,11 @@ async function init() {
         }
         const row = !fnId ? null : view === 'home'
           ? document.querySelector(`.home-app tr[data-home-row="${fnId}"]`)
-          : document.getElementById(`fn-${fnId}`);
+          : view === 'dor' ? document.getElementById(`fn-${fnId}`)
+            : view === 'wor' ? document.getElementById(`wk-${fnId}`) : null;
         if (row) {
           row.scrollIntoView({ block: 'center' });
-          row.querySelector('.fn-link, .mx-link')?.focus({ preventScroll: true });
+          (row.querySelector('.fn-link, .mx-link, [data-calc]'))?.focus({ preventScroll: true });
         } else {
           window.scrollTo(0, 0);
           runMeetingReturn()?.focus({ preventScroll: true });
@@ -1307,6 +1455,8 @@ async function init() {
     },
     onSwitchPerson: () => navigate('enter/switch'),
   });
+  // The scope line's Off goal only box (the DOR board).
+  document.addEventListener('change', (e) => { if (e.target.matches?.('[data-off-only]')) toggleOffOnly(e.target.checked); });
   wireHowTo();
   wireTerms();
   wireDatePicker();
@@ -1324,14 +1474,41 @@ async function init() {
     openMinutes: (id) => openMinutes(id),
     enterFor: (fnId) => navigate(`enter/${fnId}`),
     // An action was added, changed or removed: the board's Action cells follow.
-    onChange: () => { month = store.getMonth(); renderView(); refreshDetail(month); },
+    onChange: () => { month = store.getMonth(); renderView(); refreshDetail(month); refreshPerson(month); refreshWorSheet(month); },
   });
-  initRecorder({ getMonth: () => month, getDay: () => day, toast, addAction, openActions });
+  initRecorder({
+    getMonth: () => month,
+    getDay: () => day,
+    toast,
+    addAction,
+    openActions,
+    // The weekly meeting ended: its times, transcript and actions go on the week's draft record.
+    onWeeklyEnd: (summary, weekKey) => {
+      const r = attachMeetingSession(month, day, weekKey, summary);
+      const mins = Math.max(1, Math.round((summary.durationSec ?? 0) / 60));
+      const n = summary.actionIds?.length ?? 0;
+      toast(`Weekly meeting saved to the draft record: ${mins} min${n ? `, ${n} ${n === 1 ? 'action' : 'actions'} assigned` : ''}${summary.recorded ? ', recorded' : ''}.${r?.ok === false ? " This browser isn't saving." : ''}`);
+      refreshWorSheet(month);
+    },
+  });
+  // The Organization page's person sheet: closing it steps back like Detail.
+  initOrg({ onClose: closeView, getMonth: () => month, getDay: () => day });
+  // The Weekly review: its week picker, tabs, saves and its sheet (View calculation, review records).
+  initWor({
+    onClose: closeView,
+    getMonth: () => month,
+    getDay: () => day,
+    goToWeek,
+    navigate: (hash, opts) => navigate(hash, opts),
+    toast,
+    openMinutes: (id) => openMinutes(id),
+    refresh: () => { month = store.getMonth(); renderView(); refreshWorSheet(month); refreshPerson(month); },
+  });
   initSetup({
     getMonth: () => month,
     getDay: () => day,
     toast,
-    onChange: () => { month = store.getMonth(); renderView(); },
+    onChange: () => { month = store.getMonth(); renderView(); refreshPerson(month); refreshWorSheet(month); },
   });
   window.addEventListener('popstate', onPop);
   let resizeTimer;
@@ -1355,8 +1532,10 @@ function autoTour() {
   if (arrived === view) {
     toast(view === 'dor'
       ? 'This is the DOR board. Take its tour anytime from Take the tour.'
-      : 'This is the new dashboard. Take its tour anytime from How it works.');
+      : 'This is Home. Take its tour anytime from How it works.');
   }
+  // Every page starts its own short tour on the first visit (the Weekly review's and the Organization's
+  // are four and three steps); How it works runs it again.
   if (ask === 'off' || parseRoute().view !== 'board' || isTourOpen()) return;
   if (ask === '1' || !tourSeen(view)) {
     runTour();

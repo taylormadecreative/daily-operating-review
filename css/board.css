@@ -126,7 +126,7 @@
 .howto-btn { min-height: var(--tap); gap: 6px; color: var(--ink); font-size: var(--fs-small); }
 /* When the line wraps (tablet, phone), short rows: the links are 30px tall, and a
    pseudo-element keeps each tap area 44px without opening a gap between rows. */
-@media (max-width: 820px) {
+@container dorpage (max-width: 820px) {
   .summary-line { row-gap: 0; }
   .summary-line :is(.howto-btn, .your-row-link) { position: relative; min-height: 30px; }
   .summary-line :is(.howto-btn, .your-row-link)::before { content: ""; position: absolute; inset: -7px 0; }
@@ -338,7 +338,7 @@
 
 /* ---------- Responsive structure ---------- */
 
-@media (max-width: 1179px) {
+@container dorpage (max-width: 1179px) {
   .board { border-top: 2px solid var(--rule-strong); }
   .row {
     --cols: repeat(3, minmax(0, 1fr));
@@ -354,37 +354,23 @@
   .cell--notes { border-top: 1px solid var(--rule); padding: var(--s-3) 0 var(--s-4); }
 }
 
-/* Tablet: two rows on the navy bar (brand + Home + Customize, then the day and the actions). */
-@media (min-width: 760px) and (max-width: 1339px) {
-  .topbar-inner { flex-wrap: wrap; row-gap: var(--s-2); }
-  .brand { flex: 1 1 calc(100% - 300px); }
-  .topbar-home { order: 1; }
-  .datebar { order: 2; margin-left: 0; }
-  .topbar .actions { order: 3; margin-left: auto; }
+/* Tablet: two rows on the navy bar (brand + Home + Customize, then the day and the actions). The classic
+   layout only: the board v2 and the other pages share css/header.css. */
+@container dorpage (min-width: 760px) and (max-width: 1339px) {
+  :root[data-layout="classic"] .topbar-inner { flex-wrap: wrap; row-gap: var(--s-2); }
+  :root[data-layout="classic"] .brand { flex: 1 1 calc(100% - 300px); }
+  :root[data-layout="classic"] .topbar-home { order: 1; }
+  :root[data-layout="classic"] .datebar { order: 2; margin-left: 0; }
+  :root[data-layout="classic"] .topbar .actions { order: 3; margin-left: auto; }
 }
 
-@media (max-width: 759px) {
+@container dorpage (max-width: 759px) {
   .topbar-inner { flex-wrap: wrap; padding: 0; gap: 0; }
   .brand { width: 100%; padding: var(--s-2) var(--gutter); padding-right: calc(var(--gutter) + 92px); }
   .topbar-home { position: absolute; top: var(--s-2); right: var(--gutter); margin-top: 2px; }
   .brand-badge { height: 48px; }
   .brand-title { font-size: 1.0625rem; }
-  .datebar {
-    width: 100%;
-    margin: 0;
-    padding: var(--s-2) var(--gutter);
-    background: var(--surface);
-    color: var(--ink);
-    border-bottom: 1px solid var(--rule);
-  }
-  .datebar .icon-btn { border-color: var(--ink-2); }
-  .topbar .datebar :focus-visible { outline-color: var(--focus); }
-  .date-label { flex: 1; min-width: 0; }
-  .topbar .actions { width: 100%; padding: var(--s-2) var(--gutter) var(--s-3); background: var(--surface); }
-  .topbar .actions .btn { flex: 1; }
-  .topbar .actions .btn--outline-light { color: var(--ink); border-color: var(--btn-line); }
-  .topbar .actions .btn--outline-light:hover { background: var(--surface-quiet); }
-  .topbar .actions :focus-visible { outline-color: var(--focus); }
+  /* The day and the buttons stay in the navy band, as on every page (css/header.css). */
   .summary-lead { font-size: 1.875rem; line-height: 1.14; }
   /* 44px tap area on the summary's links; the type does not move. */
   .summary-lead a { padding-block: 0.22em; }
@@ -421,7 +407,7 @@
   .mobile-bar :focus-visible { outline-color: var(--bar-focus); }
 }
 
-@media (min-width: 1180px) {
+@container dorpage (min-width: 1180px) {
   .board-head {
     display: grid;
     grid-template-columns: var(--cols-desktop);

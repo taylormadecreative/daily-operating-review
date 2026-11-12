@@ -2,25 +2,32 @@
 // <dialog> + showModal gives the dimmed, inert background and Esc; focus is
 // moved in JS because autofocus is ignored here.
 
-import { dailySeries, leadingIndicatorsFor, kpiRowById, isoForDay, notesFor, hasProblem } from './store.js?v=20261013-151156';
-import { dayStatus, monthStatus, isProductionDay, compareToGoal, ON, OFF, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261013-151156';
+import { dailySeries, leadingIndicatorsFor, kpiRowById, isoForDay, notesFor, hasProblem } from './store.js?v=20261112-075602';
+import { dayStatus, monthStatus, isProductionDay, compareToGoal, ON, OFF, NO_PRODUCTION, NOT_TRACKED, NOT_ENTERED } from './status.js?v=20261112-075602';
 import {
   formatPair, plainLabel, formatDayMedium, formatMonthShort, monthSoFar,
   dayHeading, weekday, formatMonthName, lowerNote,
-} from './format.js?v=20261013-151156';
+} from './format.js?v=20261112-075602';
 import {
   measureMarkup, enteredByMarkup, recordText, problemStatusMarkup, notesText, actionStateFor, ACTION_WORD, issueGap, ISSUE_GAP_WORD,
-} from './board.js?v=20261013-151156';
-import { esc, statusMarkup, glyphMarkup, issueStatusMarkup } from './ui.js?v=20261013-151156';
-import { barChart, lineChart, yearChart, dataTable } from './charts.js?v=20261013-151156';
-import { actionsFor, openActions } from './actions.js?v=20261013-151156';
+} from './board.js?v=20261112-075602';
+import { esc, statusMarkup, glyphMarkup, issueStatusMarkup } from './ui.js?v=20261112-075602';
+import { barChart, lineChart, yearChart, dataTable } from './charts.js?v=20261112-075602';
+import { actionsFor, openActions } from './actions.js?v=20261112-075602';
+import { isOpenAction, isVerifiedAction, actionStateMarkup } from './action-state.js?v=20261112-075602';
 
 const AREAS = ['mold', 'bond', 'prime', 'compounding'];
 
 let dialog;
 let handlers;
 let charts = [];
-let current = null; // { fnId, day, parentId, kpiId, added, month }
+let current = null; // { fnId, day, parentId, kpiId, added, month, area }
+/**
+ * The day's scope in this sheet: the page's Area filter when one is picked ('area'), else the plant
+ * total ('plant'). Switching it is an explicit button in the sheet; it never changes on its own.
+ */
+let scopeShow = 'plant';
+const AREA_NAME = { mold: 'Mold', bond: 'Bond', prime: 'Prime', compounding: 'Compounding' };
 let opener = null;  // { el, id, cls }: the link or button that opened the sheet
 
 let closeAsked = false; // handlers.onClose already ran for this opening
@@ -78,6 +85,13 @@ export function initDetail(h) {
       openActions({ addFor: current.parentId ?? current.fnId, kpiId: current.added ? current.kpiId : null });
     }
     if (btn.matches('[data-table-toggle]')) toggleTable(btn);
+    if (btn.matches('[data-scope-switch]') && current) {
+      // Plant total or the picked area, by the reader's choice; focus stays on the switch.
+      scopeShow = scopeShow === 'area' ? 'plant' : 'area';
+      const fn = kpiRowById(current.month, current.fnId)?.row;
+      if (fn) render(current.month, fn, current.day);
+      dialog.querySelector('[data-scope-switch]')?.focus({ preventScroll: true });
+    }
   });
   // The register is its own sheet. When it closes, this sheet's list of open
   // actions catches up (the 'close' event doesn't bubble: capture it).
@@ -267,8 +281,8 @@ function syncAction() {
 function registerMarkup() {
   const { month, day } = current;
   const list = dayList();
-  const open = list.filter((a) => a.status !== 'closed');
-  const done = list.filter((a) => a.status === 'closed');
+  const open = list.filter(isOpenAction);
+  const done = list.filter(isVerifiedAction);
   const today = isoForDay(month, day);
   const sep = '<span aria-hidden="true"> · </span>';
   const openHtml = open.length
@@ -279,14 +293,14 @@ function registerMarkup() {
         : '<span>No due date</span>';
       return `<li class="reg-item">
         <p class="reg-text">${esc(a.text)}</p>
-        <p class="reg-meta"><span>${esc(a.owner || '')}</span>${a.owner ? sep : ''}${due}${sep}${issueStatusMarkup(a.status)}</p>
+        <p class="reg-meta"><span>${esc(a.owner || '')}</span>${a.owner ? sep : ''}${due}${sep}${actionStateMarkup(a.status)}${a.escalation ? `${sep}<span>Escalated to ${esc(a.escalation.to)}</span>` : ''}</p>
       </li>`;
     }).join('')}</ul>`
     : `<p class="reg-empty">${done.length ? 'No open actions.' : 'Nothing assigned in the Action register yet.'}</p>`;
   const doneHtml = done.length
-    ? `<ul class="reg-list reg-list--done" aria-label="Done">${done.map((a) => `<li class="reg-item is-done">
-        <p class="reg-text"><span class="reg-done">${glyphMarkup(ON)}Done:</span> ${esc(a.text)}</p>
-        <p class="reg-meta"><span>${esc(a.owner || '')}</span>${a.owner && a.closedDayIso ? sep : ''}${a.closedDayIso ? `<span>Done ${esc(dueDay(a.closedDayIso, month))}</span>` : ''}</p>
+    ? `<ul class="reg-list reg-list--done" aria-label="Verified">${done.map((a) => `<li class="reg-item is-done">
+        <p class="reg-text"><span class="reg-done">${glyphMarkup(ON)}Verified:</span> ${esc(a.text)}</p>
+        <p class="reg-meta"><span>${esc(a.owner || '')}</span>${a.owner && a.closedDayIso ? sep : ''}${a.closedDayIso ? `<span>Verified ${esc(dueDay(a.closedDayIso, month))}</span>` : ''}</p>
       </li>`).join('')}</ul>`
     : '';
   return openHtml + doneHtml;
@@ -349,7 +363,16 @@ function render(month, fn, day) {
   // A KPI added in Board setup reads like a function; its title names the KPI.
   const added = fn.primary === false;
   const kpiTitle = added ? plainLabel(fn.kpiDaily) : null;
-  const y = dayStatus(month, fn, day);
+  // Scope beside every value (spec §6): the day is the picked area's when the reader asked for it,
+  // never the plant total standing in for it; the month and the year are always the plant's.
+  const area = current?.area ?? 'all';
+  const hasAreas = !fn.custom && !added;
+  const canArea = hasAreas && area !== 'all' && Array.isArray(fn.daily?.[area]);
+  const useArea = canArea && scopeShow === 'area';
+  const areaWord = AREA_NAME[area] ?? '';
+  const dayScope = !hasAreas ? '' : useArea ? areaWord : 'Plant total';
+  const y = dayStatus(month, fn, day, useArea ? area : 'plant');
+  const dayWord = useArea && y.status === NOT_ENTERED ? `Not entered for ${areaWord}` : undefined;
   const mo = monthStatus(month, fn, day);
   const kpas = leadingIndicatorsFor(month, fn);
   const dayName = formatDayMedium(month, day);
@@ -405,19 +428,23 @@ function render(month, fn, day) {
           ${question ? `<p class="sheet-question">${esc(question)}</p>` : ''}
         </div>
         <div class="kpis">
-          <section class="kpi" data-status="${y.status}" aria-label="${esc(`${dayHeading(month, day)}: ${dayMeasure}`)}">
-            <h3 class="kpi-label">${esc(dayHeading(month, day))}</h3>
-            ${statusMarkup(y.status, { kpi: fn.kpiDaily })}
+          <section class="kpi" data-status="${y.status}" aria-label="${esc(`${dayHeading(month, day)}${dayScope ? `, ${dayScope}` : ''}: ${dayMeasure}`)}">
+            <h3 class="kpi-label">${esc(dayHeading(month, day))}${dayScope ? `<span class="kpi-scope"> · ${esc(dayScope)}</span>` : ''}</h3>
+            ${statusMarkup(y.status, { kpi: fn.kpiDaily, word: dayWord })}
             ${y.status === NOT_TRACKED ? notYet : noDayFigure ? '<p class="kpi-figure kpi-figure--empty">No numbers expected</p>' : bigFigure(y.actual, y.goal, fn.kpiDaily)}
             ${measureMarkup(month, fn.kpiDaily, '', 'p', 'kpi-measure')}
           </section>
-          <section class="kpi" data-status="${mo.status}" aria-label="${esc(`${monthSoFar(month)}: ${monthMeasure}`)}">
-            <h3 class="kpi-label">${esc(monthSoFar(month))}</h3>
+          <section class="kpi" data-status="${mo.status}" aria-label="${esc(`${monthSoFar(month)}${hasAreas ? ', Plant total' : ''}: ${monthMeasure}`)}">
+            <h3 class="kpi-label">${esc(monthSoFar(month))}${hasAreas ? '<span class="kpi-scope"> · Plant total</span>' : ''}</h3>
             ${statusMarkup(mo.status, { kpi: fn.kpiMonthly })}
             ${mo.asOfDay === null ? '' : mo.status === NOT_TRACKED ? notYet : bigFigure(mo.actual, mo.goal, fn.kpiMonthly)}
             ${measureMarkup(month, fn.kpiMonthly, '', 'p', 'kpi-measure')}
           </section>
         </div>
+        ${canArea ? `<p class="scope-switch">${useArea
+          ? `The day shows ${esc(areaWord)} only. The month is the plant total.`
+          : `The day shows the plant total. The board's Area filter is ${esc(areaWord)}.`}
+          <button class="btn btn--text" type="button" data-scope-switch>${useArea ? 'Show the plant total' : `Show ${esc(areaWord)}`}</button></p>` : ''}
 
         <section class="sheet-section sheet-section--kbi" aria-labelledby="sec-kbi">
           <h3 class="section-title" id="sec-kbi">${esc(kpaTitle)}</h3>
@@ -442,7 +469,7 @@ function render(month, fn, day) {
 
         <section class="sheet-section" aria-labelledby="sec-mtd">
           <h3 class="section-title" id="sec-mtd">${esc(monthSoFar(month))} <span class="section-measure">· ${esc(monthMeasure)}</span></h3>
-          <p class="section-sub">Month to date${esc(lowerNote(fn.kpiMonthly))}
+          <p class="section-sub">Month to date${hasAreas ? ' · Plant total' : ''}${esc(lowerNote(fn.kpiMonthly))}
             ${noCharts ? '' : '<span class="legend" aria-hidden="true"><span class="key key--actual"></span>Actual<span class="key key--goal"></span>Goal</span>'}</p>
           ${notStarted ? startNote : noNumbers ? freshNote(false) : `<div class="chart-host" data-chart="mtd"></div>
           <button class="btn btn--text table-toggle" type="button" data-table-toggle aria-expanded="false" aria-controls="tbl-mtd">Show as table</button>
@@ -451,8 +478,8 @@ function render(month, fn, day) {
 
         <section class="sheet-section" aria-labelledby="sec-year">
           <h3 class="section-title" id="sec-year">This year <span class="section-measure">· ${esc(monthMeasure)}</span></h3>
-          ${noYear ? `<p class="section-sub">By month${esc(lowerNote(fn.kpiMonthly))}.</p>
-          <p class="table-empty">Starts with the first month's numbers.</p>` : `<p class="section-sub">By month${esc(lowerNote(fn.kpiMonthly))}. ${esc(formatMonthName(month))} is so far, through ${esc(dayName)}. Months with no results yet stay empty.</p>
+          ${noYear ? `<p class="section-sub">By month${hasAreas ? ' · Plant total' : ''}${esc(lowerNote(fn.kpiMonthly))}.</p>
+          <p class="table-empty">Starts with the first month's numbers.</p>` : `<p class="section-sub">By month${hasAreas ? ' · Plant total' : ''}${esc(lowerNote(fn.kpiMonthly))}. ${esc(formatMonthName(month))} is so far, through ${esc(dayName)}. Months with no results yet stay empty.</p>
           <div class="chart-host" data-chart="year"></div>
           <button class="btn btn--text table-toggle" type="button" data-table-toggle aria-expanded="false" aria-controls="tbl-year">Show as table</button>
           <div class="table-wrap" id="tbl-year" hidden></div>`}
@@ -595,7 +622,7 @@ function focusBack(fnId) {
   target?.focus({ preventScroll: false });
 }
 
-export function openDetail(month, fnId, day) {
+export function openDetail(month, fnId, day, area = 'all') {
   const found = kpiRowById(month, fnId);
   if (!found) return false;
   const fn = found.row;
@@ -611,7 +638,9 @@ export function openDetail(month, fnId, day) {
     if (back) opener = back.opener; // Esc still returns to what first opened the sheet
   }
   const added = fn.primary === false;
-  current = { fnId, day, parentId: found.fn.id, kpiId: added ? fn.kpiId : null, added, month };
+  // A new opening (or another KPI, or the filter changed) starts on the page's scope.
+  if (!wasOpen || current?.fnId !== fnId || current?.area !== area) scopeShow = area !== 'all' ? 'area' : 'plant';
+  current = { fnId, day, parentId: found.fn.id, kpiId: added ? fn.kpiId : null, added, month, area };
   // Open first so the charts measure their real width.
   if (!wasOpen) dialog.showModal();
   if (!same) render(month, fn, day);

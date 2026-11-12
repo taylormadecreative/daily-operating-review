@@ -4,12 +4,12 @@
 // view above it. Keyboard: focus moves into the card, ← → step, Esc skips, and
 // focus goes back where it was afterwards.
 
-import { pageHref } from './shell.js?v=20261013-151156';
-import { esc } from './ui.js?v=20261013-151156';
-import { getSettings, derive } from './customize.js?v=20261013-151156';
-import { dayStatus, OFF } from './status.js?v=20261013-151156';
+import { pageHref } from './shell.js?v=20261112-075602';
+import { esc } from './ui.js?v=20261112-075602';
+import { getSettings, derive } from './customize.js?v=20261112-075602';
+import { dayStatus, OFF } from './status.js?v=20261112-075602';
 
-const FLAG = { home: 'dor.tour.home.v1', dor: 'dor.tour.dor.v2' };
+const FLAG = { home: 'dor.tour.home.v1', dor: 'dor.tour.dor.v2', org: 'dor.tour.org.v1', wor: 'dor.tour.wor.v1' };
 export const ARRIVAL_KEY = 'dor.tour.arrival';
 const PAD = 6; // cut-out padding around the target
 const isPhone = () => matchMedia('(max-width: 599px)').matches;
@@ -32,14 +32,30 @@ function markSeen(kind, how) {
 
 /* ---------- The steps ---------- */
 
+/**
+ * The one menu every page shares (the sidebar; on a phone the menu button, top right; on the TV board
+ * the board's Menu). Wide screens can shrink it to icons from its top.
+ */
+function pagesStep() {
+  const rail = matchMedia('(min-width: 1280px)').matches ? ' The button at its top shrinks it to icons, and this device remembers.' : '';
+  return {
+    target: ['.side .side-list--pages'],
+    fallback: '.side-menu-btn, [data-topbar-more]',
+    fallbackNote: "They're in the menu, top right.",
+    title: 'Every page, one menu',
+    text: `Home, the DOR board, the Weekly review and the Organization sit here on every page, with the meeting and setup tools under them.${rail}`,
+  };
+}
+
 function homeSteps(month, day) {
   return [
     {
-      title: 'Welcome',
-      text: "This is your plant's Daily Operating Review. Each morning every function enters its numbers and the board works out what's on track. Here's a quick tour.",
+      title: 'Welcome to Home',
+      text: "Home is your plant's day at a glance. Each morning every function enters its numbers and the board works out what's on track. Here's a quick tour.",
     },
+    pagesStep(),
     { target: ['[data-home-summary]'], title: 'The one-line answer', text: "Start here. One line says how many functions hit their goal and which didn't." },
-    { target: ['.h-date'], title: 'Pick a day', text: 'Pick any production day and the whole dashboard follows.' },
+    { target: ['.h-date'], title: 'Pick a day', text: 'Pick any production day and the whole page follows.' },
     {
       target: ['.h-kpis'],
       title: 'Key numbers',
@@ -67,13 +83,13 @@ function homeSteps(month, day) {
       target: ['.side [data-run-meeting]'],
       fallback: '.side-menu-btn',
       fallbackNote: 'On a phone it\'s in the menu, top right.',
-      title: 'Run meeting',
-      text: 'Running the morning meeting? Run meeting shows one function at a time on the TV. Arrow keys or a clicker move through it.',
+      title: 'Run daily meeting',
+      text: 'Running the morning meeting? Run daily meeting shows one function at a time on the TV. Arrow keys or a clicker move through it.',
     },
     {
       done: true,
       title: 'Your turn',
-      text: 'Enter a number and watch the dashboard change, or set the board up for your plant.',
+      text: 'Enter a number and watch Home change, or set the board up for your plant.',
       note: 'Anything you enter saves on this device only. Reopen this tour anytime from How it works.',
       tryLabel: 'Try Enter numbers',
       setupLabel: 'Set up your plant',
@@ -118,7 +134,13 @@ function boardV2Steps(month, day) {
       title: 'Welcome',
       text: 'This is your Daily Operating Review board. Every function, its owner and its KPIs, in meeting order. Every goal connected, every KPI driven by KPAs, every action accountable.',
     },
+    pagesStep(),
     { target: ['[data-summary-lead]'], title: 'The summary', text: "One sentence says how many functions hit their goal, which ones didn't, and which misses still need an action. Pick another day from the date at the top." },
+    {
+      target: ['.board-page .scope-line'],
+      title: 'What the board is showing',
+      text: "This line names the plant, the area, the day, how many functions have entered their numbers, and that it's saved on this device. Pick an area and the Status column shows that area's day; a missing area number reads Not entered, never the plant's.",
+    },
     ...(row ? [{
       target: [`${row} .kpirow`, row],
       title: 'One row per KPI',
@@ -145,10 +167,10 @@ function boardV2Steps(month, day) {
     },
     {
       target: ['.topbar [data-run-meeting]'],
-      // A phone has no Run meeting button in its bar: it's in the Menu.
+      // A phone has no Run daily meeting button in its bar: it's in the Menu.
       fallback: '[data-topbar-more]',
       fallbackNote: "It's in the Menu, top right.",
-      title: 'Run meeting',
+      title: 'Run daily meeting',
       text: 'One function at a time on the TV for the morning meeting. Record it, add actions as they come up, and the minutes are saved when it ends.',
     },
     {
@@ -172,8 +194,60 @@ function boardV2Steps(month, day) {
       note: 'Anything you enter saves on this device only. Reopen this tour anytime from Take the tour.',
       tryLabel: 'Try Enter numbers',
       setupLabel: 'Set up your plant',
-      link: { href: pageHref(month, day, { view: 'home' }), text: 'See the new dashboard →', kind: 'home' },
+      link: { href: pageHref(month, day, { view: 'home' }), text: 'See Home →', kind: 'home' },
     },
+  ];
+}
+
+/** The Organization: the chart, a person's sheet, and where it's changed. */
+function orgSteps() {
+  // Short on purpose: it starts by itself on the first visit (app.js autoTour).
+  return [
+    {
+      title: 'The organization',
+      text: 'Who owns each function, who they report to, and who answers for the result, on one page.',
+    },
+    {
+      target: ['.oc-reports', '.oc-root .oc'],
+      title: 'One card a person',
+      text: `${act(true)} a card for what that person owns (their DOR daily measures), their reporting line, roles and open actions.`,
+    },
+    {
+      target: ['.pg-head [data-open-setup]'],
+      title: 'Change it in Board setup',
+      text: 'People, titles, roles and who answers for each function are edited as a draft, then validated and activated.',
+    },
+    {
+      done: true,
+      title: "That's it",
+      text: 'Reopen this tour anytime from How it works.',
+      tryLabel: 'Open Board setup',
+    },
+  ];
+}
+
+function worSteps() {
+  // Short on purpose: it starts by itself on the first visit (app.js autoTour).
+  return [
+    { title: 'Weekly Operating Review', text: 'The week in one place: each KPI rolled up from its days by its own weekly rule, the misses that repeat, and what the meeting needs before it starts.' },
+    {
+      target: ['.wk-nav'],
+      title: 'Pick the week',
+      text: 'Weeks run Monday to Sunday. The exact dates, time zone and production days are on the line under the header.',
+    },
+    {
+      target: ['.wk-top'],
+      title: 'The week, and readiness',
+      text: 'One sentence says how the week went and whether it is getting better. Beside it, readiness checks the meeting itself, never a result.',
+    },
+    {
+      target: ['.wk-group .wk-block', '.wk-group'],
+      with: ['.wk-group .wk-dayscell'],
+      title: 'A good week can hide bad days',
+      text: `The week's result, the same solid block as the DOR board, and its days on track beside it. ${act(true)} View calculation for the rule and the days it used.`,
+    },
+    // The tour ends on this page: its one next step is the meeting it prepares for.
+    { done: true, title: "That's it", text: 'Run weekly meeting walks the room through it, one function at a time. Reopen this tour anytime from How it works.', tryLabel: 'Run weekly meeting' },
   ];
 }
 
@@ -218,7 +292,7 @@ function dorSteps(month, day) {
       target: ['.topbar [data-run-meeting]'],
       fallback: '[data-topbar-more]',
       fallbackNote: "It's in the Menu, top right.",
-      title: 'Run meeting',
+      title: 'Run daily meeting',
       text: 'Shows one function at a time on the TV for the morning meeting. Arrow keys or a clicker move through it.',
     },
     {
@@ -234,7 +308,7 @@ function dorSteps(month, day) {
       text: 'Reopen this tour anytime from Take the tour.',
       note: 'In this demo, anything you enter saves on this device only.',
       tryLabel: 'Try Enter numbers',
-      link: { href: pageHref(month, day, { view: 'home' }), text: 'See the new dashboard →', kind: 'home' },
+      link: { href: pageHref(month, day, { view: 'home' }), text: 'See Home →', kind: 'home' },
     },
   ];
 }
@@ -297,7 +371,7 @@ function markTargets(t, el, also) {
 
 export function startTour(kind, { month, day, onEnd, onTry } = {}) {
   if (tour) endTour('restart');
-  const steps = kind === 'dor' ? dorSteps(month, day) : homeSteps(month, day);
+  const steps = kind === 'dor' ? dorSteps(month, day) : kind === 'org' ? orgSteps() : kind === 'wor' ? worSteps() : homeSteps(month, day);
   const block = document.createElement('div');
   block.className = 'tour-block';
   const spot = document.createElement('div');
@@ -315,7 +389,7 @@ export function startTour(kind, { month, day, onEnd, onTry } = {}) {
   document.body.append(block, spot, card, live);
 
   // The page behind is out of reach while the tour is open.
-  const inerted = [...document.querySelectorAll('.home-app, .app')].filter((el) => !el.inert);
+  const inerted = [...document.querySelectorAll('.shell')].filter((el) => !el.inert);
   inerted.forEach((el) => { el.inert = true; });
 
   tour = { kind, steps, i: 0, block, spot, card, live, returnTo: document.activeElement, inerted, onEnd, onTry, raf: 0 };
@@ -341,7 +415,7 @@ export function endTour(how = 'skipped') {
   // Skip means no tours: the other view doesn't start its own. It greets once
   // instead (the done card's link does the same), saying where its tour is.
   const other = t.kind === 'dor' ? 'home' : 'dor';
-  if (how === 'skipped' && !tourSeen(other)) {
+  if (how === 'skipped' && (t.kind === 'home' || t.kind === 'dor') && !tourSeen(other)) {
     markSeen(other, 'arrived');
     try { sessionStorage.setItem(ARRIVAL_KEY, other); } catch { /* no greeting then */ }
   }
@@ -360,7 +434,8 @@ export function endTour(how = 'skipped') {
   // and on the tall page itself (#home) it would leave the page part way down.
   const top = () => { if (isPhone()) window.scrollTo({ top: 0, behavior: 'instant' }); };
   top();
-  const back = t.returnTo && t.returnTo !== document.body && t.returnTo.isConnected ? t.returnTo : document.querySelector(t.kind === 'dor' ? '#board' : '#home');
+  const page = { dor: '#board', org: '#org', wor: '#wor' }[t.kind] ?? '#home';
+  const back = t.returnTo && t.returnTo !== document.body && t.returnTo.isConnected ? t.returnTo : document.querySelector(page);
   back?.focus({ preventScroll: true });
   if (isPhone() && (back?.id === 'home' || back?.id === 'board')) requestAnimationFrame(() => requestAnimationFrame(top));
   t.onEnd?.(how);

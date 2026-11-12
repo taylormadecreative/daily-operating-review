@@ -6,16 +6,16 @@
 // board does; a number that looks like a slip (an extra digit, a ratio typed
 // as a percent, over 100%) gets a question under its box, never a block.
 
-import { AREA_IDS, saveEntry, notesFor, NO_ISSUE } from './store.js?v=20261013-151156';
-import { getIdentity, setIdentity } from './identity.js?v=20261013-151156';
-import { compareToGoal, isProductionDay, ON, OFF, NOT_ENTERED, NO_PRODUCTION } from './status.js?v=20261013-151156';
+import { AREA_IDS, saveEntry, notesFor, NO_ISSUE, isoForDay } from './store.js?v=20261112-075602';
+import { getIdentity, setIdentity } from './identity.js?v=20261112-075602';
+import { compareToGoal, isProductionDay, ON, OFF, NOT_ENTERED, NO_PRODUCTION } from './status.js?v=20261112-075602';
 import {
   toInputValue, parseInput, formatGoal, plainLabel, formatDayMedium, formatDayLong, monthSoFar, isPercent,
   glossaryTerm, formatPair, formatValue,
-} from './format.js?v=20261013-151156';
-import { toast } from './toast.js?v=20261013-151156';
-import { esc, statusMarkup, termButton } from './ui.js?v=20261013-151156';
-import { statusWord } from './status.js?v=20261013-151156';
+} from './format.js?v=20261112-075602';
+import { toast } from './toast.js?v=20261112-075602';
+import { esc, statusMarkup, termButton } from './ui.js?v=20261112-075602';
+import { statusWord } from './status.js?v=20261112-075602';
 
 const AREA_NAME = { plant: 'Plant total', mold: 'Mold', bond: 'Bond', prime: 'Prime', compounding: 'Compounding' };
 const AREA_KEYS = ['mold', 'bond', 'prime', 'compounding'];
@@ -79,6 +79,65 @@ export function initEnter(h) {
   window.addEventListener('beforeunload', (e) => {
     if (dlg.open && isDirty()) { e.preventDefault(); e.returnValue = ''; }
   });
+  // What's typed survives a reload, a phone that drops the page, or a tab put away (sessionStorage).
+  window.addEventListener('pagehide', keepDraft);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') keepDraft(); });
+}
+
+/* ---------- What's typed survives a reload ----------
+   sessionStorage `dor.enterDraft.v1`: { "<fnId>|<day iso>": { base, values, at } }, written as a person types
+   and when the page goes away; read when that function's form for that day opens again. Only the boxes the
+   person changed come back, onto the day's numbers as they are now. Save, "Nothing to save" and Leave
+   without saving clear it. */
+
+const DRAFT_KEY = 'dor.enterDraft.v1';
+function readDrafts() {
+  try { const d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); return d && typeof d === 'object' ? d : {}; } catch { return {}; }
+}
+function writeDrafts(d) {
+  try { if (Object.keys(d).length) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d)); else sessionStorage.removeItem(DRAFT_KEY); } catch { /* storage off: nothing to keep */ }
+}
+const draftKeyOf = (fnId, day) => `${fnId}|${isoForDay(month, day)}`;
+
+/** Keep what's typed in the open form (or forget it, when nothing differs from the board any more). */
+function keepDraft() {
+  if (!onForm() || st.initial === null || st.leaving) return;
+  const drafts = readDrafts();
+  const key = draftKeyOf(st.fnId, st.day);
+  if (isDirty()) drafts[key] = { base: JSON.parse(st.initial), values: currentValues(), at: Date.now() };
+  else delete drafts[key];
+  writeDrafts(drafts);
+}
+
+let draftTimer = 0;
+/** Typing writes the draft a moment later (one write per pause, not per key). */
+function keepDraftSoon() { clearTimeout(draftTimer); draftTimer = setTimeout(keepDraft, 250); }
+
+/** Forget the typed draft of one function and day (saved, or left on purpose). */
+function dropDraft(fnId = st?.fnId, day = st?.day) {
+  if (!fnId || !Number.isInteger(day)) return;
+  const drafts = readDrafts();
+  const key = draftKeyOf(fnId, day);
+  if (!(key in drafts)) return;
+  delete drafts[key];
+  writeDrafts(drafts);
+}
+
+/** The form just opened on the board's numbers: put back what was typed and not saved. -> true when it did. */
+function restoreDraft() {
+  const d = readDrafts()[draftKeyOf(st.fnId, st.day)];
+  if (!d || typeof d.values !== 'object' || typeof d.base !== 'object') return false;
+  const changed = {};
+  for (const [k, v] of Object.entries(d.values)) if (String(v ?? '') !== String(d.base[k] ?? '')) changed[k] = v;
+  if (!Object.keys(changed).length) return false;
+  fillValues(changed);
+  for (const k of numberKeys(fnObj())) if (k in changed && dlg.querySelector(`#e-${CSS.escape(k)}`)) updatePreview(k, { showError: true });
+  syncStatusControl();
+  syncActionHint();
+  syncFormError();
+  const note = dlg.querySelector('[data-restored]');
+  if (note) note.hidden = false;
+  return true;
 }
 
 export const isEnterOpen = () => Boolean(dlg?.open);
@@ -107,7 +166,9 @@ export function openEnter(m, { fnId = null, day, mode = 'enter', focus = null, a
   // the form asks who's entering.
   if (!as && mode !== 'switch' && fnId && !getIdentity(month)) {
     const owner = month.functions.find((f) => f.id === fnId);
-    if (namedOwner(owner)) as = { name: owner.owner, functionId: owner.id };
+    // assumed: nobody said who they are, so a save signs as "Someone on this device" until they do
+    // (I'm <owner>, or Someone else? to pick); a link can't sign as a specific person.
+    if (namedOwner(owner)) as = { name: owner.owner, functionId: owner.id, assumed: true };
   }
   const person = mode === 'switch' ? null : as ?? getIdentity(month);
   // mode 'switch': only choose who is entering, then close.
@@ -455,13 +516,28 @@ function dayOptions() {
   return html;
 }
 
+/** Who a save signs as: the person chosen, or (a form opened as its owner with nobody chosen) "Someone on this device". */
+const SOMEONE = 'Someone on this device';
+const signerName = (who) => (who?.assumed ? SOMEONE : who?.name ?? null);
+
+/**
+ * "Entering as <name> · Not you?", or, when nobody has said who they are, "Signs as Someone on this
+ * device · I'm <owner> · Someone else?": one tap claims the owner's name (for this form only).
+ */
+function enterAsMarkup(who) {
+  if (who?.assumed) {
+    return `<p class="enter-as" data-enter-as><span class="enter-as-who">Signs as <strong>${SOMEONE}</strong></span><span class="nowrap enter-as-switch"><span class="enter-as-dot" aria-hidden="true">·</span><button class="btn--text not-you" type="button" data-claim>I'm ${esc(who.name)}</button><span class="enter-as-dot" aria-hidden="true">·</span><button class="btn--text not-you" type="button" data-not-you>Someone else?</button></span></p>`;
+  }
+  return `<p class="enter-as" data-enter-as><span class="enter-as-who">Entering as <strong>${esc(who?.name ?? 'someone')}</strong></span><span class="nowrap enter-as-switch"><span class="enter-as-dot" aria-hidden="true">·</span><button class="btn--text not-you" type="button" data-not-you>Not you?</button></span></p>`;
+}
+
 function renderForm() {
   const fn = fnObj();
   const who = whoNow();
   dlg.innerHTML = `
     <form class="enter-scroll" novalidate>
       <header class="enter-top">
-        <p class="enter-as"><span class="enter-as-who">Entering as <strong>${esc(who?.name ?? 'someone')}</strong></span><span class="nowrap enter-as-switch"><span class="enter-as-dot" aria-hidden="true">·</span><button class="btn--text not-you" type="button" data-not-you>Not you?</button></span></p>
+        ${enterAsMarkup(who)}
         <button class="icon-btn" type="button" data-close aria-label="Close">
           <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-close"></use></svg>
         </button>
@@ -477,6 +553,7 @@ function renderForm() {
           </div>
         </div>
         <p class="enter-sub">Numbers already on the board are filled in. Goals come from the plant's plan. Leave a box empty if you don't have the number yet.</p>
+        <p class="enter-restored" data-restored hidden><svg class="glyph" aria-hidden="true" focusable="false"><use href="#g-info"></use></svg><span>Back where you left off: what you typed before the page closed is filled in again. It isn't saved yet.</span></p>
 
         <fieldset class="group group--primary">
           <legend><span class="group-name">${fn.custom ? "The day's number" : 'Plant total'}</span> <span class="group-note">This number sets the status on the board.${fn.custom ? ' The month is worked out from the days.' : ''}</span></legend>
@@ -571,6 +648,7 @@ function renderForm() {
   fillValues(stored.values);
   st.initial = serialize();
   updateDayDependent();
+  restoreDraft();
   if (barWatch) {
     barWatch.disconnect();
     dlg.querySelectorAll('.enter-top, .enter-bar').forEach((el) => barWatch.observe(el));
@@ -916,6 +994,7 @@ function onKeydown(e) {
 function onInput(e) {
   // A closed form gets no events (the board's Cmd/Ctrl+Z can send the browser's undo here).
   if (!onForm()) return;
+  keepDraftSoon();
   const el = e.target;
   if (el.name === 'issueStatus') { hideLeave(); return; }
   if (!el.classList?.contains('field-input')) {
@@ -955,9 +1034,12 @@ function onInput(e) {
 
 function onChange(e) {
   if (!onForm()) return;
+  keepDraftSoon();
   const el = e.target;
   if (el.name === 'day') {
     const fn = fnObj();
+    // The typed changes move to the new day (below): the old day's draft goes.
+    dropDraft(fn.id, st.day);
     // Only what the person changed comes along (they probably fixed the date);
     // every other box shows what that day already has on the board, so another
     // day's month to date, areas or notes are never saved onto this one.
@@ -1117,6 +1199,9 @@ function onClick(e) {
   if (btn.matches('[data-open-board-setup]')) { handlers.onSetup?.(); return; }
   if (btn.matches('[data-keep]')) { keepEditing(); return; }
   if (btn.matches('[data-leave-confirm]')) {
+    // Left without saving, on purpose: what was typed is let go (a reload would bring it back otherwise).
+    clearTimeout(draftTimer);
+    dropDraft();
     st.initial = serialize();
     if (leaveAction === 'switch') switchPerson();
     else if (leaveAction === 'goto' && leaveGoto) {
@@ -1131,6 +1216,16 @@ function onClick(e) {
   if (btn.matches('[data-not-you]')) {
     if (isDirty()) { showLeave('switch'); return; }
     switchPerson();
+    return;
+  }
+  if (btn.matches('[data-claim]')) {
+    // "I'm <owner>": this form signs with their name (nothing is remembered on the device).
+    if (st.as) st.as = { name: st.as.name, functionId: st.as.functionId };
+    const line = dlg.querySelector('[data-enter-as]');
+    if (line) {
+      line.outerHTML = enterAsMarkup(whoNow());
+      dlg.querySelector('[data-enter-as] [data-not-you]')?.focus();
+    }
     return;
   }
   if (btn.matches('[data-person]')) {
@@ -1203,6 +1298,8 @@ function save() {
   // Nothing changed: nothing to save. It closes like Cancel, so a Save on a filled-in
   // day never stamps "Entered by", and an empty one never turns "Nothing recorded" into "None needed".
   if (!isDirty()) {
+    clearTimeout(draftTimer);
+    dropDraft();
     closeOnce();
     toast('Nothing to save.');
     return;
@@ -1289,10 +1386,12 @@ function save() {
     issue,
     action: text('action'),
     issueStatus: issue ? (dlg.querySelector('[name="issueStatus"]:checked')?.value ?? null) : null,
-    enteredBy: who?.name ?? null,
+    enteredBy: signerName(who),
   });
   // ok false: this browser isn't saving (private window, storage off). The board
   // still holds the numbers for this visit (store.js), and the toast says so.
+  clearTimeout(draftTimer);
+  dropDraft();
   st.initial = serialize();
   handlers.onSaved({
     fnId: fn.id, fnName: fn.name, day: st.day, previous, notesChanged, persisted: ok, figure, figureKpi, figureCheck, kpiRowId,

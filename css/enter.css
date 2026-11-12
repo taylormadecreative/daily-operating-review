@@ -85,6 +85,10 @@
 }
 .enter-title:focus { outline: none; }
 .enter-sub { margin-top: var(--s-2); color: var(--ink-2); }
+/* After a reload: the unsaved numbers are back (sessionStorage), said once in ink with the info mark. */
+.enter-restored { display: flex; align-items: flex-start; gap: var(--s-2); margin-top: var(--s-2); color: var(--ink); font-size: var(--fs-small); font-weight: 600; line-height: 1.4; }
+.enter-restored[hidden] { display: none; }
+.enter-restored .glyph { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--ink-2); }
 
 /* Step 1: who's entering */
 .who-list { display: grid; gap: var(--s-2); margin-top: var(--s-5); }
