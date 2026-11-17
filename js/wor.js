@@ -11,24 +11,24 @@
 
 import {
   getOrg, kpiRowsFor, isoForDay, anyFunctionById, readWeekly, editWeekly, weekSaved,
-} from './store.js?v=20261112-075602';
-import { ON, OFF, NOT_ENTERED, NO_GOAL, statusWord, monthStatus, isProductionDay } from './status.js?v=20261112-075602';
+} from './store.js?v=20261117-065120';
+import { ON, OFF, NOT_ENTERED, NO_GOAL, statusWord, monthStatus, isProductionDay } from './status.js?v=20261117-065120';
 import {
   weeksOf, weekForDay, weeklyResult, repeatGap, functionWeek, weeklyPair, ruleFor, RULES, CALC_VERSION, calcWords,
   EXCLUDED_WORDS, keyOf, lastProductionDay, addDays, plainNumber, isoTime,
-} from './weekly.js?v=20261112-075602';
-import { plainLabel, formatValue, goalSign, parseInput, formatEnteredAt, formatStamp, glossaryTerm, formatPair } from './format.js?v=20261112-075602';
-import { esc, statusMarkup, glyphMarkup, termButton, GLYPH } from './ui.js?v=20261112-075602';
-import { icon, DEPT_ICON } from './icons.js?v=20261112-075602';
-import { avatarMarkup, dueText, ACTION_WORD, responseFor, dailyWords, lapsedMarkup, lapsedWords, plantName, fitClampedText } from './board.js?v=20261112-075602';
-import { listActions, escalateAction, addAction, linkCandidates, linkActionDay, nextProductionDayIso } from './actions.js?v=20261112-075602';
+} from './weekly.js?v=20261117-065120';
+import { plainLabel, formatValue, goalSign, parseInput, formatEnteredAt, formatStamp, glossaryTerm, formatPair } from './format.js?v=20261117-065120';
+import { esc, statusMarkup, glyphMarkup, termButton, GLYPH } from './ui.js?v=20261117-065120';
+import { icon, DEPT_ICON } from './icons.js?v=20261117-065120';
+import { avatarMarkup, dueText, ACTION_WORD, responseFor, dailyWords, lapsedMarkup, lapsedWords, plantName, fitClampedText } from './board.js?v=20261117-065120';
+import { listActions, escalateAction, addAction, linkCandidates, linkActionDay, nextProductionDayIso } from './actions.js?v=20261117-065120';
 import {
   isOpenAction, isVerifiedAction, isOverdueAction, openOnDay, agingWords, actionStateMarkup,
-} from './action-state.js?v=20261112-075602';
-import { listMinutes } from './recorder.js?v=20261112-075602';
-import { pageHref, setNavState } from './shell.js?v=20261112-075602';
-import { fitSheetHead } from './detail.js?v=20261112-075602';
-import { getIdentity } from './identity.js?v=20261112-075602';
+} from './action-state.js?v=20261117-065120';
+import { listMinutes } from './recorder.js?v=20261117-065120';
+import { pageHref, setNavState } from './shell.js?v=20261117-065120';
+import { fitSheetHead } from './detail.js?v=20261117-065120';
+import { getIdentity } from './identity.js?v=20261117-065120';
 
 /** The broader weekly set (spec §5: WOR is not a weekly copy of DOR): each function's month measure, entered once a week. */
 const MEASURE_FNS = ['safety', 'people', 'quality', 'engineering', 'operations', 'maintenance'];

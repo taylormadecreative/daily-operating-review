@@ -3,17 +3,17 @@
 // their accountable leader and roles, their open actions, and this week so far. The organization
 // itself lives in store.js (dor.org.v1) and is edited in Board setup (Draft, Validate, Activate).
 
-import { getOrg, kpiRowsFor, dailyMeasuresOf, DAILY_MEASURE_MAX, ROLES, isoForDay } from './store.js?v=20261112-075602';
-import { dayStatus, monthStatus, OFF, NO_GOAL, NOT_TRACKED } from './status.js?v=20261112-075602';
-import { formatDayMedium, formatDayLong, plainLabel, dayHeading, formatEnteredAt } from './format.js?v=20261112-075602';
-import { esc, statusMarkup, glyphMarkup } from './ui.js?v=20261112-075602';
-import { icon, DEPT_ICON } from './icons.js?v=20261112-075602';
-import { avatarMarkup, plantName, dueText, periodDateMarkup } from './board.js?v=20261112-075602';
-import { listActions } from './actions.js?v=20261112-075602';
-import { openOnDay } from './action-state.js?v=20261112-075602';
-import { pageHref } from './shell.js?v=20261112-075602';
-import { fitSheetHead } from './detail.js?v=20261112-075602';
-import { weekFor, weekLabel, weekOfDay } from './wor.js?v=20261112-075602';
+import { getOrg, kpiRowsFor, dailyMeasuresOf, DAILY_MEASURE_MAX, ROLES, isoForDay } from './store.js?v=20261117-065120';
+import { dayStatus, monthStatus, OFF, NO_GOAL, NOT_TRACKED } from './status.js?v=20261117-065120';
+import { formatDayMedium, formatDayLong, plainLabel, dayHeading, formatEnteredAt } from './format.js?v=20261117-065120';
+import { esc, statusMarkup, glyphMarkup } from './ui.js?v=20261117-065120';
+import { icon, DEPT_ICON } from './icons.js?v=20261117-065120';
+import { avatarMarkup, plantName, dueText, periodDateMarkup } from './board.js?v=20261117-065120';
+import { listActions } from './actions.js?v=20261117-065120';
+import { openOnDay } from './action-state.js?v=20261117-065120';
+import { pageHref } from './shell.js?v=20261117-065120';
+import { fitSheetHead } from './detail.js?v=20261117-065120';
+import { weekFor, weekLabel, weekOfDay } from './wor.js?v=20261117-065120';
 
 let ctx = null;
 let dlg = null;

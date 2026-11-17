@@ -2,21 +2,21 @@
 // the function × area matrix, trends and key metrics, issues and actions,
 // and the daily questions. Every number is calculated from the month.
 
-import { dailySeries, isoForDay, notesFor, noteParagraphs, entryInfo, hasProblem, kpiRowsFor, NO_ISSUE } from './store.js?v=20261112-075602';
+import { dailySeries, isoForDay, notesFor, noteParagraphs, entryInfo, hasProblem, kpiRowsFor, NO_ISSUE } from './store.js?v=20261117-065120';
 import {
   ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED, STATUS_WORD,
   dayStatus, monthStatus, isProductionDay, compareToGoal, boardSummary, statusWord,
-} from './status.js?v=20261112-075602';
+} from './status.js?v=20261117-065120';
 import {
   formatPair, glossaryTerm, formatDayLong, formatDayMedium, formatEnteredAt, formatTicks, dayHeading, plainLabel,
-} from './format.js?v=20261112-075602';
-import { esc, termButton, GLYPH, issueStatusMarkup } from './ui.js?v=20261112-075602';
-import { icon } from './icons.js?v=20261112-075602';
-import { getUndoable, plantName, actionStateFor, needsSummary, ACTION_WORD, recordedOn, issueGap, ISSUE_GAP_WORD, NO_FUNCTIONS, periodDateMarkup } from './board.js?v=20261112-075602';
-import { getIdentity } from './identity.js?v=20261112-075602';
-import { isVerifiedAction, isCompletedAction } from './action-state.js?v=20261112-075602';
-import { pageHref } from './shell.js?v=20261112-075602';
-import { weekGlance } from './wor.js?v=20261112-075602';
+} from './format.js?v=20261117-065120';
+import { esc, termButton, GLYPH, issueStatusMarkup } from './ui.js?v=20261117-065120';
+import { icon } from './icons.js?v=20261117-065120';
+import { getUndoable, plantName, actionStateFor, needsSummary, ACTION_WORD, recordedOn, issueGap, ISSUE_GAP_WORD, NO_FUNCTIONS, periodDateMarkup } from './board.js?v=20261117-065120';
+import { getIdentity } from './identity.js?v=20261117-065120';
+import { isVerifiedAction, isCompletedAction } from './action-state.js?v=20261117-065120';
+import { pageHref } from './shell.js?v=20261117-065120';
+import { weekGlance } from './wor.js?v=20261117-065120';
 
 export const AREA_OPTIONS = [
   { id: 'all', name: 'Plant total' },

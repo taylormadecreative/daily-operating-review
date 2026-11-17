@@ -12,8 +12,8 @@
 // Only days with both a number and a goal count (like with like), status is judged on unrounded
 // values, a partial week is provisional, and a missing or undefined result has no status.
 
-import { isProductionDay, compareToGoal, ON, OFF, NOT_ENTERED, NO_GOAL } from './status.js?v=20261112-075602';
-import { formatPair } from './format.js?v=20261112-075602';
+import { isProductionDay, compareToGoal, ON, OFF, NOT_ENTERED, NO_GOAL } from './status.js?v=20261117-065120';
+import { formatPair } from './format.js?v=20261117-065120';
 
 /** The calculation rules' version, in the words every screen and export uses (no rule is approved yet). */
 export const CALC_VERSION = 'Rule v1 (proposed)';

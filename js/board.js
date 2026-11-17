@@ -1,22 +1,22 @@
 // Board (home): the summary sentence and the eight functions in meeting order.
 
-import { dailySeries, isoForDay, notesFor, entryInfo, hasProblem, kpiRowsFor, ownerFor, noteParagraphs, NO_ISSUE } from './store.js?v=20261112-075602';
+import { dailySeries, isoForDay, notesFor, entryInfo, hasProblem, kpiRowsFor, ownerFor, noteParagraphs, NO_ISSUE } from './store.js?v=20261117-065120';
 import {
   ON, OFF, NO_PRODUCTION, NOT_TRACKED, NOT_ENTERED,
   dayStatus, monthStatus, trackRecord, boardSummary, isProductionDay, lastProductionDay, compareToGoal, statusWord,
-} from './status.js?v=20261112-075602';
+} from './status.js?v=20261117-065120';
 import {
   formatPair, plainLabel, glossaryTerm, formatDayLong, formatDayMedium, formatMonthName, formatMonthShort,
   dayHeading, daySentence, monthSoFar, formatEnteredAt, lowerNote, formatValue, goalSign,
-} from './format.js?v=20261112-075602';
-import { trendChart, yearChart } from './charts.js?v=20261112-075602';
-import { actionsFor, actionsForDays, verifiedBetween } from './actions.js?v=20261112-075602';
-import { isOpenAction, isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261112-075602';
-import { icon, DEPT_ICON } from './icons.js?v=20261112-075602';
-import { renderSparkline } from './sparkline.js?v=20261112-075602';
-import { getIdentity } from './identity.js?v=20261112-075602';
-import { esc, statusMarkup, termButton, issueStatusMarkup } from './ui.js?v=20261112-075602';
-import { pageHref, scopeWord } from './shell.js?v=20261112-075602';
+} from './format.js?v=20261117-065120';
+import { trendChart, yearChart } from './charts.js?v=20261117-065120';
+import { actionsFor, actionsForDays, verifiedBetween } from './actions.js?v=20261117-065120';
+import { isOpenAction, isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261117-065120';
+import { icon, DEPT_ICON } from './icons.js?v=20261117-065120';
+import { renderSparkline } from './sparkline.js?v=20261117-065120';
+import { getIdentity } from './identity.js?v=20261117-065120';
+import { esc, statusMarkup, termButton, issueStatusMarkup } from './ui.js?v=20261117-065120';
+import { pageHref, scopeWord } from './shell.js?v=20261117-065120';
 
 /* ---------- Pieces shared with Detail and Meeting ---------- */
 

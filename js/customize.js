@@ -10,9 +10,9 @@
 
 import {
   readableShade, contrast, mix, cvdDelta, normalDelta, CVD_TARGET, CVD_FLOOR, NEAR_IDENTICAL, isHex, luminance,
-} from './color.js?v=20261112-075602';
-import { esc } from './ui.js?v=20261112-075602';
-import { toast } from './toast.js?v=20261112-075602';
+} from './color.js?v=20261117-065120';
+import { esc } from './ui.js?v=20261117-065120';
+import { toast } from './toast.js?v=20261117-065120';
 
 const KEY = 'dor.customize.v2';
 // v1 settings carry over, except strength: v2's default is the client's solid blocks.

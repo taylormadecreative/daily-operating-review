@@ -1,13 +1,13 @@
 // Dashboard shell: the navy sidebar (and its phone drawer), Settings and the
 // identity menu, the Export menu, the Area filter, and matrix cell tooltips.
 
-import { esc, glyphMarkup } from './ui.js?v=20261112-075602';
-import { icon, DEPT_ICON } from './icons.js?v=20261112-075602';
-import { isoForDay, dailySeries, rowForDay, storageWorks, getOrg } from './store.js?v=20261112-075602';
-import { weeksOf, zoneWords, productionWords } from './weekly.js?v=20261112-075602';
-import { getIdentity } from './identity.js?v=20261112-075602';
-import { formatDayLong, formatDayMedium } from './format.js?v=20261112-075602';
-import { ON } from './status.js?v=20261112-075602';
+import { esc, glyphMarkup } from './ui.js?v=20261117-065120';
+import { icon, DEPT_ICON } from './icons.js?v=20261117-065120';
+import { isoForDay, dailySeries, rowForDay, storageWorks, getOrg } from './store.js?v=20261117-065120';
+import { weeksOf, zoneWords, productionWords } from './weekly.js?v=20261117-065120';
+import { getIdentity } from './identity.js?v=20261117-065120';
+import { formatDayLong, formatDayMedium } from './format.js?v=20261117-065120';
+import { ON } from './status.js?v=20261117-065120';
 
 const narrow = () => matchMedia('(max-width: 760px)').matches;
 

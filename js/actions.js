@@ -30,18 +30,18 @@
 // ctx.onChange() runs after every add, edit, status change, delete and undo,
 // so the board redraws its Action cells.
 
-import { notesFor, ownerFor, isoForDay, functionById, kpiRowsFor, NO_ISSUE, getOrg, accountableFor, readWeekly } from './store.js?v=20261112-075602';
+import { notesFor, ownerFor, isoForDay, functionById, kpiRowsFor, NO_ISSUE, getOrg, accountableFor, readWeekly } from './store.js?v=20261117-065120';
 import {
   ACTION_STATES, ACTION_STATE_WORD, MIGRATED_NOTE, MIGRATED_OPEN_NOTE, isOpenAction, isClosedAction, isVerifiedAction, isCancelledAction,
   isEscalatedAction, isOverdueAction, countsOnDay, coversDay, actionDays, agingWords, verifierOptions, actionStateMarkup,
-} from './action-state.js?v=20261112-075602';
-import { getIdentity } from './identity.js?v=20261112-075602';
-import { isProductionDay, OFF } from './status.js?v=20261112-075602';
-import { formatDayMedium, plainLabel, formatPair, monthSoFar } from './format.js?v=20261112-075602';
-import { esc, issueStatusMarkup, statusMarkup } from './ui.js?v=20261112-075602';
+} from './action-state.js?v=20261117-065120';
+import { getIdentity } from './identity.js?v=20261117-065120';
+import { isProductionDay, OFF } from './status.js?v=20261117-065120';
+import { formatDayMedium, plainLabel, formatPair, monthSoFar } from './format.js?v=20261117-065120';
+import { esc, issueStatusMarkup, statusMarkup } from './ui.js?v=20261117-065120';
 // The board's action words and states (one wording on every screen). Used only
 // inside functions: board.js imports this module too.
-import { actionStateFor, needsSummary, needsLabel, ACTION_WORD, issueGap, ISSUE_GAP_WORD, NO_FUNCTIONS } from './board.js?v=20261112-075602';
+import { actionStateFor, needsSummary, needsLabel, ACTION_WORD, issueGap, ISSUE_GAP_WORD, NO_FUNCTIONS } from './board.js?v=20261117-065120';
 
 const KEY = 'dor.actions.v1';
 const STATUS_WORD = ACTION_STATE_WORD;

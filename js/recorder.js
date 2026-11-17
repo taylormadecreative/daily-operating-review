@@ -16,20 +16,20 @@
 // The weekly meeting runs the same session (Record, Add action) with kind 'wor': when it ends, its
 // times, transcript and actions go to ctx.onWeeklyEnd (the week's draft record), not to DOR minutes.
 
-import { kpiRowsFor, ownerFor, isoForDay, getOrg, readWeekly } from './store.js?v=20261112-075602';
-import { getIdentity } from './identity.js?v=20261112-075602';
-import { dayStatus, monthStatus, statusWord, ON, OFF, NO_PRODUCTION } from './status.js?v=20261112-075602';
-import { formatPair, plainLabel, formatDayMedium, formatDayLong, monthSoFar } from './format.js?v=20261112-075602';
-import { notesText, summaryParts, actionStateFor, needsSummary, ACTION_WORD, issueGap, ISSUE_GAP_WORD } from './board.js?v=20261112-075602';
-import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261112-075602';
+import { kpiRowsFor, ownerFor, isoForDay, getOrg, readWeekly } from './store.js?v=20261117-065120';
+import { getIdentity } from './identity.js?v=20261117-065120';
+import { dayStatus, monthStatus, statusWord, ON, OFF, NO_PRODUCTION } from './status.js?v=20261117-065120';
+import { formatPair, plainLabel, formatDayMedium, formatDayLong, monthSoFar } from './format.js?v=20261117-065120';
+import { notesText, summaryParts, actionStateFor, needsSummary, ACTION_WORD, issueGap, ISSUE_GAP_WORD } from './board.js?v=20261117-065120';
+import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261117-065120';
 // Namespace import: the Action register is built in parallel, and a missing
 // export must never stop the board from loading.
-import * as register from './actions.js?v=20261112-075602';
+import * as register from './actions.js?v=20261117-065120';
 // The payoff toast is shared with the Action register, so both say it the same way.
-import { ALL_CLEAR_ADDED, clearedNeeds } from './actions.js?v=20261112-075602';
+import { ALL_CLEAR_ADDED, clearedNeeds } from './actions.js?v=20261117-065120';
 // The sheet's title bar height, so Shift+Tab never leaves a control hidden under it (shared with Detail).
-import { fitSheetHead } from './detail.js?v=20261112-075602';
-import { ACTION_STATE_WORD, actionStateMarkup } from './action-state.js?v=20261112-075602';
+import { fitSheetHead } from './detail.js?v=20261117-065120';
+import { ACTION_STATE_WORD, actionStateMarkup } from './action-state.js?v=20261117-065120';
 
 /** A verified action (older minutes kept the register's old word, 'closed'). */
 const isDoneStatus = (s) => s === 'verified' || s === 'closed';

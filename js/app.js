@@ -2,25 +2,25 @@
 // URL = ?date=YYYY-MM-DD (production day) + hash for the open view:
 //   (none) board · #safety detail · #enter[/fn] enter numbers · #meeting[/n] meeting
 
-import * as store from './store.js?v=20261112-075602';
-import { renderBoard, revealRow, setUndoable, getOffOnly, setOffOnly, shownFunctions, offOnlyLabel } from './board.js?v=20261112-075602';
-import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261112-075602';
-import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261112-075602';
-import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261112-075602';
-import { initToast, toast, dismissAll } from './toast.js?v=20261112-075602';
-import { formatDayMedium, formatMonthShort, formatMonthName, termName } from './format.js?v=20261112-075602';
-import { renderHome, revealHomeRow, AREA_OPTIONS, fitSide } from './home.js?v=20261112-075602';
-import { renderNav, wireShell, setNavState, toggleMenu, showPopoverFrom, renderScope, PAGES, pageHref } from './shell.js?v=20261112-075602';
-import { initOrg, renderOrg, openPerson, closePerson, isPersonOpen, refreshPerson } from './org.js?v=20261112-075602';
-import { initWor, renderWor, openWorSheet, closeWorSheet, isWorSheetOpen, refreshWorSheet, worDay, attachMeetingSession, syncWorTab, sayWorNote, weekOfDay } from './wor.js?v=20261112-075602';
-import { downloadCsv, printDay } from './export.js?v=20261112-075602';
-import { esc, statusMarkup } from './ui.js?v=20261112-075602';
-import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261112-075602';
-import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261112-075602';
-import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261112-075602';
-import { initActions, openActions, addAction, listActions, refreshActions } from './actions.js?v=20261112-075602';
-import { initRecorder, openMinutes } from './recorder.js?v=20261112-075602';
-import { initSetup, openSetup } from './setup.js?v=20261112-075602';
+import * as store from './store.js?v=20261117-065120';
+import { renderBoard, revealRow, setUndoable, getOffOnly, setOffOnly, shownFunctions, offOnlyLabel } from './board.js?v=20261117-065120';
+import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261117-065120';
+import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261117-065120';
+import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261117-065120';
+import { initToast, toast, dismissAll } from './toast.js?v=20261117-065120';
+import { formatDayMedium, formatMonthShort, formatMonthName, termName } from './format.js?v=20261117-065120';
+import { renderHome, revealHomeRow, AREA_OPTIONS, fitSide } from './home.js?v=20261117-065120';
+import { renderNav, wireShell, setNavState, toggleMenu, showPopoverFrom, renderScope, PAGES, pageHref } from './shell.js?v=20261117-065120';
+import { initOrg, renderOrg, openPerson, closePerson, isPersonOpen, refreshPerson } from './org.js?v=20261117-065120';
+import { initWor, renderWor, openWorSheet, closeWorSheet, isWorSheetOpen, refreshWorSheet, worDay, attachMeetingSession, syncWorTab, sayWorNote, weekOfDay } from './wor.js?v=20261117-065120';
+import { downloadCsv, printDay } from './export.js?v=20261117-065120';
+import { esc, statusMarkup } from './ui.js?v=20261117-065120';
+import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261117-065120';
+import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261117-065120';
+import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261117-065120';
+import { initActions, openActions, addAction, listActions, refreshActions } from './actions.js?v=20261117-065120';
+import { initRecorder, openMinutes } from './recorder.js?v=20261117-065120';
+import { initSetup, openSetup } from './setup.js?v=20261117-065120';
 
 // We decide where the page scrolls after views close (the saved row).
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
