@@ -10,9 +10,10 @@
 
 import {
   readableShade, contrast, mix, cvdDelta, normalDelta, CVD_TARGET, CVD_FLOOR, NEAR_IDENTICAL, isHex, luminance,
-} from './color.js?v=20261117-065120';
-import { esc } from './ui.js?v=20261117-065120';
-import { toast } from './toast.js?v=20261117-065120';
+} from './color.js?v=20261120-154112';
+import { esc } from './ui.js?v=20261120-154112';
+import { toast } from './toast.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-154112';
 
 const KEY = 'demo.customize.v2';
 // v1 settings carry over, except strength: v2's default is the client's solid blocks.
@@ -263,7 +264,7 @@ function sheetMarkup() {
           <svg class="icon" aria-hidden="true" focusable="false"><use href="#g-close"></use></svg>
         </button>
       </header>
-      <p class="cz-lead">Colors and what the board shows. Changes show right away and stay on this device.</p>
+      <p class="cz-lead">Colors and what the board shows. Changes show right away${cloud.BOARD ? ', in this browser only. Everyone else keeps their own.' : ' and stay on this device.'}</p>
       <p class="cz-setup">To change the plant name, functions, owners or KPIs, use <button class="btn--text cz-setup-link" type="button" data-open-setup>Board setup</button>.</p>
       <div class="cz-preview" role="img" data-cz-preview>
         <p class="cz-preview-label" aria-hidden="true">Preview</p>

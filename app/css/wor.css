@@ -1,0 +1,806 @@
+/* Weekly review (?view=wor): the DOR board's look on a weekly page. The scoreboard reuses the board's
+   navy column head (.board2-head, .h2c), cells (.v2cell) and solid status blocks (.v2cell--block,
+   .block-status, .block-figure), so the room reads the week the way it reads the day. Its own column
+   width decides its layout (@container worpage), as the DOR board asks @container dorpage. */
+
+.page-app[data-page="wor"] .pg-main { container: worpage / inline-size; }
+
+/* ---------- Header: week picker, Prepare review, Run weekly meeting ---------- */
+
+.wk-pg-head .pg-head-inner { row-gap: var(--s-2); }
+.wk-pg-head .pg-sub { font-variant-numeric: tabular-nums; }
+.wk-headtools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3) var(--s-5); }
+.wk-nav { display: flex; align-items: center; gap: var(--s-2); }
+.wk-step { color: var(--bar-ink); border-color: var(--bar-line); }
+.wk-step[aria-disabled="true"] { opacity: 0.4; cursor: not-allowed; }
+.wk-step[aria-disabled="true"]:active { transform: none; }
+.wk-pick { display: flex; }
+.wk-select {
+  min-height: var(--tap);
+  max-width: 100%;
+  padding: 0 40px 0 var(--s-3);
+  border: 1.5px solid var(--bar-line);
+  border-radius: var(--radius);
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23FBFCFD' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center / 12px 8px;
+  color: var(--bar-ink);
+  font: inherit;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  appearance: none;
+}
+.wk-select option { background: var(--surface); color: var(--ink); }
+.wk-select:focus-visible { outline: 3px solid var(--bar-focus); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .wk-select:hover, .wk-step:hover:not([aria-disabled="true"]) { border-color: var(--bar-ink); }
+}
+.wk-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+/* ---------- Tabs ---------- */
+
+.wk-tabs {
+  display: flex;
+  gap: var(--s-1);
+  margin-top: var(--s-4);
+  border-bottom: 2px solid var(--rule-strong);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.wk-tab {
+  position: relative;
+  min-height: var(--tap);
+  margin-bottom: -2px;
+  padding: 0 var(--s-4);
+  border: 0;
+  border-bottom: 4px solid transparent;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.wk-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 750; }
+.wk-tab:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; border-radius: 4px 4px 0 0; }
+@media (hover: hover) and (pointer: fine) { .wk-tab:hover { color: var(--ink); } }
+.wk-panel:focus { outline: none; }
+.wk-panel:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+.page-app[data-page="wor"] .date-note { margin-top: var(--s-2); color: var(--ink); font-size: var(--fs-small); font-weight: 600; }
+.page-app[data-page="wor"] .date-note[hidden] { display: none; }
+.wk-tab-intro { max-width: 72ch; padding-top: var(--s-4); color: var(--ink-2); font-size: var(--fs-small); }
+
+/* ---------- Overview: the week in a sentence, and readiness beside it ---------- */
+
+.wk-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 470px);
+  gap: var(--s-4) var(--s-6);
+  align-items: start;
+  padding-top: var(--s-4);
+}
+.wk-eyebrow { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; letter-spacing: 0.02em; }
+.wk-lead {
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.004em;
+  /* Two even lines, never "week." alone on the second. */
+  text-wrap: balance;
+}
+.wk-lines { display: grid; gap: 6px; margin-top: var(--s-3); max-width: 70ch; }
+.wk-line { display: flex; align-items: flex-start; gap: var(--s-2); font-size: var(--fs-body); font-weight: 600; line-height: 1.35; }
+.wk-line .glyph { width: 18px; height: 18px; margin-top: 1px; flex: none; color: var(--neutral); }
+.wk-line--off .glyph { color: var(--off); }
+.wk-line--mixed .glyph { color: var(--on); }
+.wk-line a { color: inherit; font-weight: 750; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+
+/* Readiness: about the meeting, not the plant's results, so it speaks in navy and steel, never in
+   the status colors (a check when ready, a ring when not). Compact: one line an item, so the
+   scoreboard starts on the first screen of a 1440x900 laptop and the TV. */
+.wk-ready {
+  padding: var(--s-3) var(--s-4) 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface-quiet);
+}
+.wk-ready:focus { outline: none; }
+.wk-ready:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.wk-ready-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px var(--s-3); }
+.wk-ready-title { font-size: var(--fs-lead); font-weight: 750; line-height: 1.2; }
+.wk-ready-count { color: var(--ink-2); font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
+.wk-ready-count strong { color: var(--ink); font-weight: 750; }
+.wk-ready-note { margin-top: 0; color: var(--ink-2); font-size: var(--fs-caption); }
+/* A finalized week: "Finalized v1 · … · Open record", and a new version only on purpose. */
+.wk-ready-open { position: relative; min-height: 0; padding: 0; font-size: inherit; font-weight: 700; color: var(--ink); vertical-align: baseline; }
+.wk-ready-open::before { content: ""; position: absolute; inset: -12px -6px; } /* a 44px target; the words stay inline */
+.wk-ready-amend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-3); margin-top: var(--s-2); color: var(--ink-2); font-size: var(--fs-caption); }
+.wk-ready-amend .btn { min-height: var(--tap); font-size: var(--fs-small); }
+/* A finalized week's card: the record's state; its exceptions as quiet lines (noted, not to-dos). */
+.wk-ready--final { padding-bottom: var(--s-3); }
+.wk-final-exc { display: grid; gap: 2px; margin: var(--s-2) 0 0; padding: 0 0 0 var(--s-4); color: var(--ink-mid); font-size: var(--fs-caption); line-height: 1.4; list-style: disc; }
+.wk-final-exc li::marker { color: var(--ink-2); }
+.wk-final-more { list-style: none; margin-left: calc(-1 * var(--s-4)); color: var(--ink-2); }
+/* Functions tab of a finalized week: where a later commentary change shows. */
+.wk-final-note { max-width: 72ch; margin-top: var(--s-2); color: var(--ink-2); font-size: var(--fs-small); line-height: 1.45; }
+.wk-final-note .status { display: inline-flex; margin-right: var(--s-1); color: var(--ink); font-weight: 750; }
+.wk-final-note a { color: var(--ink); font-weight: 650; }
+.wk-ready-list { display: grid; gap: 6px; margin-top: var(--s-2); }
+.wk-ready-item { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--s-2); align-items: start; }
+.wk-ready-mark { display: grid; place-items: center; width: 20px; height: 20px; margin-top: 1px; }
+.wk-check { width: 20px; height: 20px; padding: 3px; border-radius: 50%; background: var(--ink); color: var(--surface); }
+.wk-ring { width: 17px; height: 17px; border: 2px solid var(--ink-2); border-radius: 50%; }
+.wk-ready-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-2); font-size: var(--fs-small); line-height: 1.35; }
+.wk-ready-name { font-weight: 750; }
+.wk-ready-val { color: var(--ink-mid); font-variant-numeric: tabular-nums; }
+.wk-ready-detail { flex-basis: 100%; color: var(--ink-2); font-size: var(--fs-caption); }
+.wk-ready-item:not(.is-done) .wk-ready-val { color: var(--ink); font-weight: 600; }
+.wk-ready-head.is-flash { animation: wk-flash 1800ms ease-out; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { .wk-ready-head.is-flash { animation-duration: 2400ms; } }
+@keyframes wk-flash { from { background: var(--saved-wash); } to { background: transparent; } }
+.wk-people { margin-top: var(--s-2); border-top: 1px solid var(--rule); }
+.wk-people summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  font-size: var(--fs-small);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.wk-people summary::-webkit-details-marker { display: none; }
+.wk-people summary::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin: 0 4px 0 2px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 160ms var(--ease-out);
+}
+.wk-people[open] summary::before { transform: rotate(45deg); }
+.wk-people summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.wk-people-n { margin-left: auto; color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+.wk-people-list { display: grid; padding-bottom: var(--s-1); }
+.wk-person { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s-2); min-height: var(--tap); font-size: var(--fs-small); font-weight: 650; cursor: pointer; }
+.wk-person input { width: 20px; height: 20px; margin: 0 var(--s-1) 0 0; accent-color: var(--ink); cursor: pointer; }
+.wk-person-title { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 550; }
+
+/* ---------- The scoreboard: the DOR board's rows, one week ---------- */
+
+.wk-board {
+  /* Minimums add up to 1,154px with the gaps: the roomy table from 1,160px of column (a 1440 laptop
+     beside the full sidebar). Repeat gap's 140px keeps "Missed every day · 4 weeks" to two lines.
+     From 1,000 to 1,159px (1280 and 1366 beside the full sidebar) the same table runs compact (below),
+     so the first screen shows more than one function. */
+  --c-fn: minmax(176px, 1.1fr);
+  --c-kpi: minmax(124px, 0.85fr);
+  --c-week: minmax(150px, 1fr);
+  --c-days: minmax(132px, 0.85fr);
+  --c-trend: minmax(170px, 1.2fr);
+  --c-gap: minmax(140px, 1fr);
+  --c-comment: minmax(124px, 1fr);
+  --c-action: minmax(124px, 1fr);
+  --v2-cols: var(--c-fn) var(--c-kpi) var(--c-week) var(--c-days) var(--c-trend) var(--c-gap) var(--c-comment) var(--c-action);
+  --gap: 2px;
+  margin-top: var(--s-4);
+}
+.wk-rows { display: grid; gap: var(--gap); margin: var(--gap) 0 0; padding: 0; list-style: none; }
+.wk-group {
+  display: grid;
+  grid-template-columns: var(--v2-cols);
+  grid-template-rows: repeat(var(--kpis, 1), auto);
+  gap: var(--gap);
+  scroll-margin-top: var(--s-7);
+}
+.wk-group + .wk-group { padding-top: var(--gap); border-top: 2px solid var(--rule-strong); }
+.wk-row { display: contents; }
+.wk-fn { grid-column: 1; grid-row: 1 / span var(--kpis, 1); display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4); }
+.wk-row > .wk-kpi { grid-column: 2; grid-row: var(--r); }
+.wk-row > .wk-block { grid-column: 3; grid-row: var(--r); }
+.wk-row > .wk-dayscell { grid-column: 4; grid-row: var(--r); }
+.wk-row > .wk-trend { grid-column: 5; grid-row: var(--r); }
+.wk-row > .wk-gapcell { grid-column: 6; grid-row: var(--r); }
+.wk-commentcell { grid-column: 7; grid-row: 1 / span var(--kpis, 1); }
+.wk-row > .wk-action { grid-column: 8; grid-row: var(--r); }
+
+.wk-fn .fn-name { font-size: 1.5rem; line-height: 0.92; }
+.wk-owner { display: flex; align-items: center; gap: 6px; margin-top: var(--s-2); font-size: var(--fs-caption); font-weight: 700; line-height: 1.2; }
+.wk-owner > span:last-child { min-width: 0; overflow-wrap: break-word; }
+.wk-fn .fn-text { min-width: 0; }
+.wk-owner .avatar { width: 28px; height: 28px; font-size: 0.875rem; }
+.wk-kpi { display: flex; flex-direction: column; }
+.wk-kpi .kpi-name, .wk-mkpi .kpi-name { white-space: normal; }
+.wk-rule { margin-top: var(--s-1); color: var(--ink-mid); font-size: var(--fs-caption); line-height: 1.3; }
+.wk-rule-name { font-weight: 650; }
+.wk-rule-note { display: block; margin-top: 2px; color: var(--ink-2); font-size: 0.75rem; }
+.wk-rule-cue { width: 13px; height: 13px; margin-left: 4px; color: var(--ink-2); vertical-align: -2px; }
+.wk-mgoal { margin-top: var(--s-1); color: var(--ink-2); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+
+/* The week's block: the board's solid block, with its tags and the way into the calculation. */
+.wk-block .block-rest { text-wrap: balance; }
+.wk-tag { margin-top: 4px; font-size: 0.75rem; font-weight: 750; letter-spacing: 0.01em; line-height: 1.25; text-wrap: balance; }
+.wk-calc {
+  position: relative;
+  margin-top: auto;
+  padding-top: var(--s-2);
+  min-height: 36px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--fs-caption);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.wk-calc::before { content: ""; position: absolute; inset: -4px -8px; }
+.wk-calc:active { transform: scale(0.97); }
+.wk-block:not([data-status="on"]):not([data-status="off"]) .wk-calc { color: var(--ink); }
+
+.wk-dayscell, .wk-trend, .wk-action, .wk-commentcell, .wk-gapcell { background: var(--surface); }
+.wk-board .mini-caption, .wk-mboard .mini-caption { margin-top: 4px; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.25; font-variant-numeric: tabular-nums; text-wrap: balance; }
+.wk-board .mini-empty { color: var(--ink-2); font-size: var(--fs-caption); }
+
+/* Days on goal, Monday to Friday. */
+.wk-days { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.wk-day { display: grid; justify-items: center; gap: 3px; }
+/* Each mark opens its day on the DOR board: the whole mark and letter (44px tall) is the link. */
+.wk-day-link { display: grid; justify-items: center; align-content: center; gap: 3px; min-width: 24px; min-height: 44px; margin-block: -4px; border-radius: 4px; color: inherit; text-decoration: none; }
+.wk-day-link:focus-visible { outline: 3px solid var(--focus); outline-offset: 0; }
+@media (hover: hover) and (pointer: fine) { .wk-day-link:hover { background: var(--n-100); } }
+.wk-day .glyph { width: 22px; height: 22px; color: var(--neutral); }
+.wk-day--on .glyph { color: var(--on); }
+.wk-day--off .glyph { color: var(--off); }
+.wk-day-d { color: var(--ink-2); font-size: 0.8125rem; font-weight: 700; }
+.wk-days-cap strong { color: var(--off); font-weight: 750; }
+
+/* Last 4 weeks: each week's result against its goal (dashed), the week under review in ink. */
+.w4 { display: grid; gap: 2px; }
+.w4-plot { position: relative; height: 64px; margin: 0 2px; }
+.w4-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.w4-goal { fill: none; stroke: var(--chart-goal); stroke-width: 1.5; stroke-dasharray: 5 3; }
+.w4-line { fill: none; stroke: var(--chart-bar); stroke-width: 2; stroke-linejoin: round; }
+.w4-mark { position: absolute; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--surface); color: var(--neutral); transform: translate(-50%, -50%); }
+.w4-mark .glyph { width: 16px; height: 16px; }
+.w4-mark--on { color: var(--on); }
+.w4-mark--off { color: var(--chart-off); }
+.w4-axis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; color: var(--ink-2); font-size: 0.8125rem; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.w4-axis .is-this { color: var(--ink); font-weight: 750; }
+
+.wk-gap { align-items: flex-start; gap: 5px; font-size: var(--fs-small); font-weight: 750; line-height: 1.25; }
+.wk-gapcell { padding-inline: 10px; }
+.wk-gap .status-word { white-space: normal; text-wrap: balance; }
+.wk-gap--three { font-weight: 650; }
+
+.wk-comment { -webkit-line-clamp: 3; line-clamp: 3; }
+/* The daily board's own words (read only): a quiet label, then the words, clamped on the scoreboard. */
+.wk-from { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 700; }
+.wk-daily-line { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; font-size: var(--fs-small); line-height: 1.35; white-space: pre-line; }
+.wk-daily-line .wk-from { display: block; white-space: normal; }
+.wk-action .wk-daily-line { -webkit-line-clamp: 3; line-clamp: 3; }
+.wk-daily { margin-top: var(--s-2); padding: var(--s-3); border-radius: var(--radius); background: var(--surface-quiet); }
+.wk-daily .wk-from + .wk-daily-dl { margin-top: 4px; }
+.wk-daily-dl + .wk-from { display: block; margin-top: var(--s-3); }
+.wk-daily-dl { display: grid; gap: 4px; }
+.wk-daily-dl > div { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: var(--s-3); font-size: var(--fs-small); }
+.wk-daily-dl dt { color: var(--ink-2); font-weight: 650; }
+.wk-daily-dl dd { white-space: pre-line; overflow-wrap: anywhere; }
+.wk-daily-note { margin-top: var(--s-2); color: var(--ink-2); font-size: var(--fs-caption); }
+.wk-daily--none { margin-top: var(--s-2); color: var(--ink-2); font-size: var(--fs-small); }
+@container worpage (max-width: 599px) { .wk-daily-dl > div { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+.wk-need { margin-top: 2px; color: var(--off); font-size: 0.75rem; font-weight: 650; }
+.wk-write { position: relative; min-height: 36px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-size: var(--fs-caption); font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+.wk-write::before { content: ""; position: absolute; inset: -4px -6px; }
+.wk-action .v2-add { margin-top: var(--s-2); }
+.wk-foot { margin-top: var(--gap); }
+.wk-expand { display: none; }
+
+/* ---------- More weekly measures ---------- */
+
+.wk-more { margin-top: var(--s-6); }
+.wk-h2 { font-size: var(--fs-lead); font-weight: 750; line-height: 1.2; }
+.wk-h2-sub { max-width: 72ch; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
+.wk-mboard {
+  /* 170px: "Maintenance" beside its small icon fits whole in the narrowest full table. */
+  --v2-cols: minmax(170px, 0.8fr) minmax(220px, 1.4fr) minmax(160px, 1fr) minmax(200px, 1.4fr) minmax(130px, 0.6fr);
+  --gap: 2px;
+  margin-top: var(--s-3);
+}
+.wk-mrows { display: grid; gap: 2px; margin: 2px 0 0; padding: 0; list-style: none; }
+.wk-mrow { display: grid; grid-template-columns: var(--v2-cols); gap: 2px; }
+.wk-mrow:last-child > .v2cell:first-child { border-radius: 0 0 0 var(--radius); }
+.wk-mfn { display: flex; align-items: center; gap: var(--s-2); }
+.wk-mfn-name { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; line-height: 0.95; text-transform: uppercase; }
+.fn-icon--sm { width: 28px; height: 28px; margin-top: 0; border-radius: 6px; }
+.fn-icon--sm .i { width: 16px; height: 16px; }
+.wk-mmode, .wk-menter { background: var(--surface); }
+.wk-mode { font-size: var(--fs-small); line-height: 1.35; overflow-wrap: anywhere; }
+.wk-menter { display: flex; align-items: center; justify-content: center; }
+.wk-enter { padding: 0 var(--s-4); }
+
+/* ---------- Wide: the column head names the cells ---------- */
+
+@container worpage (min-width: 1000px) {
+  .wk-board .v2-label, .wk-mboard .v2-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
+/* ---------- 1,000 to 1,159px of column: the full table, compact ----------
+   Minimums add up to 1,000px with the gaps. The icon sits over the name (the name gets the cell's width),
+   cells pad 8px, and the last 4 weeks keep 150px for their four labels. */
+
+@container worpage (min-width: 1000px) and (max-width: 1159px) {
+  .wk-board {
+    --c-fn: minmax(124px, 0.9fr);
+    --c-kpi: minmax(112px, 0.85fr);
+    --c-week: minmax(130px, 1fr);
+    --c-days: minmax(124px, 0.85fr);
+    --c-trend: minmax(150px, 1.15fr);
+    --c-gap: minmax(110px, 0.9fr);
+    --c-comment: minmax(118px, 1fr);
+    --c-action: minmax(118px, 1fr);
+  }
+  .wk-board .v2cell { padding: var(--s-2); }
+  .wk-board .wk-fn { flex-direction: column; gap: var(--s-2); padding: var(--s-3) var(--s-2) var(--s-3) var(--s-3); }
+  .wk-board .wk-fn .fn-icon { width: 28px; height: 28px; margin-top: 0; border-radius: 6px; }
+  .wk-board .wk-fn .fn-icon .i { width: 16px; height: 16px; }
+  .wk-board .wk-day .glyph { width: 18px; height: 18px; }
+  .wk-head .h2c { padding-inline: var(--s-2); }
+}
+
+/* ---------- Narrower: each function is a band over its KPI rows, in a 4-column grid ---------- */
+
+@container worpage (max-width: 999px) {
+  .wk-head, .wk-mhead { display: none; }
+  .wk-board .board2-foot { border-radius: var(--radius); }
+  .wk-group { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: none; }
+  .wk-fn { grid-column: 1 / -1; grid-row: auto; align-items: center; }
+  .wk-row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-areas:
+      "kpi week days trend"
+      "gap action action action";
+    gap: var(--gap);
+  }
+  .wk-row > .wk-kpi { grid-area: kpi; }
+  .wk-row > .wk-block { grid-area: week; }
+  .wk-row > .wk-dayscell { grid-area: days; }
+  .wk-row > .wk-trend { grid-area: trend; }
+  .wk-row > .wk-gapcell { grid-area: gap; }
+  .wk-row > .wk-action { grid-area: action; }
+  /* The last row holds the commentary (read before the action, as in the table's columns). */
+  .wk-row:has(> .wk-commentcell) {
+    grid-template-areas:
+      "kpi week days trend"
+      "gap comment comment comment"
+      "action action action action";
+  }
+  .wk-row > .wk-commentcell { grid-area: comment; }
+  .wk-mrow { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-areas: "fn fn fn fn" "kpi kpi week week" "mode mode enter enter"; }
+  .wk-mfn { grid-area: fn; }
+  .wk-mkpi { grid-area: kpi; }
+  .wk-mrow > .wk-block { grid-area: week; }
+  .wk-mmode { grid-area: mode; }
+  .wk-menter { grid-area: enter; }
+  .wk-board .v2-label, .wk-mboard .v2-label { position: static; }
+  .wk-block .v2-label { color: inherit; }
+}
+@container worpage (max-width: 899px) {
+  .wk-top { grid-template-columns: minmax(0, 1fr); }
+}
+/* A wide column (a desk monitor, the TV): readiness in two columns, so the scoreboard starts higher. */
+@container worpage (min-width: 1400px) {
+  .wk-top { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+  .wk-ready-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px var(--s-5); }
+}
+
+/* ---------- Phone: one column, the week's block beside its days ---------- */
+
+@container worpage (max-width: 599px) {
+  .wk-lead { font-size: 2rem; }
+  .wk-line { font-size: var(--fs-small); }
+  .wk-group, .wk-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .wk-row {
+    grid-template-areas:
+      "kpi kpi"
+      "week days"
+      "more more"
+      "trend trend"
+      "gap action";
+  }
+  .wk-row:has(> .wk-commentcell) {
+    grid-template-areas:
+      "kpi kpi"
+      "week days"
+      "more more"
+      "trend trend"
+      "gap gap"
+      "comment comment"
+      "action action";
+  }
+  .wk-row > .wk-expand { grid-area: more; }
+  .wk-fn .fn-name { font-size: 1.875rem; }
+  /* Folded on a phone: status, figure and the days stay; the rest opens under its button. */
+  .wk-group:not(.is-open) :is(.wk-trend, .wk-gapcell, .wk-action, .wk-commentcell) { display: none; }
+  .wk-expand {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px var(--s-3);
+    grid-column: 1 / -1;
+    min-height: var(--tap);
+    padding: var(--s-2) var(--s-3);
+    border: 0;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--fs-small);
+    font-weight: 650;
+    text-align: left;
+    cursor: pointer;
+  }
+  .wk-expand-text { display: inline-flex; align-items: center; gap: var(--s-2); }
+  .wk-expand-text::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin: 0 4px 0 2px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 160ms var(--ease-out);
+  }
+  .wk-expand[aria-expanded="true"] .wk-expand-text::before { transform: rotate(45deg); }
+  .wk-expand-flags { display: inline-flex; flex-wrap: wrap; gap: 0 var(--s-3); }
+  .wk-expand-flag { font-size: var(--fs-caption); font-weight: 750; }
+  .wk-expand-gap { color: var(--off); font-size: var(--fs-caption); font-weight: 700; }
+  .wk-expand:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+  /* More weekly measures, compact: one row each ("SAFETY · Recordable injury rate (TRIR)", its state under it)
+     with Enter beside it. Their status is never on or off (no weekly goal is set), so the solid block gives
+     way to a line; View calculation, the rule and how it's set are one press away (Enter opens the sheet). */
+  .wk-mrow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "fn enter" "kpi enter" "week enter";
+    gap: 0 var(--s-3);
+    padding: var(--s-2) var(--s-3);
+    background: var(--surface);
+    align-items: center;
+  }
+  .wk-mrow > .v2cell { padding: 0; background: none; border: 0; }
+  .wk-mrow .v2-label, .wk-mrow .wk-rule, .wk-mrow > .wk-mmode, .wk-mrow .wk-calc, .wk-mrow .wk-block .block-rest { display: none; }
+  .wk-mfn .fn-icon { display: none; }
+  .wk-mfn-name { font-size: 1rem; }
+  .wk-mkpi .kpi-name { font-size: var(--fs-small); }
+  .wk-mgoal { margin-top: 0; }
+  .wk-mrow > .wk-block { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-2); min-height: 0; text-align: left; color: var(--ink); }
+  .wk-mrow > .wk-block .block-status { font-size: 0.75rem; }
+  :root .page-app[data-page="wor"] .wk-mrow > .wk-block .block-figure { font-size: 1.25rem; line-height: 1.1; }
+  .wk-mrow > .wk-block .wk-tag { flex-basis: 100%; margin: 0; }
+  .wk-menter { align-self: center; }
+  .wk-enter { min-width: 5.5rem; padding: 0 var(--s-3); }
+  .wk-board .b2-tagline, .wk-board .b2-sep { display: none; }
+}
+
+/* ---------- Functions tab ---------- */
+
+.wf { margin-top: var(--s-5); padding-top: var(--s-4); border-top: 2px solid var(--rule-strong); scroll-margin-top: var(--s-6); }
+.wf-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
+.wf-name { font-family: var(--font-display); font-size: 2rem; font-weight: 800; line-height: 0.9; text-transform: uppercase; }
+.wf-owner { color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
+.wf-kpi { margin-top: var(--s-3); }
+.wf-kpi-name { font-size: var(--fs-small); font-weight: 750; }
+.wf-kpi-rule { color: var(--ink-2); font-weight: 550; }
+.wf-kpi-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(170px, 230px); gap: 2px; margin-top: var(--s-2); }
+.wf-days { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 2px; margin: 0; padding: 0; list-style: none; }
+.wf-days > li { display: flex; }
+.wf-day {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  width: 100%;
+  min-height: 100%;
+  padding: var(--s-2) var(--s-3) var(--s-3);
+  background: var(--surface-quiet);
+  color: inherit;
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 150ms ease;
+}
+.wf-day:active { transform: scale(0.98); }
+.wf-day:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; position: relative; z-index: 1; }
+@media (hover: hover) and (pointer: fine) { .wf-day:hover { background: var(--n-100); } .wf-day:hover .wf-day-date { text-decoration: underline; } }
+.wf-day--off { background: var(--off-wash); }
+.wf-day-date { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; text-underline-offset: 0.2em; }
+.wf-day-val { font-family: var(--font-display); font-size: 1.625rem; font-weight: 800; line-height: 1; }
+.wf-day-goal { color: var(--ink-mid); font-size: 0.75rem; }
+.wf-day-status { margin-top: 2px; font-size: 0.75rem; }
+.wf-kpi-body .wk-block { justify-content: center; }
+.wf-comment { margin: var(--s-4) 0 0; padding: 0; border: 0; }
+.wf-comment legend { padding: 0; font-size: var(--fs-small); font-weight: 750; }
+.wf-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); margin-top: var(--s-2); }
+.wf-field label { display: block; margin-bottom: 4px; font-size: var(--fs-caption); font-weight: 650; }
+.wf-field textarea, .wc-field input, .wc-field textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+.wf-field textarea { min-height: 96px; font-size: var(--fs-small); resize: vertical; }
+.wf-field textarea:focus-visible, .wc-field input:focus-visible, .wc-field textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.wf-saved { margin-top: var(--s-2); color: var(--ink-2); font-size: var(--fs-caption); }
+@container worpage (max-width: 899px) {
+  .wf-fields { grid-template-columns: minmax(0, 1fr); }
+  .wf-kpi-body { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- Actions and Meeting records tabs ---------- */
+
+.wa-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--s-3) var(--s-5); }
+.wa-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-5) var(--s-6); margin-top: var(--s-4); }
+.wa-group { margin-top: var(--s-4); padding-top: var(--s-3); border-top: 2px solid var(--rule-strong); }
+.wa-grid .wa-group { margin-top: 0; }
+.wa-title { font-size: var(--fs-lead); font-weight: 750; line-height: 1.2; }
+.wa-n { margin-left: 4px; color: var(--ink-2); font-weight: 650; font-variant-numeric: tabular-nums; }
+.wa-sub { margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); }
+.wa-list { display: grid; margin: var(--s-2) 0 0; padding: 0; list-style: none; }
+.wa-item { padding: var(--s-2) 0; border-top: 1px solid var(--rule-quiet); }
+.wa-text { font-weight: 650; overflow-wrap: anywhere; }
+.wa-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--s-3); margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
+.wa-id { color: var(--ink); font-weight: 700; }
+.wa-status { color: var(--ink); font-weight: 700; }
+.wa-over { font-size: var(--fs-caption); }
+.wa-empty { margin-top: var(--s-2); color: var(--ink-2); font-size: var(--fs-small); }
+/* An empty list reads as settled, with the one next step under it. */
+.wa-calm .wa-empty { color: var(--ink); font-weight: 600; }
+.wa-next { max-width: 64ch; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
+.wa-prev { margin-top: var(--s-6); }
+.wa-needs { margin-top: var(--s-4); padding: var(--s-3) var(--s-4) var(--s-2); border-radius: var(--radius); background: var(--off-wash); }
+.wa-needs .wa-title .status { font-size: inherit; font-weight: 750; }
+.wa-needs .wa-title .status-word { color: var(--ink); }
+.wa-need { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s-2) var(--s-4); }
+.wa-need-kpi { color: var(--ink-mid); font-weight: 550; }
+.wa-lapsed { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 550; }
+.wa-allclear { margin-top: var(--s-4); font-weight: 650; }
+.wa-allclear .status { display: inline-flex; }
+@container worpage (max-width: 899px) { .wa-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.wr-list { display: grid; margin: var(--s-2) 0 0; padding: 0; list-style: none; }
+.wr-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--s-2) var(--s-4); padding: var(--s-3) 0; border-top: 1px solid var(--rule-quiet); }
+.wr-type { display: inline-grid; place-items: center; min-width: 52px; height: 30px; padding: 0 8px; border-radius: 4px; background: var(--ink); color: var(--surface); font-size: 0.8125rem; font-weight: 800; letter-spacing: 0.05em; }
+.wr-type--dor { background: var(--lx-steel-600); }
+.wr-title { font-size: var(--fs-body); font-weight: 750; }
+.wr-meta { display: flex; flex-wrap: wrap; gap: 2px var(--s-3); margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
+.wr-state { color: var(--ink); font-weight: 750; }
+.wr-flag { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-1); margin-top: 4px; font-size: var(--fs-caption); }
+.wr-flag .status { font-size: var(--fs-caption); font-weight: 750; }
+.wr-flag-detail { color: var(--ink); }
+.wr-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-4); }
+@container worpage (max-width: 699px) {
+  .wr-item { grid-template-columns: auto minmax(0, 1fr); }
+  .wr-tools { grid-column: 1 / -1; }
+}
+
+/* ---------- The sheet: View calculation, and a review record ---------- */
+
+.wor-sheet { width: min(780px, 100vw); }
+.wc-title { font-size: 2.5rem; }
+.wc-sub { padding-top: var(--s-4); color: var(--ink-2); font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
+.wc-result { display: grid; margin-top: var(--s-3); }
+.wc-result .wk-block { padding: var(--s-4); border-radius: var(--radius); }
+.wc-result .block-rest { font-size: var(--fs-small); }
+.wc-rule-line { font-variant-numeric: tabular-nums; }
+.wc-rule-note, .wc-note, .wc-foot { margin-top: var(--s-1); color: var(--ink-2); font-size: var(--fs-caption); }
+.wc-foot { margin-top: var(--s-6); padding-top: var(--s-3); border-top: 1px solid var(--rule); }
+.wor-sheet .sheet-section p + p { margin-top: var(--s-2); }
+.wc-table th a { color: inherit; font-weight: 650; text-underline-offset: 0.2em; }
+.wc-table tbody th, .wr-table tbody th { white-space: nowrap; }
+.wc-table tbody tr:not(.is-used) { color: var(--ink-2); }
+.wc-table .status { font-size: var(--fs-caption); }
+.wc-out { display: grid; margin: 0; padding: 0; list-style: none; }
+.wc-out li { display: flex; flex-wrap: wrap; gap: 0 var(--s-3); padding: 6px 0; border-top: 1px solid var(--rule-quiet); font-size: var(--fs-small); }
+.wc-out-day { min-width: 7.5rem; font-weight: 650; }
+.wc-dl { display: grid; gap: var(--s-2); }
+.wc-dl > div { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: var(--s-3); }
+.wc-dl dt { color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
+.wc-dl dd { font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.wc-empty { color: var(--ink-2); }
+.wc-warn { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-2); margin-top: var(--s-3); padding: var(--s-2) var(--s-3); border-radius: var(--radius); background: var(--off-wash); font-size: var(--fs-small); }
+.wc-warn .status { font-weight: 750; }
+.wc-ov { display: grid; gap: var(--s-3); justify-items: start; }
+.wc-ov-line { font-size: var(--fs-lead); }
+.wc-form { display: grid; gap: var(--s-3); }
+.wc-modes { margin: 0; padding: 0; border: 0; }
+.wc-modes legend { padding: 0; font-size: var(--fs-small); font-weight: 750; }
+.wc-mode { display: flex; align-items: flex-start; gap: var(--s-2); min-height: var(--tap); padding-top: 10px; cursor: pointer; }
+.wc-mode input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--ink); cursor: pointer; }
+.wc-mode.is-off { color: var(--ink-2); cursor: not-allowed; }
+.wc-mode.is-off input { cursor: not-allowed; }
+.wc-hint { margin-left: 28px; color: var(--ink-2); font-size: var(--fs-caption); }
+.wc-fields { display: grid; gap: var(--s-3); }
+.wc-field[hidden] { display: none; }
+.wc-field label { display: block; margin-bottom: 4px; font-size: var(--fs-small); font-weight: 650; }
+.wc-field .su-suffix { max-width: 14rem; }
+.wc-field textarea { min-height: 72px; resize: vertical; }
+.wc-buttons { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-3); margin-top: var(--s-2); }
+.wc-buttons [hidden] { display: none; }
+.wc-history { display: grid; margin: 0; padding: 0; list-style: none; }
+.wc-history li { padding: 6px 0; border-top: 1px solid var(--rule-quiet); }
+.wc-h-what { display: block; font-size: var(--fs-small); font-weight: 700; }
+.wc-h-meta { display: block; color: var(--ink-2); font-size: var(--fs-caption); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.wr-summary { margin-top: var(--s-3); font-weight: 600; }
+.wr-table .status { font-size: var(--fs-caption); }
+.wk-tag-inline { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; }
+.wr-people { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-size: var(--fs-small); }
+@media (max-width: 599px) {
+  .wc-title { font-size: 2rem; }
+  .wc-dl > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  /* View calculation's days on a phone: each day a short stack, every value named, nothing off to the side. */
+  .wc-table, .wc-table tbody, .wc-table tr, .wc-table th, .wc-table td { display: block; }
+  .wc-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .wc-table tr { padding: var(--s-2) 0; border-top: 1px solid var(--rule); }
+  .wc-table tbody th { padding: 0 0 2px; border: 0; font-size: var(--fs-body); }
+  .wc-table td, .wc-table td.num { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); align-items: baseline; gap: var(--s-2); padding: 2px 0; border: 0; text-align: left; }
+  .wc-table td::before { content: attr(data-label); color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; text-align: left; }
+  .wor-sheet .table-wrap { overflow: visible; }
+}
+
+/* ---------- 1080p and larger TVs: the scoreboard reads from across the room ---------- */
+
+@media (min-width: 1800px) {
+  .wk-lead { font-size: 3rem; }
+  .wk-line { font-size: 1.125rem; }
+  /* 240px: the longest function name ("Maintenance") fits whole at the TV's 32px, beside its icon. */
+  .wk-board { --c-fn: minmax(240px, 1.2fr); --c-week: minmax(190px, 1.1fr); --c-days: minmax(190px, 1fr); }
+  .wk-board .wk-fn .fn-name { font-size: 2rem; }
+  .wk-board .kpi-name { font-size: 1rem; }
+  .wk-board .block-status .glyph { width: 18px; height: 18px; }
+  .wk-board .block-rest { font-size: var(--fs-small); }
+  .wk-board .h2c { font-size: var(--fs-body); }
+  .wk-day .glyph { width: 28px; height: 28px; }
+  .wk-day-d { font-size: var(--fs-caption); }
+  .w4-plot { height: 80px; }
+  .wk-gap { font-size: var(--fs-body); }
+  .wk-board .v2-note, .wk-board .v2-assigned-text { font-size: var(--fs-body); }
+}
+
+/* ---------- Print a review record ---------- */
+
+.wk-print { display: none; }
+html.wk-printing .wor-sheet, html.wk-printing .wor-sheet::backdrop { transition: none !important; }
+@media print {
+  html.wk-printing body > :not(.wk-print):not(.sprite) { display: none !important; }
+  html.wk-printing, html.wk-printing body { background: var(--n-0) !important; }
+  html.wk-printing .wk-print { display: block; color: var(--ink); font-size: 10.5pt; }
+  .wk-print-kicker { color: var(--ink-2); font-size: 9.5pt; font-weight: 650; }
+  .wk-print-title { font-family: var(--font-display); font-size: 26pt; font-weight: 800; line-height: 1; text-transform: uppercase; }
+  .wk-print .sheet-section { padding-top: 12pt; break-inside: avoid; }
+  .wk-print .data-table { font-size: 9.5pt; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wk-people summary::before, .wk-tab, .wf-day { transition: none; }
+}
+
+/* Phone header: the week picker takes the row, the two buttons share the next one. */
+@media (max-width: 759px) {
+  .wk-headtools { width: 100%; }
+  .wk-nav { width: 100%; }
+  .wk-pick { flex: 1; min-width: 0; }
+  .wk-select { width: 100%; font-size: var(--fs-small); text-overflow: ellipsis; }
+  .wk-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); width: 100%; }
+  .wk-actions .btn { padding: 0 var(--s-3); font-size: var(--fs-small); white-space: normal; text-align: center; }
+  /* Four tabs fit the width on one line each ("Meeting records" whole at 390); only a very narrow
+     phone lets a name take two lines rather than scroll out of sight. */
+  .wk-tabs { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; gap: 0; overflow: visible; }
+  .wk-tab { padding: 4px 6px; font-size: 0.875rem; line-height: 1.15; white-space: nowrap; text-align: center; }
+}
+@media (max-width: 374px) {
+  .wk-tab { white-space: normal; }
+}
+
+/* The DOR board sizes its blocks for its own TV and short-laptop fits with :root[data-layout] rules that
+   reach every .block-figure; the weekly page sets its own sizes at every width, so they never drift. */
+:root .page-app[data-page="wor"] .wk-block .block-figure { font-size: 2.125rem; }
+:root .page-app[data-page="wor"] .wk-block.wk-block--compact .block-figure { font-size: 1.875rem; }
+:root .page-app[data-page="wor"] .wk-block .block-status { font-size: 0.75rem; }
+:root .page-app[data-page="wor"] .h2c { padding-block: var(--s-2); }
+:root .wor-sheet .wc-result .block-figure { font-size: 3rem; }
+:root .wor-sheet .wc-result .block-status { font-size: 0.875rem; }
+@container worpage (max-width: 599px) {
+  :root .page-app[data-page="wor"] .wk-block .block-figure { font-size: 1.875rem; }
+}
+@media (min-width: 1800px) {
+  :root .page-app[data-page="wor"] .wk-board .wk-block .block-figure { font-size: 2.875rem; }
+  :root .page-app[data-page="wor"] .wk-board .wk-block .block-status { font-size: 0.9375rem; }
+}
+
+/* ---------- Finish review, the record's lifecycle, amendments (WOR-ORG-PLAN Part 4) ---------- */
+.wr-life { margin-top: var(--s-3); }
+.wr-head-tools { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-3); }
+.wr-state--finalized { color: var(--on); }
+/* A version a later one replaced: the record still stands as it was, in quiet ink (not a status). */
+.wr-state--replaced { color: var(--ink-2); }
+/* Under the lifecycle steps: where this record is, in one line ("Replaced by v2 … Open v2"). */
+.wr-life-note { max-width: 72ch; margin-top: var(--s-2); color: var(--ink-2); font-size: var(--fs-small); line-height: 1.45; }
+.wr-life-note a { color: var(--ink); font-weight: 700; }
+.wr-sub { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 550; }
+.wr-note { margin-top: var(--s-2); max-width: 64ch; color: var(--ink-mid); font-size: var(--fs-small); }
+.wr-final { margin-top: var(--s-3); }
+.wr-finish-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin-top: var(--s-3); }
+.wr-exc { padding: var(--s-3) var(--s-4); border: 2px solid var(--off); border-radius: var(--radius); background: var(--off-wash); }
+.wr-exc .section-title .status { font-size: inherit; font-weight: 750; }
+.wr-actions li { display: block; padding: 2px 0; }
+.wr-actions .ast { margin-left: var(--s-1); font-size: var(--fs-caption); }
+.wa-id { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; font-variant-numeric: tabular-nums; }
+.wa-esc { font-weight: 700; color: var(--ink); }
+.wr-amend { margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--rule); }
+
+/* What still stands before finalizing: each item in plain words, with Go to it. */
+.ff-n { margin-left: var(--s-1); color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Before you finalize: process gaps, in readiness's navy and steel (a ring when not done), apart from performance. */
+.ff-items { display: grid; margin: var(--s-2) 0 0; padding: 0; list-style: none; border-top: 2px solid var(--ink); }
+.ff-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); padding: var(--s-3); border-bottom: 1px solid var(--rule); background: var(--surface-quiet); }
+.ff-item-text { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--s-2); align-items: start; flex: 1 1 18rem; min-width: 0; color: var(--ink); font-weight: 650; white-space: normal; }
+.ff-item-text .wk-ring { margin-top: 2px; }
+/* The glyph says it's open; the sentence stays in ink, so a list of them reads, not shouts. */
+.ff-item-text .status-word { white-space: normal; color: var(--ink); }
+.ff-go { flex: none; }
+.ff-clear { margin-top: var(--s-2); }
+.ff-clear .status { display: inline-flex; font-weight: 750; }
+.ff-decisions { margin-bottom: var(--s-3); list-style: decimal; padding-left: 1.4em; }
+.ff-decide, .ff-final { margin-top: var(--s-3); }
+.ff-final .wc-hint { margin-left: 0; margin-top: 4px; }
+.ff-final select {
+  display: block;
+  width: 100%;
+  max-width: 28rem;
+  min-height: 48px;
+  padding: 0 var(--s-3);
+  border: 2px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 650;
+}
+.ff-final select:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--ink); }
+.ff-final button[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+
+/* ---------- Add action for one KPI and week (the sheet's own form) ---------- */
+.wa-week { display: grid; gap: 2px; margin-top: var(--s-3); padding: var(--s-3) var(--s-4); border-radius: var(--radius); background: var(--surface-quiet); }
+.wa-week-st { font-size: var(--fs-small); font-weight: 750; }
+.wa-week-fig { font-variant-numeric: tabular-nums; }
+.wa-week-fig { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; line-height: 1; }
+.wa-week-fig span { font-family: var(--font-ui); font-size: var(--fs-small); font-weight: 550; color: var(--ink-mid); }
+.wa-week-gap { color: var(--off); font-size: var(--fs-small); font-weight: 700; }
+.wa-form { margin-top: var(--s-4); }
+.wa-hint { margin-left: 0; }
+.wc-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--s-3); }
+@media (max-width: 599px) { .wc-row { grid-template-columns: minmax(0, 1fr); } }
+.wc-hint--flush { margin-left: 0; margin-top: 4px; }
+.wc-fields[hidden] { display: none; }
+/* A finalized record keeps what was true then; what changed since sits beside it, never over it. */
+/* The record's commentary, function by function (frozen when finalized, "now: …" beside later changes). */
+.wr-comment + .wr-comment { margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--rule-quiet); }
+.wr-comment-fn { margin-bottom: var(--s-1); font-size: var(--fs-small); font-weight: 750; }
+.wr-comment-dl dd { font-weight: 500; white-space: pre-line; }
+.wr-now { margin-left: 4px; padding: 0 6px; border-radius: 4px; background: var(--n-100); color: var(--ink-mid); font-size: var(--fs-caption); font-weight: 650; white-space: normal; }
+
+/* An action that took focus after Save action (it can't be pressed; focus says where it landed). */
+.wk-action .v2-assigned[tabindex="-1"]:focus { outline: none; }
+.wk-action .v2-assigned[tabindex="-1"]:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }

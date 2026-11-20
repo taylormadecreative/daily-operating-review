@@ -333,3 +333,8 @@
 .kpi-scope { font-weight: inherit; }
 .scope-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s-3); margin-top: var(--s-3); color: var(--ink-2); font-size: var(--fs-small); }
 .scope-switch .btn--text { color: var(--ink); font-size: var(--fs-small); }
+
+/* Days off and extra production days (pilot boards) */
+.org-days-list { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: var(--s-3); padding: 0; list-style: none; }
+.org-days-list li { display: flex; align-items: center; gap: 6px; }
+.org-days-add { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: var(--s-3); font-size: var(--fs-small); }

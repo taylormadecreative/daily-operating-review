@@ -1,0 +1,282 @@
+/* One shell for every page (the client team's spec §4, §17, §18 #2): the navy sidebar from the home
+   dashboard sits beside Home, the DOR board, the Weekly review and the Organization. Its own look
+   (the .side rules) stays in css/home.css; this file places it, collapses it to an icon rail,
+   hides it where a page needs the whole screen (the TV board, the meeting), and draws the pieces
+   every page shares: the pinned scope line and the new pages' navy header. */
+
+.shell {
+  --side-w: 168px;
+  --h-side: #02274c;
+  --h-side-active: #0e3a66;
+  --h-side-hover: #0a3159;
+  --h-side-ink: #fbfcfd;
+  --h-side-ink-2: #c5d3e2;   /* 9.9:1 on the sidebar */
+
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--side-w) minmax(0, 1fr);
+  min-height: 100vh;
+}
+/* Narrower than 1280 the sidebar is always the icon rail (its look: css/home.css). */
+@media (max-width: 1279px) { .shell { --side-w: 68px; } }
+/* The sidebar's navy runs the full page height; its contents stay sticky. */
+.shell::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--side-w); background: var(--h-side); }
+.shell > .side { grid-column: 1; grid-row: 1; }
+.shell > .home-app,
+.shell > .app,
+.shell > .page-app { grid-column: 2; grid-row: 1; min-width: 0; }
+
+/* The sidebar speaks the dashboard's Archivo at its own size on every page. */
+.side { font-family: var(--font-ui); font-size: 14px; line-height: 1.4; }
+.side .i { width: 18px; height: 18px; flex: none; }
+.side :focus-visible { outline: 3px solid var(--lx-mint-400); outline-offset: 2px; border-radius: 4px; }
+/* Press feedback on every sidebar control (links, commands, the collapse button). */
+.side-link { transition: background-color 120ms ease, color 120ms ease, transform 140ms var(--ease-out); }
+.side-link:active { transform: scale(0.97); }
+
+/* ---------- Which page shows ---------- */
+
+:root:not([data-view="home"]) .shell > .home-app,
+:root:not([data-view="dor"]) .shell > .app,
+.shell > .page-app { display: none; }
+:root[data-view="org"] .shell > .page-app[data-page="org"],
+:root[data-view="wor"] .shell > .page-app[data-page="wor"] { display: block; }
+:root[data-view="org"], :root[data-view="org"] body,
+:root[data-view="wor"], :root[data-view="wor"] body { background: var(--surface); }
+
+/* The DOR board's column measures itself (css/board.css, board-v2.css and customize.css ask
+   @container dorpage instead of the window), so the board lays out for the room it has beside the
+   sidebar. A container query never traps the fixed phone bar: it doesn't apply layout containment. */
+.shell > .app { container: dorpage / inline-size; }
+
+/* ---------- The collapse button (1280 and wider; narrower, the sidebar is always the rail) ---------- */
+
+.side-collapse { display: none !important; }
+.side-collapse .side-collapse-open { display: none; }
+@media (min-width: 1280px) {
+  .side-collapse { display: flex !important; }
+}
+
+/* ---------- The icon rail, chosen on this device (narrower than 1280 it's always the rail: css/home.css) ---------- */
+
+@media (min-width: 1280px) {
+  :root[data-side="rail"] .shell { --side-w: 68px; }
+  :root[data-side="rail"] .side { padding: 12px 8px; }
+  :root[data-side="rail"] .side-brand { display: flex; justify-content: center; padding: 4px 0 14px; }
+  :root[data-side="rail"] .side-collapse .side-collapse-shut { display: none; }
+  :root[data-side="rail"] .side-collapse .side-collapse-open { display: block; }
+  /* The brand's words are hidden one by one: .side-brand-text is display: contents (css/home.css), so
+     clipping it alone left "Operating R" painted in the rail. */
+  :root[data-side="rail"] .side-brand-text,
+  :root[data-side="rail"] .side .side-brand-name,
+  :root[data-side="rail"] .side .side-brand-sub,
+  :root[data-side="rail"] .side .side-text,
+  :root[data-side="rail"] .side .side-group,
+  :root[data-side="rail"] .side .side-powered-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :root[data-side="rail"] .side .side-link { justify-content: center; padding: 0; min-height: 44px; }
+  :root[data-side="rail"] .side .side-group + .side-list { margin-top: 10px; padding-top: 10px; border-top: 1px solid #1c4570; }
+  :root[data-side="rail"] .side .side-bottom { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  :root[data-side="rail"] .side .side-bottom .side-link { width: auto; }
+  :root[data-side="rail"] .side .side-powered { grid-auto-flow: row; padding: 6px 4px; }
+  :root[data-side="rail"] .side .side-badge { width: 44px; }
+  /* The LinkedXL OS badge on its light tile takes the plant glyph's place, as below 1280 (one badge: the
+     page header drops its own while the rail shows, css/header.css). */
+  :root[data-side="rail"] .side .side-brand-icon { display: none; }
+  :root[data-side="rail"] .side .side-lx { display: grid; }
+  :root[data-side="rail"] .side .side-lx .side-badge { width: 38px; }
+}
+/* Below 1280 the sidebar is always the rail: the same badge tile at its top, whatever the height. */
+@media (min-width: 761px) and (max-width: 1279px) {
+  .shell > .side .side-brand-icon { display: none; }
+  .shell > .side .side-lx { display: grid; }
+  .shell > .side .side-brand-name, .shell > .side .side-brand-sub { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
+/* ---------- Where the sidebar steps aside ---------- */
+
+/* The TV board (1080p, the room's wall) is the whole screen, as it was: its Menu has the pages. */
+/* The classic layout on the TV too: it fills the screen as it did before the shell (its Home button is back). */
+@media (min-width: 1800px) and (max-height: 1200px) {
+  :root[data-view="dor"] .shell { grid-template-columns: minmax(0, 1fr); }
+  :root[data-view="dor"] .shell::before,
+  :root[data-view="dor"] .shell > .side { display: none; }
+  :root[data-view="dor"] .shell > .app { grid-column: 1; }
+}
+/* Meeting mode fills the screen; the sidebar is out of sight and out of reach (meeting.js makes it inert). */
+:root.is-meeting .shell > .side { visibility: hidden; }
+
+/* ---------- Phone: the sidebar is the top bar and its drawer, on every page ---------- */
+
+@media (max-width: 760px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .shell::before { display: none; }
+  .shell > .side { grid-column: 1; grid-row: 1; }
+  .shell > .home-app,
+  .shell > .app,
+  .shell > .page-app { grid-column: 1; grid-row: 2; }
+  /* Focus scrolled into view stays clear of the sticky top bar on every page (home.js measures it). */
+  html { scroll-padding-top: calc(var(--home-top-h, 56px) + 8px); }
+}
+
+/* The drawer has room for the board's own commands (Customize); the sidebar keeps to the four pages and four tools. */
+.side .side-drawer-only { display: none; }
+/* The tools sit apart from the pages. */
+.side-list--tools { margin-top: 6px; padding-top: 6px; border-top: 1px solid #1c4570; }
+.drawer .side-list--tools { border-top-color: #1c4570; }
+
+/* ---------- The DOR board in the shell ---------- */
+
+/* The sidebar has Home: the board's own Home button shows only where the sidebar doesn't (the TV). */
+@media (min-width: 761px) {
+  :root[data-view="dor"] .topbar [data-nav-home].topbar-home { display: none; }
+}
+@media (min-width: 1800px) and (max-height: 1200px) {
+  :root[data-view="dor"] .topbar [data-nav-home].topbar-home { display: inline-flex; }
+}
+/* The Menu lists the pages only on the TV, where the sidebar steps aside. */
+:root .dor-menu [data-nav-page], :root .dor-menu [data-nav-home] { display: none; }
+@media (min-width: 1800px) and (max-height: 1200px) {
+  :root[data-view="dor"][data-layout="v2"] .dor-menu [data-nav-page],
+  :root[data-view="dor"][data-layout="v2"] .dor-menu [data-nav-home] { display: flex; }
+}
+/* Phone: the shell's top bar carries the plant, the badge and the menu, so the board's navy band
+   keeps just its name under it (one masthead). Its Menu's commands are in the drawer. */
+@media (max-width: 760px) {
+  .topbar .brand { padding: 0 var(--gutter) var(--s-3); }
+  .topbar .brand-badge,
+  .topbar .brand-plant,
+  .topbar .topbar-more,
+  .topbar [data-nav-home].topbar-home { display: none !important; }
+  .topbar .brand-title { font-size: 1rem; white-space: normal; }
+  .topbar .brand-title .v2-only { display: inline !important; }
+}
+@media (max-width: 760px) {
+  :root[data-view="dor"] .topbar { border-top: 1px solid var(--d-rule); }
+}
+
+/* The Area filter's scope in the board's column heads: its own line, in the head's full ink. A long
+   "Not entered for Compounding" wraps inside its block instead of running past it. */
+.board2-head .h2c-scope { display: block; color: var(--bar-ink); font-weight: 750; }
+.v2cell--status[data-area-scope] .block-status .status-word { white-space: normal; text-wrap: balance; }
+
+/* ---------- Scope, pinned on every page ---------- */
+
+/* "Riverside plant · Plant total · Fri, Feb 27, 2026 · 8 of 8 entered · Saved on this device". */
+.scope:empty { display: none; }
+.scope-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 32px;
+  color: var(--ink-2);
+  font-size: var(--fs-caption);
+  font-weight: 550;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+/* Each item carries its dot in an 18px lead; the line starts 18px left of the scope and the scope clips there,
+   so an item that starts a wrapped line never shows a dot in front of it ("· Saved on this device"). The
+   clip keeps 4px of margin, so the Area filter's focus ring still shows whole. */
+.scope { overflow: clip; overflow-clip-margin: 4px; }
+.scope-item { position: relative; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.scope-line { margin-left: -18px; }
+.scope-line > .scope-item { padding-left: 18px; }
+.scope-line > .scope-item::before { content: "·" / ""; position: absolute; left: 0; width: 18px; color: var(--ink-2); text-align: center; }
+/* Phones: the line wraps, so the items sit apart by space alone. */
+@media (max-width: 760px) {
+  .scope-line { margin-left: 0; column-gap: var(--s-3); row-gap: 2px; }
+  .scope-line > .scope-item { padding-left: 0; }
+  .scope-line > .scope-item::before { content: none; }
+  /* A pilot board's longer save words wrap rather than run off the screen. */
+  .scope-line > .scope-saved { white-space: normal; }
+}
+.scope-plant { color: var(--ink); font-weight: 700; }
+.scope-check { width: 13px; height: 13px; flex: none; color: var(--ink-2); }
+.scope-saved.is-off { color: var(--off); font-weight: 650; }
+/* A pilot board's warning (not saved yet, unlock ended): the off glyph at the check mark's size. */
+.scope-saved .glyph { width: 13px; height: 13px; flex: none; }
+.scope-area { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-weight: 650; }
+.scope-select {
+  min-height: var(--tap);
+  padding: 0 30px 0 10px;
+  border: 1px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2302274c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center / 16px;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-small);
+  font-weight: 650;
+  cursor: pointer;
+  appearance: none;
+}
+.scope-select:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+@media (hover: hover) and (pointer: fine) { .scope-select:hover { border-color: var(--ink); } }
+/* With an area picked, the scope says so in the board's ink, so it reads before the numbers do. */
+.scope-line.is-area .scope-area-word { color: var(--ink); font-weight: 700; }
+
+/* Where it sits on each page. */
+.board-page > .scope { padding-top: var(--s-3); }
+.h-main > .scope { padding: 2px 0 6px; }
+@media (max-width: 760px) { .h-main > .scope { padding-top: 10px; } }
+.h-main > .scope .scope-line { color: var(--h-ink-2); }
+.h-main > .scope .scope-plant { color: var(--h-ink); }
+.pg-main > .scope { padding-top: var(--s-3); }
+@media (min-width: 1800px) and (max-height: 1200px) {
+  /* The fitted TV board: one compact line, its select no taller than the date's buttons. */
+  :root[data-view="dor"][data-layout="v2"] .board-page > .scope { padding-top: var(--s-2); }
+  :root[data-view="dor"][data-layout="v2"] .scope-line { min-height: 0; }
+}
+
+/* ---------- One page header on every page: the DOR board's navy bar, the LinkedXL OS badge first ---------- */
+
+/* Home, the Weekly review and the Organization start like the DOR board's bar: badge, page name, plant. */
+.pg-brand { display: flex; flex: 1 1 260px; align-items: center; gap: var(--s-3); min-width: 0; margin-right: auto; }
+.pg-brand .pg-sub { text-wrap: balance; }
+.pg-brand .pg-titles { margin-right: 0; }
+.pg-badge { display: block; height: 64px; width: auto; flex: none; }
+/* The badge sits 24px in on every page header (the DOR board's bar), and the page's content lines up with it. */
+@media (min-width: 761px) {
+  .page-app { --gutter: 24px; }
+}
+/* A phone's top bar already carries the badge: the page header keeps its name. */
+@media (max-width: 760px) { .pg-badge { display: none; } }
+/* The DOR board's own phone band does the same (its badge sits in the top bar). */
+
+.page-app { min-height: 100vh; }
+.pg-head { background: var(--bar-bg); color: var(--bar-ink); }
+.pg-head :focus-visible { outline-color: var(--bar-focus); }
+.pg-head-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-5);
+  min-height: var(--topbar-h);
+  padding: var(--s-2) var(--gutter);
+}
+.pg-titles { min-width: 0; margin-right: auto; }
+.pg-title { font-size: 1.125rem; font-weight: 700; line-height: 1.15; }
+.pg-abbr { font: inherit; }
+.pg-sub { color: var(--bar-ink-2); font-size: var(--fs-small); font-weight: 500; }
+.pg-main { padding: 0 var(--gutter) var(--s-7); }
+.pg-main:focus { outline: none; }
+
+/* The board's column narrower than a phone's layout (a tablet beside the rail): phone gutters too. */
+@container dorpage (max-width: 759px) {
+  :is(.topbar, .board-page, .mobile-bar) { --gutter: 1rem; --topbar-h: 60px; }
+  .board-page > .scope { padding-top: var(--s-2); }
+}
+@media (max-width: 759px) {
+  .pg-head-inner { min-height: 0; padding: var(--s-2) var(--gutter) var(--s-3); border-top: 1px solid var(--d-rule); }
+  .pg-action { width: 100%; }
+  .pg-main { padding-bottom: var(--s-6); }
+}
+
+@media print {
+  .shell { display: block; }
+  .shell::before, .shell > .side { display: none; }
+}
+
+/* A sheet over the page: the navy sidebar dims with the page (the backdrop alone barely shows on navy). */
+.shell > .side { transition: filter 180ms ease; }
+:root:has(dialog:modal) .shell > .side { filter: brightness(0.5); }
+@media (prefers-reduced-motion: reduce) { .shell > .side { transition: none; } }

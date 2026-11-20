@@ -3,17 +3,18 @@
 // their accountable leader and roles, their open actions, and this week so far. The organization
 // itself lives in store.js (dor.org.v1) and is edited in Board setup (Draft, Validate, Activate).
 
-import { getOrg, kpiRowsFor, dailyMeasuresOf, DAILY_MEASURE_MAX, ROLES, isoForDay } from './store.js?v=20261117-065120';
-import { dayStatus, monthStatus, OFF, NO_GOAL, NOT_TRACKED } from './status.js?v=20261117-065120';
-import { formatDayMedium, formatDayLong, plainLabel, dayHeading, formatEnteredAt } from './format.js?v=20261117-065120';
-import { esc, statusMarkup, glyphMarkup } from './ui.js?v=20261117-065120';
-import { icon, DEPT_ICON } from './icons.js?v=20261117-065120';
-import { avatarMarkup, plantName, dueText, periodDateMarkup } from './board.js?v=20261117-065120';
-import { listActions } from './actions.js?v=20261117-065120';
-import { openOnDay } from './action-state.js?v=20261117-065120';
-import { pageHref } from './shell.js?v=20261117-065120';
-import { fitSheetHead } from './detail.js?v=20261117-065120';
-import { weekFor, weekLabel, weekOfDay } from './wor.js?v=20261117-065120';
+import { getOrg, kpiRowsFor, dailyMeasuresOf, DAILY_MEASURE_MAX, ROLES, isoForDay, setOrgDays, boardFirstDay, dateBounds } from './store.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-154112';
+import { dayStatus, monthStatus, OFF, NO_GOAL, NOT_TRACKED } from './status.js?v=20261120-154112';
+import { formatDayMedium, formatDayLong, plainLabel, dayHeading, formatEnteredAt } from './format.js?v=20261120-154112';
+import { esc, statusMarkup, glyphMarkup } from './ui.js?v=20261120-154112';
+import { icon, DEPT_ICON } from './icons.js?v=20261120-154112';
+import { avatarMarkup, plantName, dueText, periodDateMarkup } from './board.js?v=20261120-154112';
+import { listActions } from './actions.js?v=20261120-154112';
+import { openOnDay } from './action-state.js?v=20261120-154112';
+import { pageHref } from './shell.js?v=20261120-154112';
+import { fitSheetHead } from './detail.js?v=20261120-154112';
+import { weekFor, weekLabel, weekOfDay } from './wor.js?v=20261120-154112';
 
 let ctx = null;
 let dlg = null;
@@ -160,9 +161,10 @@ export function renderOrg(month, day) {
     const wkEl = document.querySelector('[data-org-week]');
     if (wkEl) wkEl.textContent = wk ? `· ${weekLabel(wk).replace(/^Week/, 'week')}` : '';
     const picker = document.querySelector('[data-org-date-input]');
-    if (picker) { picker.min = isoForDay(month, 1); picker.max = isoForDay(month, month.daysInMonth); picker.value = isoForDay(month, day); }
-    document.querySelector('[data-org-prev]').disabled = day <= 1;
-    document.querySelector('[data-org-next]').disabled = day >= month.daysInMonth;
+    const bounds = dateBounds(month);
+    if (picker) { picker.min = bounds.min; picker.max = bounds.max; picker.value = isoForDay(month, day); }
+    document.querySelector('[data-org-prev]').disabled = isoForDay(month, day) <= bounds.min;
+    document.querySelector('[data-org-next]').disabled = isoForDay(month, day) >= bounds.max;
   }
 
   const byId = new Map(org.people.map((p) => [p.id, p]));
@@ -233,7 +235,59 @@ export function renderOrg(month, day) {
             : `<button class="oc-add" type="button" data-open-setup data-setup-section="org" data-setup-focus="area:${esc(a.id)}">${icon('plus', 'i')}Add a lead<span class="sr-only"> for ${esc(a.name)}</span></button>`}
         </li>`;
       }).join('')}</ul>
-    </section>`;
+    </section>
+    ${cloud.BOARD ? daysMarkup(doc) : ''}`;
+  wireDays(host);
+}
+
+/* ---------- Days off and extra production days (pilot boards) ---------- */
+
+const DAY_LISTS = [
+  ['daysOff', 'Days off', 'Weekdays the plant doesn\'t run. A day off has no goal and counts no miss.'],
+  ['extraDays', 'Extra production days', 'Days it runs that are usually off, like a Saturday.'],
+];
+const dayWords = (iso) => new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(`${iso}T12:00:00Z`));
+
+function daysMarkup(doc) {
+  return DAY_LISTS.map(([which, title, sub]) => `
+    <section class="org-group org-days" aria-labelledby="org-${which}" data-days="${which}">
+      <h2 class="org-group-title" id="org-${which}">${title}</h2>
+      <p class="org-group-sub">${sub} They take effect as soon as they are saved.</p>
+      <ul class="org-days-list">${(doc[which] ?? []).map((iso) => `
+        <li><time datetime="${iso}">${esc(dayWords(iso))}</time>
+          <button class="btn btn--text" type="button" data-day-remove="${iso}">Remove<span class="sr-only"> ${esc(dayWords(iso))}</span></button></li>`).join('')}</ul>
+      <form class="org-days-add" data-day-add>
+        <label for="org-${which}-new">Add a day</label>
+        <input id="org-${which}-new" type="date" min="${esc(boardFirstDay() ?? '')}" required>
+        <button class="btn" type="submit">Add</button>
+      </form>
+    </section>`).join('');
+}
+
+function wireDays(host) {
+  if (host.dataset.daysWired) return;
+  host.dataset.daysWired = '1';
+  const save = (which, change) => {
+    const doc = getOrg(ctx.getMonth());
+    setOrgDays(which, change(doc[which] ?? []));
+    ctx.onDaysChange?.();
+  };
+  host.addEventListener('submit', (e) => {
+    const form = e.target.closest('[data-day-add]');
+    if (!form) return;
+    e.preventDefault();
+    const which = form.closest('[data-days]').dataset.days;
+    const iso = form.querySelector('input').value;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) save(which, (list) => [...list, iso]);
+    host.querySelector(`[data-days="${which}"] input`)?.focus();
+  });
+  host.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-day-remove]');
+    if (!btn) return;
+    const which = btn.closest('[data-days]').dataset.days;
+    save(which, (list) => list.filter((x) => x !== btn.dataset.dayRemove));
+    host.querySelector(`[data-days="${which}"] input`)?.focus();
+  });
 }
 
 /* ---------- The person sheet ---------- */

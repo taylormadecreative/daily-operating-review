@@ -1,0 +1,340 @@
+/* Organization (?view=org): the org chart in the board's look (light ground, navy ink, Big Shoulders
+   names, word + glyph status), the person sheet (Detail's sheet), and Board setup's Organization
+   section. Also Detail's scope labels. */
+
+/* ---------- Summary ---------- */
+
+.org-summary { padding: var(--s-4) 0 0; }
+.org-lead {
+  font-family: var(--font-display);
+  font-size: 2.125rem;
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: 0.004em;
+}
+.org-line { max-width: 72ch; margin-top: var(--s-1); color: var(--ink-2); }
+.org-draft { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s-2); margin-top: var(--s-1); font-size: var(--fs-small); font-weight: 650; }
+.org-draft .glyph { width: 16px; height: 16px; color: var(--neutral); }
+.org-draft .btn--text { font-size: var(--fs-small); }
+
+/* ---------- The chart ---------- */
+
+.oc-chart {
+  --conn: var(--n-200);
+  --gap: 12px;
+  margin-top: var(--s-5);
+  container: orgchart / inline-size;
+}
+.oc-root { position: relative; display: flex; justify-content: center; }
+.oc-root > .oc { width: min(360px, 100%); }
+.oc-reports {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--n, 7), minmax(0, 1fr));
+  gap: var(--gap);
+  margin-top: 40px;
+  padding: 0;
+  list-style: none;
+}
+.oc-slot { position: relative; display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.oc-slot > .oc { flex: 1; }
+
+/* The lines of the tree: a stem down from the top person, a bar across, a stem down to each card. */
+.oc-reports:not(:only-child)::before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: calc((100% - (var(--n) - 1) * var(--gap)) / (var(--n) * 2));
+  right: calc((100% - (var(--n) - 1) * var(--gap)) / (var(--n) * 2));
+  height: 2px;
+  background: var(--conn);
+}
+.oc-root::after { content: ""; position: absolute; left: calc(50% - 1px); bottom: -20px; width: 2px; height: 20px; background: var(--conn); }
+.oc-slot::before { content: ""; position: absolute; left: calc(50% - 1px); top: -20px; width: 2px; height: 20px; background: var(--conn); }
+
+/* A card: the whole card opens the person's sheet (the name is the link). */
+.oc {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--s-2);
+  min-width: 0;
+  padding: var(--s-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: transform 140ms var(--ease-out), border-color 150ms ease;
+}
+.oc:has(.oc-open:active) { transform: scale(0.98); }
+.oc:has(.oc-open:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .oc:hover { border-color: var(--ink-2); }
+  .oc:hover .oc-open { text-decoration: underline; text-decoration-thickness: 0.06em; text-underline-offset: 0.12em; }
+}
+/* The department heads' cards are narrow: the photo sits above the name, so a name gets the card's width. */
+/* A card opens: a small chevron says so (hover and touch alike). */
+.oc-go { position: absolute; top: var(--s-3); right: var(--s-2); width: 18px; height: 18px; color: var(--ink-2); transition: transform 140ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .oc:hover .oc-go { color: var(--ink); transform: translateX(2px); } }
+.oc-head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); min-width: 0; }
+.oc--top .oc-head { flex-direction: row; align-items: center; gap: var(--s-3); }
+.oc-avatar { width: 40px; height: 40px; flex: none; font-size: 1.0625rem; }
+.oc-id { min-width: 0; }
+.oc-name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  overflow-wrap: break-word;
+  hyphens: manual;
+}
+.oc-open { color: inherit; text-decoration: none; }
+.oc-open:focus-visible { outline: none; }
+.oc-open::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.oc-title { margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; line-height: 1.25; }
+.oc-dept { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--s-2); font-size: var(--fs-caption); font-weight: 650; }
+.oc-dept-fn { display: inline-flex; align-items: center; gap: 5px; }
+.oc-dept-fn .i { width: 15px; height: 15px; color: var(--ink-2); }
+.oc-dept-fn.is-empty { color: var(--ink-2); font-weight: 550; }
+.oc-load { color: var(--ink-2); font-weight: 550; }
+.oc-acc { color: var(--ink); font-size: var(--fs-caption); font-weight: 650; }
+.oc-facts { display: grid; gap: 6px; padding-top: var(--s-2); border-top: 1px solid var(--rule-quiet); }
+.oc-fact dt { color: var(--ink-2); font-size: 0.75rem; font-weight: 650; }
+.oc-fact dd { font-size: var(--fs-small); font-weight: 600; font-variant-numeric: tabular-nums; }
+.oc-fact dd.is-empty { color: var(--ink-2); font-weight: 550; }
+.oc-today { display: grid; gap: 2px; }
+.oc-today .status { font-size: var(--fs-small); }
+.oc-fact-fn { color: var(--ink-2); font-weight: 650; }
+/* This week: the Weekly review's result for the person's KPI (status, figure, days on goal). */
+.oc-week { display: grid; gap: 1px; }
+.oc-week .status { font-size: var(--fs-small); }
+.oc-week-fig { font-weight: 650; }
+.oc-week-days { color: var(--ink-2); font-size: 0.75rem; font-weight: 550; }
+.oc--top { padding: var(--s-4); }
+.oc--top .oc-avatar { width: 56px; height: 56px; font-size: 1.375rem; }
+.oc--top .oc-name { font-size: 1.875rem; }
+
+/* People under a department head (a third level) list under their card. */
+.oc-under { display: grid; gap: 2px; margin: 0; padding: 0 0 0 var(--s-3); list-style: none; border-left: 1px solid var(--conn); }
+.oc-under li, .oc-area-lead { display: grid; gap: 0; font-size: var(--fs-small); }
+.oc-under li span, .oc-area-lead span { color: var(--ink-2); font-size: 0.75rem; font-weight: 600; }
+.oc-under-link { display: inline-flex; align-items: center; min-height: 32px; color: var(--ink); font-weight: 700; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+.oc-under-link { position: relative; }
+.oc-under-link::before { content: ""; position: absolute; inset: -6px -4px; }
+
+.org-note { display: flex; align-items: flex-start; gap: var(--s-2); margin-top: var(--s-4); color: var(--ink); font-size: var(--fs-small); font-weight: 600; }
+.org-note .glyph { width: 16px; height: 16px; margin-top: 1px; flex: none; color: var(--neutral); }
+.org-empty { color: var(--ink-2); }
+
+/* Not in the chart yet, and the areas */
+.org-group { margin-top: var(--s-6); padding-top: var(--s-4); border-top: 2px solid var(--rule-strong); }
+.org-group-title { font-size: var(--fs-lead); font-weight: 750; }
+.org-group-sub { margin-top: 2px; color: var(--ink-2); font-size: var(--fs-small); }
+.oc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--gap, 12px); margin-top: var(--s-3); padding: 0; list-style: none; }
+.oc-areas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: var(--s-3); padding: 0; list-style: none; }
+.oc-area { display: grid; align-content: start; gap: var(--s-2); padding: var(--s-3); border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface-quiet); }
+.oc-area-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; line-height: 1; text-transform: uppercase; }
+.oc-add {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 0 var(--s-3) 0 var(--s-2);
+  border: 1px dashed var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-small);
+  font-weight: 650;
+  cursor: pointer;
+  transition: transform 140ms var(--ease-out), border-color 150ms ease;
+}
+.oc-add .i { width: 18px; height: 18px; }
+.oc-add:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { .oc-add:hover { border-color: var(--ink); border-style: solid; } }
+.org-foot { margin-top: var(--s-6); color: var(--ink-2); font-size: var(--fs-caption); }
+
+/* Narrower than the seven heads fit side by side (or more than seven under one person): the
+   heads wrap in a grid under a line that says who they report to; the tree's lines step aside. */
+@container orgchart (max-width: 1099px) {
+  .oc-reports { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); margin-top: var(--s-4); }
+  .oc-reports::before, .oc-root::after, .oc-slot::before { display: none; }
+  .oc-root { justify-content: flex-start; }
+}
+.oc-reports--wrap { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); margin-top: var(--s-4); }
+.oc-reports--wrap::before, .oc-root:has(+ .oc-reports--wrap)::after, .oc-reports--wrap .oc-slot::before { display: none; }
+
+/* Phone: the chart is an indented list. */
+@container orgchart (max-width: 599px) {
+  .oc-root > .oc { width: 100%; }
+  .oc-reports { grid-template-columns: minmax(0, 1fr); gap: var(--s-2); margin-top: var(--s-2); margin-left: var(--s-3); padding-left: var(--s-3); border-left: 1px solid var(--conn); }
+  .oc-slot::before { display: block; left: calc(-1 * var(--s-3)); top: 26px; width: var(--s-3); height: 1px; }
+  .oc { gap: 6px; }
+  .oc-facts { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px var(--s-3); }
+  .oc-fact--today { grid-column: 1 / -1; }
+}
+@media (max-width: 759px) {
+  .oc-areas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .org-lead { font-size: 1.875rem; }
+}
+
+/* ---------- The person sheet (Detail's sheet, narrower) ---------- */
+
+.person { width: min(640px, 100vw); }
+.ps-title { font-size: 2.75rem; }
+.ps-id { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4) 0 var(--s-2); }
+.ps-avatar { width: 56px; height: 56px; font-size: 1.375rem; flex: none; }
+.ps-role-title { font-weight: 700; }
+.ps-scope { color: var(--ink-2); font-size: var(--fs-small); }
+.ps-section .section-title { margin-bottom: var(--s-2); }
+.ps-load { color: var(--ink-2); font-size: var(--fs-small); font-weight: 600; }
+.ps-fn { margin-top: var(--s-3); }
+.ps-fn-name { display: flex; align-items: center; gap: var(--s-2); font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; line-height: 1; text-transform: uppercase; }
+.ps-fn-name .i { width: 20px; height: 20px; color: var(--ink-2); }
+.ps-kpis { display: grid; margin-top: var(--s-2); }
+.ps-kpis li { display: grid; grid-template-columns: 5.25rem minmax(0, 1fr) auto; align-items: center; gap: var(--s-2) var(--s-3); min-height: var(--tap); border-top: 1px solid var(--rule-quiet); }
+.ps-tag { justify-self: start; padding: 1px 6px; border: 1px solid var(--ink); border-radius: 4px; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
+.ps-tag--quiet { border-color: var(--rule); color: var(--ink-2); }
+.ps-kpis li { position: relative; min-height: 46px; } /* 44px of target plus the row's hairline */
+.ps-kpi { font-weight: 650; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+/* The whole 44px row opens the KPI (its status word sits above the link, so it stays readable to a pointer). */
+.ps-kpi::before { content: ""; position: absolute; inset: 0; }
+.ps-status { font-size: var(--fs-small); justify-self: end; }
+.ps-month { color: var(--ink-2); }
+.ps-empty { color: var(--ink-2); }
+.ps-dl { display: grid; gap: var(--s-3); }
+.ps-dl > div { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: var(--s-3); }
+.ps-dl dt { color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
+.ps-dl .is-empty { color: var(--ink-2); }
+/* One person a row, each row 44px, so every name is a 44px target (its row) without reaching into the next. */
+.ps-list { display: grid; gap: 0; margin-top: -10px; }
+.ps-list li { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s-2); min-height: var(--tap); }
+.ps-fn-label { min-width: 7.5rem; color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
+.ps-person { position: relative; font-weight: 700; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+.ps-person::before { content: ""; position: absolute; inset: -12px -4px; }
+.ps-list .ps-person { position: static; }
+.ps-list .ps-person::before { inset: 0; }
+.ps-person-title { margin-left: 0.5em; color: var(--ink-2); font-size: var(--fs-small); }
+.ps-list .ps-person-title { margin-left: 0; }
+/* Roles sit apart by a dot that ends its item ("Administrator ·"), so a wrapped line can end with a dot
+   but never start with one. The dot is decoration (empty alt text); each role is its own list item. */
+.ps-roles { display: flex; flex-wrap: wrap; gap: var(--s-1) 0; font-weight: 600; }
+.ps-roles li { white-space: nowrap; }
+.ps-roles li:not(:last-child)::after { content: "·" / ""; margin: 0 0.5em 0 0.45em; color: var(--ink-2); }
+.ps-actions { display: grid; }
+.ps-action { padding: var(--s-2) 0; border-top: 1px solid var(--rule-quiet); }
+.ps-action-text { font-weight: 650; }
+.ps-action-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--s-3); margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
+.ps-over { font-size: var(--fs-caption); }
+.ps-week { display: grid; }
+.ps-week li { display: flex; justify-content: space-between; gap: var(--s-3); padding: 6px 0; border-top: 1px solid var(--rule-quiet); font-size: var(--fs-small); }
+.ps-week li span:last-child { font-weight: 650; font-variant-numeric: tabular-nums; text-align: right; }
+.ps-week .ps-week-res { display: grid; justify-items: end; gap: 1px; }
+.ps-week .ps-week-res span { text-align: right; }
+.ps-week .ps-week-res .status { font-size: var(--fs-small); }
+.ps-note a { color: var(--ink); font-weight: 650; text-underline-offset: 0.2em; }
+.ps-note { margin-top: var(--s-2); color: var(--ink-2); font-size: var(--fs-caption); }
+.ps-foot { padding-top: var(--s-5); }
+@media (max-width: 599px) {
+  .ps-title { font-size: 2.25rem; }
+  .ps-dl > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .ps-kpis li { grid-template-columns: auto minmax(0, 1fr); padding-block: 6px; }
+  .ps-status { grid-column: 2; justify-self: start; }
+}
+
+/* ---------- Board setup: Organization ---------- */
+
+.org-badge { margin-left: var(--s-2); color: var(--ink-2); font-size: var(--fs-small); font-weight: 650; }
+.org-badge::before { content: "·" / ""; margin-right: var(--s-2); }
+.org-state-box { display: grid; gap: var(--s-2); margin-top: var(--s-3); padding: var(--s-3); border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface-quiet); }
+.org-state-box--end { margin-top: var(--s-5); }
+.org-steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-5); margin: 0; padding: 0; list-style: none; font-size: var(--fs-small); font-weight: 600; color: var(--ink-2); }
+.org-steps li { display: inline-flex; align-items: center; gap: var(--s-2); }
+.org-step-n {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.org-steps .is-current { color: var(--ink); font-weight: 750; }
+.org-steps .is-current .org-step-n { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.org-steps .is-done { color: var(--ink); }
+.org-steps .is-done .org-step-n { border-color: var(--on); color: var(--on); }
+.org-steps .is-done .org-step-n .org-check { width: 14px; height: 14px; }
+.org-state { font-size: var(--fs-small); font-weight: 600; }
+.org-issues { display: grid; gap: var(--s-2); }
+.org-issues li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-2); }
+.org-issue { font-size: var(--fs-small); align-items: flex-start; }
+.org-issue .glyph { margin-top: 0.1em; }
+.org-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-4); }
+.su-inline-link { min-height: 0; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-size: var(--fs-small); font-weight: 650; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; position: relative; }
+.su-inline-link::before { content: ""; position: absolute; inset: -12px -4px; }
+
+.org-days, .org-roles { display: flex; flex-wrap: wrap; gap: 0 var(--s-3); margin: var(--s-3) 0 0; padding: 0; border: 0; }
+.org-days legend, .org-roles legend { padding: 0; color: var(--ink); font-size: var(--fs-caption); font-weight: 650; }
+.org-role { display: inline-flex; align-items: center; gap: var(--s-2); min-height: var(--tap); padding-right: var(--s-2); font-size: var(--fs-small); cursor: pointer; }
+.org-role input { width: 20px; height: 20px; margin: 0; accent-color: var(--ink); cursor: pointer; }
+.org-cutoff-note { grid-column: span 4; align-self: end; }
+
+.org-table-wrap { overflow-x: auto; }
+.org-table { width: 100%; margin-top: var(--s-2); font-size: var(--fs-small); }
+.org-table th, .org-table td { padding: 4px 8px 4px 0; border-bottom: 1px solid var(--rule-quiet); text-align: left; vertical-align: middle; }
+.org-table thead th { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 650; }
+.org-table tbody th { font-weight: 700; white-space: nowrap; }
+.org-table select, .org-shifts input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 var(--s-2);
+  border: 1px solid var(--ink-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-small);
+}
+.org-table select:focus-visible, .org-shifts input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.org-table--fns select { min-width: 10rem; }
+.org-load { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.org-load.is-over { color: var(--error); font-weight: 700; }
+.org-load .glyph { width: 15px; height: 15px; margin-right: 4px; vertical-align: -2px; }
+.org-shifts { display: grid; gap: var(--s-2); margin: var(--s-2) 0; padding: 0; list-style: none; }
+.org-shifts li { display: flex; align-items: center; gap: var(--s-3); }
+.org-shifts input { max-width: 16rem; }
+.org-people { display: grid; gap: var(--s-2); margin: var(--s-2) 0; }
+.org-person { margin: 0; padding: var(--s-3); border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); }
+.org-person .su-grid .su-field { grid-column: span 2; }
+.org-remove { margin-top: var(--s-1); }
+.su-section .btn .i { width: 18px; height: 18px; }
+
+/* Owner named by the active organization (the function editor). */
+.su-fixed-label { color: var(--ink); font-size: var(--fs-caption); font-weight: 650; }
+.su-fixed { display: flex; align-items: center; min-height: var(--tap); font-weight: 700; }
+
+/* At most 3 daily measures per owner: the count under Add a KPI, and the plain refusal of a 4th. */
+.su-cap { display: grid; justify-items: start; gap: 4px; }
+.su-add[aria-disabled="true"] { border-color: var(--rule); color: var(--ink-2); cursor: not-allowed; }
+.su-add[aria-disabled="true"]:active { transform: none; }
+.su-cap-msg { max-width: 60ch; }
+
+@media (max-width: 599px) {
+  .org-person .su-grid .su-field { grid-column: 1 / -1; }
+  .org-cutoff-note { grid-column: 1 / -1; }
+}
+
+/* ---------- Detail: the scope beside every value ---------- */
+
+.kpi-scope { font-weight: inherit; }
+.scope-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--s-3); margin-top: var(--s-3); color: var(--ink-2); font-size: var(--fs-small); }
+.scope-switch .btn--text { color: var(--ink); font-size: var(--fs-small); }
+
+/* Days off and extra production days (pilot boards) */
+.org-days-list { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: var(--s-3); padding: 0; list-style: none; }
+.org-days-list li { display: flex; align-items: center; gap: 6px; }
+.org-days-add { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: var(--s-3); font-size: var(--fs-small); }

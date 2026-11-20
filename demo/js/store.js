@@ -5,21 +5,90 @@
 // localStorage overlay of what people entered on this device. getMonth()
 // returns a fresh merged copy; nothing outside this file touches storage.
 
-const DATA_URL = new URL('../data/plant-2026-02.json?v=20261117-065120', import.meta.url);
+import * as cloud from './cloud.js?v=20261120-154112';
+import { todayIn, monthKey, daysInMonth, monthDate, productionCalendar, shiftMonth } from './calendar.js?v=20261120-154112';
+
+const DATA_URL = new URL('../data/plant-2026-02.json?v=20261120-154112', import.meta.url);
+const STARTER_URL = new URL('../data/starter-board.json?v=20261120-154112', import.meta.url);
 const OVERLAY_KEY = 'demo.overlay.v1';
 const SETUP_KEY = 'demo.setup.v1';
 export const AREA_IDS = ['plant', 'mold', 'bond', 'prime', 'compounding'];
 
 let base = null;
+// A pilot board: { board, starter }. Each month is built from the board's setup, one at a time.
+let pilot = null;
 
-/** Load the workbook month once. Same-origin file only. */
-export async function load() {
+/**
+ * Load the month once. The demo reads the workbook month (same-origin file only);
+ * a pilot board (`{ board }` from cloud.openBoard()) starts from a blank month that
+ * its Board setup fills in (PILOT-SPEC.md, "What a new board starts with").
+ */
+export async function load({ board = null } = {}) {
+  if (!base && board) {
+    const res = await fetch(STARTER_URL);
+    if (!res.ok) throw new Error(`Could not load the board data (${res.status}).`);
+    pilot = { board, starter: await res.json() };
+    base = pilotMonth(pilot.board, pilot.starter);
+  }
   if (!base) {
     const res = await fetch(DATA_URL);
     if (!res.ok) throw new Error(`Could not load the board data (${res.status}).`);
     base = await res.json();
   }
   return getMonth();
+}
+
+export { todayIn };
+
+/** A pilot board's today in its time zone ('YYYY-MM-DD'); null in the demo. */
+export const boardToday = (now = new Date()) => (pilot ? todayIn(pilot.board.timeZone, now) : null);
+/** A pilot board's first day ('YYYY-MM-DD'); null in the demo. */
+export const boardFirstDay = () => (pilot ? pilot.board.firstDay ?? null : null);
+
+/**
+ * Show another month (or the same month on a new today): rebuilds the month from the documents
+ * already in memory and returns it. Screens keep working on day numbers within one month.
+ * The demo has one month, so it only returns it.
+ */
+export function useMonth(month) {
+  if (!pilot || !base) return getMonth();
+  const next = pilotMonth(pilot.board, pilot.starter, month);
+  if (next.month !== base.month) overlayMem = null;
+  if (next.month !== base.month || next.boardDate !== base.boardDate) base = next;
+  return getMonth();
+}
+
+/**
+ * A pilot board's month: plant totals only, no numbers. It is this month (today in the board's
+ * time zone) unless another is asked for, kept between the first day's month and this month.
+ * boardDate is today in this month, else the month's last day.
+ */
+function pilotMonth(board, starter = {}, want = null) {
+  const today = todayIn(board.timeZone);
+  const first = board.firstDay && /^\d{4}-\d{2}-\d{2}$/.test(board.firstDay) ? board.firstDay : today;
+  let m = typeof want === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(want) ? want : monthKey(today);
+  if (m > monthKey(today)) m = monthKey(today);
+  if (m < monthKey(first) && monthKey(first) <= monthKey(today)) m = monthKey(first);
+  const n = daysInMonth(m);
+  return {
+    plant: board.name,
+    month: m,
+    daysInMonth: n,
+    boardDate: m === monthKey(today) ? today : monthDate(m, n),
+    firstDay: first,
+    areas: [{ id: 'plant', name: 'Plant total' }],
+    source: '',
+    pilot: true,
+    functions: [],
+    leadingIndicators: starter.leadingIndicators ?? {},
+    glossary: starter.glossary ?? {},
+    notes: [],
+  };
+}
+
+/** The numbers document's key. A pilot board keeps one per month, because entries are keyed by day of the month. */
+function overlayKey(month = base.month) {
+  return cloud.BOARD ? OVERLAY_KEY + '@' + month : OVERLAY_KEY;
 }
 
 /* ---------- Storage (all access guarded) ---------- */
@@ -54,11 +123,12 @@ function cleanEntry(e) {
   return out;
 }
 
-function readOverlay() {
+function readOverlay(key = overlayKey()) {
   try {
     // After a refused write, this visit's copy is the truth (see writeOverlay).
-    const raw = overlayMem ? null : localStorage.getItem(OVERLAY_KEY);
-    const parsed = overlayMem ?? (raw ? JSON.parse(raw) : null);
+    const mem = key === overlayKey() ? overlayMem : null;
+    const raw = mem ? null : cloud.storage().getItem(key);
+    const parsed = mem ?? (raw ? JSON.parse(raw) : null);
     if (parsed && typeof parsed === 'object' && parsed.entries && typeof parsed.entries === 'object') {
       const entries = {};
       for (const [key, e] of Object.entries(parsed.entries)) {
@@ -78,7 +148,7 @@ let overlayMem = null;
 /** Returns false when the browser refused: the change then lives in this visit's copy only. */
 function writeOverlay(overlay) {
   try {
-    localStorage.setItem(OVERLAY_KEY, JSON.stringify(overlay));
+    cloud.storage().setItem(overlayKey(), JSON.stringify(overlay));
     overlayMem = null;
     return true;
   } catch {
@@ -212,6 +282,17 @@ function cleanFunctionSetup(f) {
   return out;
 }
 
+/** A goal history: dated entries, sorted by date, one per date (the later one kept). */
+function cleanGoals(list) {
+  const byDate = new Map();
+  for (const g of list) {
+    if (isObj(g) && typeof g.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(g.from)) {
+      byDate.set(g.from, { from: g.from, goal: isNum(g.goal) ? Number(g.goal.toFixed(8)) : null });
+    }
+  }
+  return [...byDate.values()].sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0));
+}
+
 /** Every field checked, so a damaged record can never stop the board from loading. */
 function normalizeSetup(raw) {
   const s = emptySetup();
@@ -241,6 +322,10 @@ function normalizeSetup(raw) {
         ...(k.rollup === 'total' || k.rollup === 'average' ? { rollup: k.rollup } : {}),
         ...(isNum(k.monthGoal) ? { monthGoal: k.monthGoal } : {}),
         ...(Number.isInteger(k.startDay) ? { startDay: k.startDay } : {}),
+        // A pilot board's measures start on a full date (PILOT-SPEC.md, Part 2).
+        ...(typeof k.startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k.startDate) ? { startDate: k.startDate } : {}),
+        // A pilot board's goal history: each goal holds from its date until the next one.
+        ...(Array.isArray(k.goals) ? { goals: cleanGoals(k.goals) } : {}),
         ...(WEEKLY_RULE_IDS.includes(k.weeklyRule) ? { weeklyRule: k.weeklyRule } : {}),
       }));
     }
@@ -258,7 +343,7 @@ let setupWriteFailed = false;
 export function readSetup() {
   if (setupWriteFailed && setupMem) return normalizeSetup(setupMem);
   try {
-    const raw = localStorage.getItem(SETUP_KEY);
+    const raw = cloud.storage().getItem(SETUP_KEY);
     return normalizeSetup(raw ? JSON.parse(raw) : setupMem);
   } catch {
     return normalizeSetup(setupMem); // blocked or corrupt: this visit's copy, else the workbook's setup
@@ -268,7 +353,7 @@ export function readSetup() {
 export function writeSetup(setup) {
   setupMem = structuredClone(setup);
   try {
-    localStorage.setItem(SETUP_KEY, JSON.stringify(setup));
+    cloud.storage().setItem(SETUP_KEY, JSON.stringify(setup));
     setupWriteFailed = false;
     return true;
   } catch {
@@ -284,9 +369,10 @@ export function hasSetup() {
 
 export function resetSetup() {
   const snapshot = readSetup();
+  if (cloud.BOARD) return snapshot; // a real board's setup is never cleared from the app
   setupMem = null;
   setupWriteFailed = false;
-  try { localStorage.removeItem(SETUP_KEY); } catch { /* ignore */ }
+  try { cloud.storage().removeItem(SETUP_KEY); } catch { /* ignore */ }
   return snapshot;
 }
 
@@ -298,6 +384,7 @@ export function resetSetup() {
  * Returns a snapshot for Undo.
  */
 export function resetEverything() {
+  if (cloud.BOARD) return null; // a real board can never be cleared from the app
   const snapshot = { local: {}, session: {} };
   for (const name of ['local', 'session']) {
     try {
@@ -390,13 +477,38 @@ function productionMap(calendar) {
   return Object.fromEntries(Object.entries(calendar).map(([d, v]) => [d, v ?? true]));
 }
 
+/**
+ * The day of this month a KPI starts. The demo stores a day of the month; a pilot board stores the
+ * full date (startDate), so a later month starts on its 1st and an earlier one never starts
+ * (daysInMonth + 1). Nothing starts before the board's first day.
+ */
+function startDayOf(month, k) {
+  if (!month.pilot) return Number.isInteger(k.startDay) && k.startDay >= 1 ? k.startDay : 1;
+  const dayIn = (iso) => {
+    if (!iso) return 1;
+    const m = monthKey(iso);
+    return m < month.month ? 1 : m > month.month ? month.daysInMonth + 1 : Number(iso.slice(8, 10));
+  };
+  return Math.max(dayIn(k.startDate), dayIn(month.firstDay));
+}
+
+/** A KPI's daily goal on a day: on a pilot board, the latest dated goal on or before that day. */
+function goalOn(month, k, day) {
+  if (month.pilot && k.goals?.length) {
+    const iso = monthDate(month.month, day);
+    let goal = null;
+    for (const g of k.goals) if (g.from <= iso) goal = g.goal; else break;
+    return goal;
+  }
+  return isNum(k.goal) ? k.goal : null;
+}
+
 /** A KPI row that isn't in the workbook: same shape as a function, with no numbers yet. */
 function newKpiRow(month, fn, k, prod) {
   const unit = UNITS.find((u) => u.id === k.unit) ?? UNITS[0];
   const kpi = { name: k.name, boardLabel: k.name, unit: unit.id, better: k.better === 'lower' ? 'lower' : 'higher' };
-  const goal = isNum(k.goal) ? k.goal : null;
   const days = [];
-  for (let d = 1; d <= month.daysInMonth; d += 1) days.push({ day: d, actual: null, goal: prod[d] ? goal : null });
+  for (let d = 1; d <= month.daysInMonth; d += 1) days.push({ day: d, actual: null, goal: prod[d] ? goalOn(month, k, d) : null });
   return {
     id: `${fn.id}--${k.id}`,
     kpiId: k.id,
@@ -404,9 +516,10 @@ function newKpiRow(month, fn, k, prod) {
     primary: false,
     custom: true,
     // The board day it was added on: days before it read as "not tracked yet", not as misses.
-    startDay: Number.isInteger(k.startDay) && k.startDay >= 1 ? k.startDay : 1,
+    startDay: startDayOf(month, k),
     rollup: k.rollup === 'total' || k.rollup === 'average' ? k.rollup : unit.rollup,
-    monthGoal: isNum(k.monthGoal) ? k.monthGoal : null,
+    // A pilot board works the month goal out from the daily goals (finishKpiRow).
+    monthGoal: isNum(k.monthGoal) && !month.pilot ? k.monthGoal : null,
     weeklyRule: WEEKLY_RULE_IDS.includes(k.weeklyRule) ? k.weeklyRule : null,
     name: fn.name,
     owner: fn.owner,
@@ -422,9 +535,16 @@ function newKpiRow(month, fn, k, prod) {
   };
 }
 
-/** Month to date and the year for a KPI row that isn't in the workbook, from its daily numbers. */
+/**
+ * Month to date and the year for a KPI row that isn't in the workbook, from its daily numbers.
+ * On a pilot board each day can have its own goal (a goal change starts on its date): an average's
+ * goal so far is the latest day's, and the month goal is the sum of the production days' goals
+ * (total) or the last production day's goal (average). A pilot board's year (row.monthly) is filled
+ * from yearRows() in getMonth(), actuals and goals both; here it fills only goals, in the demo.
+ */
 function finishKpiRow(month, row, prod) {
   let sum = 0; let n = 0; let goalSum = 0; let goalN = 0; let prodDays = 0; let allGoals = 0;
+  let lastGoal = null; let anyGoal = false;
   const dayGoal = row.daily.plant.find((r) => isNum(r.goal))?.goal ?? null;
   // Tracking starts the day it was added, or earlier if someone entered an earlier day.
   const firstNumber = row.daily.plant.find((r) => isNum(r.actual))?.day ?? Infinity;
@@ -436,7 +556,7 @@ function finishKpiRow(month, row, prod) {
   row.monthToDate = row.daily.plant.map((r) => {
     if (prod[r.day] && !r.beforeStart) {
       prodDays += 1;
-      if (isNum(r.goal)) allGoals += r.goal;
+      if (isNum(r.goal)) { allGoals += r.goal; anyGoal = true; lastGoal = r.goal; } else lastGoal = null;
     }
     // Every day with a number counts (Saturday overtime too); goals only on scheduled days.
     if (isNum(r.actual)) {
@@ -447,11 +567,15 @@ function finishKpiRow(month, row, prod) {
     const actual = n ? (row.rollup === 'total' ? sum : sum / n) : null;
     let goal;
     if (row.rollup === 'total') goal = n ? (goalN ? goalSum : null) : (isNum(dayGoal) ? allGoals : null);
-    else goal = dayGoal;
+    else goal = month.pilot ? (lastGoal ?? dayGoal) : dayGoal;
     if (r.beforeStart) return { day: r.day, actual: null, goal: null, beforeStart: true };
     return { day: r.day, actual, goal };
   });
   const dailyGoal = row.daily.plant.find((r) => isNum(r.goal))?.goal ?? null;
+  if (month.pilot) {
+    row.monthGoal = row.rollup === 'total' ? (anyGoal ? Number(allGoals.toFixed(8)) : null) : lastGoal;
+    return;
+  }
   const monthGoal = isNum(row.monthGoal) ? row.monthGoal
     : !isNum(dailyGoal) ? null
       : row.rollup === 'total' ? dailyGoal * prodDays : dailyGoal;
@@ -585,7 +709,14 @@ export const ORG_NAME_MAX = 80;
 let orgMem = null;
 let orgWriteFailed = false;
 
-const emptyOrgDoc = () => ({ version: 1, active: null, draft: null, rev: 0, checked: null, activatedAt: null });
+const emptyOrgDoc = () => ({ version: 1, active: null, draft: null, rev: 0, checked: null, activatedAt: null, daysOff: [], extraDays: [] });
+
+/**
+ * Days off and extra production days: ISO dates, sorted, no repeats. They sit at the top of the
+ * organization document, beside active and draft, because they take effect when saved, with no
+ * Validate or Activate (PILOT-SPEC.md D8), and merge as one group (js/merge.js).
+ */
+const cleanDays = (v) => [...new Set((Array.isArray(v) ? v : []).map(dayKey).filter(Boolean))].sort();
 
 function cleanOrg(o) {
   if (!isObj(o)) return null;
@@ -625,7 +756,7 @@ function readOrgDoc() {
   let raw = null;
   if (orgWriteFailed && orgMem) raw = orgMem;
   else {
-    try { raw = JSON.parse(localStorage.getItem(ORG_KEY) ?? 'null') ?? orgMem; } catch { raw = orgMem; }
+    try { raw = JSON.parse(cloud.storage().getItem(ORG_KEY) ?? 'null') ?? orgMem; } catch { raw = orgMem; }
   }
   const doc = emptyOrgDoc();
   if (!isObj(raw) || raw.version !== 1) return doc;
@@ -633,6 +764,8 @@ function readOrgDoc() {
   doc.draft = cleanOrg(raw.draft);
   doc.rev = Number.isInteger(raw.rev) && raw.rev >= 0 ? raw.rev : 0;
   doc.activatedAt = typeof raw.activatedAt === 'string' ? raw.activatedAt : null;
+  doc.daysOff = cleanDays(raw.daysOff);
+  doc.extraDays = cleanDays(raw.extraDays);
   if (isObj(raw.checked) && Number.isInteger(raw.checked.rev) && Array.isArray(raw.checked.issues)) {
     doc.checked = {
       rev: raw.checked.rev,
@@ -648,7 +781,7 @@ function readOrgDoc() {
 function writeOrgDoc(doc) {
   orgMem = structuredClone(doc);
   try {
-    localStorage.setItem(ORG_KEY, JSON.stringify(doc));
+    cloud.storage().setItem(ORG_KEY, JSON.stringify(doc));
     orgWriteFailed = false;
     return true;
   } catch {
@@ -689,7 +822,7 @@ export function defaultOrg(month) {
   const site = String(month.sourcePlant ?? month.plant ?? '').replace(/\s+plant$/i, '');
   return {
     name: '',
-    timeZone: `Eastern (${site}, OH)`,
+    timeZone: pilot ? zoneWords(pilot.board.timeZone) : `Eastern (${site}, OH)`,
     weekStart: 'mon',
     productionDays: ['mon', 'tue', 'wed', 'thu', 'fri'],
     cutoff: '',
@@ -707,7 +840,24 @@ export function defaultOrg(month) {
  */
 export function getOrg(month) {
   const doc = readOrgDoc();
-  return { active: doc.active ?? defaultOrg(month), stored: Boolean(doc.active), draft: doc.draft, rev: doc.rev, checked: doc.checked, activatedAt: doc.activatedAt };
+  const active = doc.active ?? defaultOrg(month);
+  // A pilot board's time zone is the board's, set when it was made.
+  if (pilot) active.timeZone = zoneWords(pilot.board.timeZone);
+  return { active, stored: Boolean(doc.active), draft: doc.draft, rev: doc.rev, checked: doc.checked, activatedAt: doc.activatedAt, daysOff: doc.daysOff, extraDays: doc.extraDays };
+}
+
+const ZONE_WORDS = { 'America/New_York': 'Eastern', 'America/Chicago': 'Central', 'America/Denver': 'Mountain', 'America/Los_Angeles': 'Pacific' };
+const zoneWords = (tz) => ZONE_WORDS[tz] ?? String(tz ?? '');
+
+/**
+ * Save the days off or the extra production days (which: 'daysOff' | 'extraDays'). They take effect
+ * at once, with no Validate or Activate. Returns false when the browser refused.
+ */
+export function setOrgDays(which, list) {
+  if (which !== 'daysOff' && which !== 'extraDays') return false;
+  const doc = readOrgDoc();
+  doc[which] = cleanDays(list);
+  return writeOrgDoc(doc);
 }
 
 /** A copy of the whole stored record, for Undo. */
@@ -854,29 +1004,104 @@ function applyOrg(month, org) {
   }
 }
 
+/** The month's production days: the workbook's, or on a pilot board the Organization's week days less days off plus extra days. */
+function calendarOf(month) {
+  if (!month.pilot) return workbookCalendar(month);
+  const doc = readOrgDoc();
+  const days = doc.active?.productionDays ?? ['mon', 'tue', 'wed', 'thu', 'fri'];
+  return productionCalendar(month.month, days, doc.daysOff, doc.extraDays);
+}
+
+/** One month built: workbook (or a pilot board's blank month) + Board setup + the active Organization + entries. */
+function buildMonth(from, overlay) {
+  const month = structuredClone(from);
+  applyDataQuality(month);
+  month.productionDays = calendarOf(month);
+  const prod = productionMap(month.productionDays);
+  applySetup(month, readSetup(), prod);
+  applyOrg(month, readOrgDoc().active);
+  applyOverlay(month, overlay);
+  applyExtraEntries(month, overlay, prod);
+  return month;
+}
+
 /** A fresh merged copy of the month: workbook + Board setup + the active Organization + entries from this device. */
 export function getMonth() {
   if (!base) throw new Error('Call load() first.');
   const overlay = readOverlay();
   try {
-    const month = structuredClone(base);
-    applyDataQuality(month);
-    month.productionDays = workbookCalendar(month);
-    const prod = productionMap(month.productionDays);
-    applySetup(month, readSetup(), prod);
-    applyOrg(month, readOrgDoc().active);
-    applyOverlay(month, overlay);
-    applyExtraEntries(month, overlay, prod);
+    const month = buildMonth(base, overlay);
+    if (month.pilot) fillYear(month);
     return month;
   } catch (err) {
     // Board setup or an entry this code can't read: show the workbook's board rather than nothing.
     console.warn('Board setup skipped:', err);
     const month = structuredClone(base);
     applyDataQuality(month);
-    month.productionDays = workbookCalendar(month);
+    month.productionDays = calendarOf(month);
     try { applyOverlay(month, overlay); } catch { applyOverlay(month, { version: 1, entries: {} }); }
     month.setupFailed = true;
     return month;
+  }
+}
+
+/* ---------- A pilot board's year ---------- */
+
+// Built months, kept while their documents are the same text: month -> { key: [texts], month }.
+const builtMonths = new Map();
+
+function builtMonth(m) {
+  const store = cloud.storage();
+  const read = (k) => { try { return store.getItem(k); } catch { return null; } };
+  const key = [read(SETUP_KEY), read(ORG_KEY), read(overlayKey(m)), m === base.month ? base.boardDate : ''];
+  const hit = builtMonths.get(m);
+  if (hit && hit.key.every((t, i) => t === key[i])) return hit.month;
+  const month = buildMonth(pilotMonth(pilot.board, pilot.starter, m), readOverlay(overlayKey(m)));
+  builtMonths.set(m, { key, month });
+  return month;
+}
+
+/** Month to date at the month's end (or the board date this month) and the month goal, for one KPI row. */
+function monthResult(month, row) {
+  const last = monthKey(month.boardDate) === month.month ? Number(month.boardDate.slice(8, 10)) : month.daysInMonth;
+  const r = (row.monthToDate ?? []).find((x) => x.day === last) ?? null;
+  return { month: month.month, actual: r && !r.beforeStart && isNum(r.actual) ? r.actual : null, goal: isNum(row.monthGoal) ? row.monthGoal : null };
+}
+
+/**
+ * A pilot board's results by month for one calendar year, from the first day's month through the
+ * month shown. -> { [fnId]: { [kpiId]: [{ month: 'YYYY-MM', actual, goal }] } }
+ */
+export function yearRows(year, current = null) {
+  const out = {};
+  if (!pilot || !base) return out;
+  const first = monthKey(base.firstDay ?? base.month);
+  for (let m = `${year}-01`; m <= `${year}-12` && m <= base.month; m = shiftMonth(m, 1)) {
+    if (m < first) continue;
+    const month = current && current.month === m ? current : builtMonth(m);
+    for (const fn of [...month.functions, ...(month.hiddenFunctions ?? [])]) {
+      const rows = (out[fn.id] ??= {});
+      (rows[fn.firstKpiId ?? 'kpi'] ??= []).push(monthResult(month, fn));
+      for (const k of fn.extraKpis ?? []) (rows[k.kpiId] ??= []).push(monthResult(month, k));
+    }
+  }
+  return out;
+}
+
+/** Fill each KPI row's year (row.monthly) from yearRows(): months before the first day and after this one stay empty. */
+function fillYear(month) {
+  let rows;
+  try { rows = yearRows(Number(month.month.slice(0, 4)), month); } catch (err) { console.warn('Year skipped:', err); return; }
+  const year = month.month.slice(0, 4);
+  const fill = (row, list) => {
+    row.monthly = MONTHS.map((name, i) => {
+      const r = list?.find((x) => x.month === `${year}-${String(i + 1).padStart(2, '0')}`);
+      return { month: name, actual: r?.actual ?? null, goal: r?.goal ?? null };
+    });
+  };
+  for (const fn of [...month.functions, ...(month.hiddenFunctions ?? [])]) {
+    fill(fn, rows[fn.id]?.[fn.firstKpiId ?? 'kpi']);
+    for (const k of fn.extraKpis ?? []) fill(k, rows[fn.id]?.[k.kpiId]);
   }
 }
 
@@ -969,6 +1194,16 @@ export function dayFromIso(month, iso) {
 
 export const boardDay = (month) => dayFromIso(month, month.boardDate);
 
+/**
+ * The dates the ‹ › arrows and the date pickers reach: on a pilot board its first day through
+ * today, across months; in the demo the month's data. -> { min, max } ('YYYY-MM-DD')
+ */
+export function dateBounds(month) {
+  if (!pilot) return { min: isoForDay(month, 1), max: isoForDay(month, month.daysInMonth) };
+  const today = boardToday();
+  return { min: pilot.board.firstDay && pilot.board.firstDay <= today ? pilot.board.firstDay : today, max: today };
+}
+
 /* ---------- Writes ---------- */
 
 /**
@@ -985,8 +1220,18 @@ export function saveEntry(entry) {
   return { ok: writeOverlay(overlay), previous };
 }
 
-/** Put back what was there before a save (null removes the entry). */
-export function restoreEntry(functionId, day, previous) {
+/**
+ * Put back what was there before a save (null removes the entry). `inMonth` ('YYYY-MM') is the month
+ * the save went into, on a pilot board that may no longer be the month shown (midnight, the arrows).
+ */
+export function restoreEntry(functionId, day, previous, inMonth = null) {
+  if (pilot && inMonth && inMonth !== base.month) {
+    const key = overlayKey(inMonth);
+    const overlay = readOverlay(key);
+    if (previous) overlay.entries[entryKey(functionId, day)] = previous;
+    else delete overlay.entries[entryKey(functionId, day)];
+    try { cloud.storage().setItem(key, JSON.stringify(overlay)); return true; } catch { return false; }
+  }
   const overlay = readOverlay();
   const key = entryKey(functionId, day);
   if (previous) overlay.entries[key] = previous;
@@ -996,10 +1241,11 @@ export function restoreEntry(functionId, day, previous) {
 
 /** Clear everything entered on this device. Returns a snapshot for Undo. */
 export function resetDemo() {
+  if (cloud.BOARD) return null;
   const snapshot = readOverlay();
   let ok = true;
   overlayMem = null; // else a refused write's copy would keep the numbers on screen
-  try { localStorage.removeItem(OVERLAY_KEY); } catch { ok = false; }
+  try { cloud.storage().removeItem(overlayKey()); } catch { ok = false; }
   return { ok, snapshot };
 }
 
@@ -1198,7 +1444,7 @@ export function readWeekly() {
   let raw = null;
   if (weeklyWriteFailed && weeklyMem) raw = weeklyMem;
   else {
-    try { raw = JSON.parse(localStorage.getItem(WEEKLY_KEY) ?? 'null') ?? weeklyMem; } catch { raw = weeklyMem; }
+    try { raw = JSON.parse(cloud.storage().getItem(WEEKLY_KEY) ?? 'null') ?? weeklyMem; } catch { raw = weeklyMem; }
   }
   const doc = { version: 1, weeks: {}, records: [] };
   if (!isObj(raw) || raw.version !== 1) return doc;
@@ -1211,7 +1457,7 @@ export function readWeekly() {
 function writeWeekly(doc) {
   weeklyMem = structuredClone(doc);
   try {
-    localStorage.setItem(WEEKLY_KEY, JSON.stringify(doc));
+    cloud.storage().setItem(WEEKLY_KEY, JSON.stringify(doc));
     weeklyWriteFailed = false;
     return true;
   } catch {

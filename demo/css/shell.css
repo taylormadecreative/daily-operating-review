@@ -187,10 +187,14 @@
   .scope-line { margin-left: 0; column-gap: var(--s-3); row-gap: 2px; }
   .scope-line > .scope-item { padding-left: 0; }
   .scope-line > .scope-item::before { content: none; }
+  /* A pilot board's longer save words wrap rather than run off the screen. */
+  .scope-line > .scope-saved { white-space: normal; }
 }
 .scope-plant { color: var(--ink); font-weight: 700; }
 .scope-check { width: 13px; height: 13px; flex: none; color: var(--ink-2); }
 .scope-saved.is-off { color: var(--off); font-weight: 650; }
+/* A pilot board's warning (not saved yet, unlock ended): the off glyph at the check mark's size. */
+.scope-saved .glyph { width: 13px; height: 13px; flex: none; }
 .scope-area { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-weight: 650; }
 .scope-select {
   min-height: var(--tap);

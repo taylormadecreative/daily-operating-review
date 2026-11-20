@@ -10,25 +10,29 @@
 // Numbers come from js/weekly.js (pure); what this page saves lives in store.js (dor.weekly.v1).
 
 import {
-  getOrg, kpiRowsFor, isoForDay, anyFunctionById, readWeekly, editWeekly, weekSaved,
-} from './store.js?v=20261117-065120';
-import { ON, OFF, NOT_ENTERED, NO_GOAL, statusWord, monthStatus, isProductionDay } from './status.js?v=20261117-065120';
+  getOrg, kpiRowsFor, isoForDay, anyFunctionById, readWeekly, editWeekly, weekSaved, dateBounds, dayFromIso,
+} from './store.js?v=20261120-154112';
+import { ON, OFF, NOT_ENTERED, NO_GOAL, statusWord, monthStatus, isProductionDay } from './status.js?v=20261120-154112';
 import {
   weeksOf, weekForDay, weeklyResult, repeatGap, functionWeek, weeklyPair, ruleFor, RULES, CALC_VERSION, calcWords,
   EXCLUDED_WORDS, keyOf, lastProductionDay, addDays, plainNumber, isoTime,
-} from './weekly.js?v=20261117-065120';
-import { plainLabel, formatValue, goalSign, parseInput, formatEnteredAt, formatStamp, glossaryTerm, formatPair } from './format.js?v=20261117-065120';
-import { esc, statusMarkup, glyphMarkup, termButton, GLYPH } from './ui.js?v=20261117-065120';
-import { icon, DEPT_ICON } from './icons.js?v=20261117-065120';
-import { avatarMarkup, dueText, ACTION_WORD, responseFor, dailyWords, lapsedMarkup, lapsedWords, plantName, fitClampedText } from './board.js?v=20261117-065120';
-import { listActions, escalateAction, addAction, linkCandidates, linkActionDay, nextProductionDayIso } from './actions.js?v=20261117-065120';
+} from './weekly.js?v=20261120-154112';
+import { plainLabel, formatValue, goalSign, parseInput, formatEnteredAt, formatStamp, glossaryTerm, formatPair } from './format.js?v=20261120-154112';
+import { esc, statusMarkup, glyphMarkup, termButton, GLYPH } from './ui.js?v=20261120-154112';
+import { icon, DEPT_ICON } from './icons.js?v=20261120-154112';
+import { avatarMarkup, dueText, ACTION_WORD, responseFor, dailyWords, lapsedMarkup, lapsedWords, plantName, fitClampedText } from './board.js?v=20261120-154112';
+import { listActions, escalateAction, addAction, linkCandidates, linkActionDay, nextProductionDayIso } from './actions.js?v=20261120-154112';
 import {
   isOpenAction, isVerifiedAction, isOverdueAction, openOnDay, agingWords, actionStateMarkup,
-} from './action-state.js?v=20261117-065120';
-import { listMinutes } from './recorder.js?v=20261117-065120';
-import { pageHref, setNavState } from './shell.js?v=20261117-065120';
-import { fitSheetHead } from './detail.js?v=20261117-065120';
-import { getIdentity } from './identity.js?v=20261117-065120';
+} from './action-state.js?v=20261120-154112';
+import { listMinutes } from './recorder.js?v=20261120-154112';
+import { pageHref, setNavState } from './shell.js?v=20261120-154112';
+import { fitSheetHead } from './detail.js?v=20261120-154112';
+import { getIdentity } from './identity.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-154112';
+
+// Demo copy says where things are kept; on a board they're on the server, so the words drop it.
+const ON_DEVICE = cloud.BOARD ? '' : ' on this device';
 
 /** The broader weekly set (spec §5: WOR is not a weekly copy of DOR): each function's month measure, entered once a week. */
 const MEASURE_FNS = ['safety', 'people', 'quality', 'engineering', 'operations', 'maintenance'];
@@ -77,7 +81,39 @@ const boundaries = (week) => `${dayMed(week.start)} – ${dayLong(week.end)}`;
 /* ---------- The week the page shows ---------- */
 
 /** The organization's weeks for the month. */
-const weeksFor = (month) => weeksOf(month, { weekStart: getOrg(month).active.weekStart });
+const weeksFor = (month) => {
+  const weeks = weeksOf(month, { weekStart: getOrg(month).active.weekStart });
+  if (!cloud.BOARD) return weeks;
+  // A pilot board: only weeks with a day of this month from the first day through today.
+  const { min, max } = dateBounds(month);
+  return weeks.filter((w) => w.days.some((d) => d.day !== null && d.iso >= min && d.iso <= max));
+};
+
+/** The Weekly review's weeks for the month (a pilot board: the first day through today). */
+export const worWeeks = (month) => weeksFor(month);
+
+/**
+ * The week holding a day of the month, else the nearest one in the direction of travel
+ * (dir > 0: the next, dir < 0: the one before). -> its key, or null
+ */
+export function weekNear(month, day, dir) {
+  const weeks = weeksFor(month);
+  const w = weeks.find((x) => x.days.some((d) => d.day === day))
+    ?? (dir > 0 ? weeks.find((x) => x.days.some((d) => d.day !== null && d.day > day))
+      : [...weeks].reverse().find((x) => x.days.some((d) => d.day !== null && d.day < day)));
+  return w?.key ?? null;
+}
+
+/**
+ * A week that crosses into the next month (a pilot board): "This week continues in December.
+ * Those days are on December's review." Its one saved record stays under its Monday.
+ */
+export function splitWeekNote(week) {
+  const after = week?.days.filter((d) => d.day === null && d.iso > week.days.find((x) => x.day !== null)?.iso);
+  if (!cloud.BOARD || !after?.length) return '';
+  const name = new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(new Date(`${after[0].iso}T12:00:00Z`));
+  return `This week continues in ${name}. Those days are on ${name}'s review.`;
+}
 
 /**
  * The day a Weekly review link should look from: the day itself when it falls in the asked week,
@@ -93,7 +129,10 @@ export function worDay(month, weekKey, day) {
   if (!asked) return { day, week: weekForDay(weeks, day), badWeek: Boolean(weekKey) };
   const snap = snapped ? { snappedFrom: weekKey, weekKey: snapped.key } : {};
   if (asked.days.some((d) => d.day === day)) return { day, week: asked, badWeek: false, ...snap };
-  return { day: lastProductionDay(asked), week: asked, badWeek: false, ...snap };
+  let look = lastProductionDay(asked);
+  // A pilot board's week this week looks from today at the latest.
+  if (cloud.BOARD && isoForDay(month, look) > dateBounds(month).max) look = dayFromIso(month, dateBounds(month).max) ?? look;
+  return { day: look, week: asked, badWeek: false, ...snap };
 }
 
 /** The KPI that weights the weighted rule: Operations' parts produced (hidden in Board setup or not). */
@@ -390,7 +429,7 @@ function readinessOf(m) {
     done: carried.length === 0 || (Boolean(since) && updated.length === carried.length),
     text: !carried.length ? 'No open actions carried in from before this week'
       : since ? `${updated.length} of ${carried.length} carried-in actions, since the review of ${dayShort(prev.weekKey)}`
-        : `${carried.length} carried in · no earlier weekly review on this device to compare with`,
+        : `${carried.length} carried in · no earlier weekly review${ON_DEVICE} to compare with`,
     short: !carried.length ? 'None carried in' : since ? `${updated.length} of ${carried.length} updated` : `${carried.length} carried in · nothing to compare with`,
   });
   // 4. Commentary written (needed for every function off goal for the week).
@@ -780,12 +819,13 @@ function boardKey(m) {
         <li><svg class="glyph b2-key-na" aria-hidden="true" focusable="false"><use href="#g-missing"></use></svg>Not entered</li>
         <li><svg class="glyph b2-key-na" aria-hidden="true" focusable="false"><use href="#g-nogoal"></use></svg>Goal varies or not set</li>
       </ul>
-      <p class="b2-updated">Calculated just now from data saved on this device. View calculation shows each rule and its version.</p>
+      <p class="b2-updated">${cloud.here('Calculated just now from data saved on this device. View calculation shows each rule and its version.')}</p>
     </div>`;
 }
 
 function measuresMarkup(m) {
-  if (!m.measures.length) return '';
+  // A pilot board has one measure per function, so this section would repeat the daily measure.
+  if (!m.measures.length || cloud.BOARD) return '';
   const rows = m.measures.map((x) => {
     const r = x.result;
     const kpi = x.row.kpiDaily;
@@ -849,7 +889,7 @@ function functionsMarkup(m) {
   const final = latestFinal(m.doc, m.week.key);
   const sealed = final && !latestDraft(m.doc, m.week.key);
   const finalNote = final ? `<p class="wk-final-note">${statusMarkup(ON, { tag: 'span', word: `Finalized v${final.version}` })} <span>The record keeps the commentary as it was then. A change here shows on the record as "now: …"${sealed ? `, and Start a revised version (v${final.version + 1}) on the Overview carries it into a new version` : ''}.</span> <a href="#record/${esc(final.id)}">Open the record</a></p>` : '';
-  return `<p class="wk-tab-intro">Each day links to that day on the DOR board. Commentary is saved on this device and never changes a number.</p>
+  return `<p class="wk-tab-intro">Each day links to that day on the DOR board. ${cloud.here('Commentary is saved on this device and never changes a number.')}</p>
     ${finalNote}
     ${m.fns.map((f) => {
     const kpis = f.rows.map((e) => {
@@ -879,7 +919,7 @@ function functionsMarkup(m) {
       const id = `wc-${f.fn.id}-${k}`;
       return `<div class="wf-field"><label for="${id}">${esc(label)}</label><textarea id="${id}" rows="3" data-commentary="${esc(f.fn.id)}" data-field="${k}" maxlength="4000">${esc(c[k] ?? '')}</textarea></div>`;
     }).join('');
-    const savedLine = c.at ? `Saved on this device · ${formatEnteredAt(c.at)}` : 'Saves on this device as you type';
+    const savedLine = cloud.here(c.at ? `Saved on this device · ${formatEnteredAt(c.at)}` : 'Saves on this device as you type');
     return `<section class="wf" id="wf-${esc(f.fn.id)}" aria-labelledby="wf-${esc(f.fn.id)}-title">
         <header class="wf-head">
           <span class="fn-icon" aria-hidden="true">${icon(DEPT_ICON[f.fn.id] ?? 'board', 'i')}</span>
@@ -932,7 +972,7 @@ function actionsMarkup(m) {
     ? `<p class="wa-sub">From the weekly review of ${esc(dayShort(prev.weekKey))} (${prev.state === 'finalized' ? 'finalized' : 'draft'}).</p>
        ${prev.decisions.length ? `<ul class="wa-list">${prev.decisions.map((d) => `<li class="wa-item"><p class="wa-text">${esc(d.text)}</p><p class="wa-meta"><span>Decision</span>${d.by ? `<span>${esc(d.by)}</span>` : ''}</p></li>`).join('')}</ul>` : '<p class="wa-empty">No decisions were recorded in that review.</p>'}
        ${prev.actionIds.length ? `<ul class="wa-list">${prev.actionIds.map((id) => all.find((a) => a.id === id)).filter(Boolean).map((a) => actionItem(m, a)).join('')}</ul>` : ''}`
-    : '<div class="wa-calm"><p class="wa-empty">No weekly review was saved for an earlier week on this device.</p><p class="wa-next">Once a week is reviewed, its decisions and actions show here the week after, so the room checks what it promised.</p></div>';
+    : '<div class="wa-calm"><p class="wa-empty">No weekly review was saved for an earlier week' + ON_DEVICE + '.</p><p class="wa-next">Once a week is reviewed, its decisions and actions show here the week after, so the room checks what it promised.</p></div>';
   // First, what the week still needs (the same response rule as the scoreboard and Finish review).
   const needs = m.fns.flatMap((f) => f.rows.filter((e) => e.needs).map((e) => ({ f, e })));
   const needsBlock = needs.length
@@ -1058,7 +1098,7 @@ function minutesRow(min) {
       <span class="wr-type wr-type--dor">DOR</span>
       <div class="wr-main">
         <h3 class="wr-title">Daily meeting, ${esc(day)}</h3>
-        <p class="wr-meta"><span class="wr-state wr-state--${min.state === 'finalized' ? 'finalized' : 'draft'}">${min.state === 'finalized' ? 'Finalized' : 'Draft'}</span><span>${esc(min.startedAt ? `Held ${formatStamp(min.startedAt)}` : 'Saved on this device')}</span><span>${mins} min</span><span>${min.actions.length} ${min.actions.length === 1 ? 'action' : 'actions'}</span>${min.recorded ? '<span>Recorded</span>' : ''}</p>
+        <p class="wr-meta"><span class="wr-state wr-state--${min.state === 'finalized' ? 'finalized' : 'draft'}">${min.state === 'finalized' ? 'Finalized' : 'Draft'}</span><span>${esc(min.startedAt ? `Held ${formatStamp(min.startedAt)}` : cloud.here('Saved on this device'))}</span><span>${mins} min</span><span>${min.actions.length} ${min.actions.length === 1 ? 'action' : 'actions'}</span>${min.recorded ? '<span>Recorded</span>' : ''}</p>
       </div>
       <div class="wr-tools">
         <button class="btn btn--secondary" type="button" data-minutes-open="${esc(min.id)}">Open<span class="sr-only"> the minutes of ${esc(day)}</span></button>
@@ -1074,7 +1114,7 @@ function recordsMarkup(m) {
   const thisWeek = recs.some((r) => r.weekKey === m.week.key);
   const open = !latestFinal(m.doc, m.week.key) || latestDraft(m.doc, m.week.key);
   return `<div class="wa-head">
-      <p class="wk-tab-intro">Weekly reviews and the daily meetings' minutes, each a Draft until it's finalized. A finalized record never changes: a note can be added to it (with its author and reason), and a change to a weekly review goes into a revised version (v2) that replaces it once it's finalized. Saved on this device; the connected version keeps them in LinkedXL OS Governance.</p>
+      <p class="wk-tab-intro">Weekly reviews and the daily meetings' minutes, each a Draft until it's finalized. A finalized record never changes: a note can be added to it (with its author and reason), and a change to a weekly review goes into a revised version (v2) that replaces it once it's finalized. ${cloud.here('Saved on this device;')} the connected version keeps them in LinkedXL OS Governance.</p>
       <div class="wr-head-tools">
         ${thisWeek ? '' : `<button class="btn btn--secondary" type="button" data-prepare>Save a review draft for the ${esc(weekOf(m.week))}</button>`}
         ${open ? `<button class="btn btn--primary" type="button" data-finish="${esc(m.week.key)}">Finish review for the ${esc(weekOf(m.week))}</button>` : ''}
@@ -1086,7 +1126,7 @@ function recordsMarkup(m) {
     </section>
     <section class="wa-group" aria-labelledby="wr-dor">
       <h3 class="wa-title" id="wr-dor">Daily meetings <span class="wa-n">${minutes.length}</span></h3>
-      ${minutes.length ? `<ul class="wr-list">${minutes.map(minutesRow).join('')}</ul>` : '<div class="wa-calm"><p class="wa-empty">No daily meeting minutes saved on this device yet.</p><p class="wa-next">Run daily meeting on the DOR board saves its minutes here when it ends.</p></div>'}
+      ${minutes.length ? `<ul class="wr-list">${minutes.map(minutesRow).join('')}</ul>` : '<div class="wa-calm"><p class="wa-empty">No daily meeting minutes saved' + ON_DEVICE + ' yet.</p><p class="wa-next">Run daily meeting on the DOR board saves its minutes here when it ends.</p></div>'}
     </section>`;
 }
 
@@ -1100,8 +1140,11 @@ function headMarkup(m) {
     ? `<button class="btn btn--mint" type="button" data-record-open="${esc(final.id)}">Open finalized record</button>`
     : '<button class="btn btn--mint" type="button" data-prepare title="Saves this week\'s numbers, readiness and participants as the meeting\'s draft record">Save review draft</button>';
   const options = m.weeks.map((w) => `<option value="${esc(w.key)}"${w === m.week ? ' selected' : ''}>${esc(weekLabel(w))}</option>`).join('');
-  const first = m.idx === 0;
-  const lastWeek = m.idx === m.weeks.length - 1;
+  // A pilot board steps across months, from the first day's week through this week.
+  const { min, max } = dateBounds(m.month);
+  const own = m.week.days.filter((d) => d.day !== null);
+  const first = m.idx === 0 && !(cloud.BOARD && own[0]?.iso > min);
+  const lastWeek = m.idx === m.weeks.length - 1 && !(cloud.BOARD && own[own.length - 1]?.iso < max);
   const step = (dir, label, glyph, off) => `<button class="icon-btn wk-step period-step" type="button" data-wk-step="${dir}" aria-label="${label}"${off ? ' aria-disabled="true"' : ''}><svg class="icon" aria-hidden="true" focusable="false"><use href="#${glyph}"></use></svg></button>`;
   // The same period control as Home's and the DOR board's day (css/header.css): ‹, the week, ›, joined.
   return `<nav class="wk-nav period" aria-label="Week">
@@ -1124,7 +1167,9 @@ function pageMarkup(m) {
   const tab = currentTab();
   const tabs = TABS.map(([id, label]) => `<button class="wk-tab" type="button" role="tab" id="wk-tab-${id}" aria-controls="wk-panel-${id}" aria-selected="${id === tab}" tabindex="${id === tab ? 0 : -1}" data-wk-tab="${id}">${esc(label)}</button>`).join('');
   const panel = (id, body) => `<div class="wk-panel" role="tabpanel" id="wk-panel-${id}" aria-labelledby="wk-tab-${id}" tabindex="0"${id === tab ? '' : ' hidden'}>${body}</div>`;
+  const split = splitWeekNote(m.week);
   return `<p class="date-note" data-wk-note role="status" hidden></p>
+    ${split ? `<p class="date-note wk-split" data-wk-split>${esc(split)}</p>` : ''}
     <div class="wk-tabs" role="tablist" aria-label="Weekly review">${tabs}</div>
     ${panel('overview', overviewMarkup(m))}
     ${panel('functions', functionsMarkup(m))}
@@ -1306,7 +1351,7 @@ function saveCommentary(el, { quiet = false } = {}) {
     w.commentary[fnId] = c;
   });
   const line = document.querySelector(`[data-saved-for="${CSS.escape(fnId)}"]`);
-  if (line) line.textContent = ok ? `Saved on this device · ${formatEnteredAt(new Date().toISOString())}` : "Kept for this visit. This browser isn't saving.";
+  if (line) line.textContent = ok ? cloud.here(`Saved on this device · ${formatEnteredAt(new Date().toISOString())}`) : "Kept for this visit. This browser isn't saving.";
   if (!quiet) redrawPanel('overview');
 }
 
@@ -1830,7 +1875,7 @@ function historyList(input, kpi, rule) {
 }
 
 /** Who did it, for a record or a history line: the person chosen on this device, never blank. */
-const actorWords = (month) => String(getIdentity(month)?.name ?? '').trim() || 'Someone on this device';
+const actorWords = (month) => String(getIdentity(month)?.name ?? '').trim() || (cloud.BOARD ? 'Someone' : 'Someone on this device');
 
 /** The weekly entry or override form (mode selector: the week's own value, or an override with a reason and an approver). */
 function entryForm(m, e) {
@@ -1881,7 +1926,7 @@ function entryForm(m, e) {
       <div class="wc-buttons">
         <button class="btn btn--primary" type="submit" data-entry-save${weeklyOnly ? '' : ' hidden'}>${weeklyOnly ? 'Save weekly value' : 'Save override'}</button>
       </div>
-      <p class="wc-note">${weeklyOnly ? 'Saved on this device for this week only. It never changes a daily number.' : 'An override replaces the effective result for this week only. The calculated value is kept, and the daily numbers, month to date and year to date stay as they are.'}</p>
+      <p class="wc-note">${weeklyOnly ? cloud.here('Saved on this device for this week only. It never changes a daily number.') : 'An override replaces the effective result for this week only. The calculated value is kept, and the daily numbers, month to date and year to date stay as they are.'}</p>
     </form>`;
 }
 
@@ -1936,7 +1981,7 @@ function calcBody(m, e) {
     </section>
     <section class="sheet-section" aria-labelledby="wc-entry" id="wc-entry-section"><h3 class="section-title" id="wc-entry">${ov ? 'Override' : r.rule === 'weekly-only' ? 'Enter this week' : 'Override'}</h3>${overrideBlock}</section>
     <section class="sheet-section" aria-labelledby="wc-hist"><h3 class="section-title" id="wc-hist">History</h3>${historyList(input, kpi, r.rule)}</section>
-    <p class="wc-foot">Calculated just now from data saved on this device. The connected version recalculates in LinkedXL OS and keeps a version for every change.</p>`;
+    <p class="wc-foot">${cloud.here('Calculated just now from data saved on this device.')} The connected version recalculates in LinkedXL OS and keeps a version for every change.</p>`;
 }
 
 function recordBody(m, rec, { print = false } = {}) {
@@ -1959,12 +2004,12 @@ function recordBody(m, rec, { print = false } = {}) {
       // As it was when the record was finalized, with "now: …" beside anything that has changed since.
       const fn = anyFunctionById(m.month, snap.fnId);
       const now = (field, words) => (a && a[field] !== snap[field] ? ` <span class="wr-now">now: ${esc(words(a))}</span>` : '');
-      const gone = a ? '' : ' <span class="wr-now">now: no longer in the Action register on this device</span>';
+      const gone = a ? '' : ` <span class="wr-now">now: no longer in the Action register${ON_DEVICE}</span>`;
       return `<li><span class="wa-id">ID ${esc(id.slice(0, 8))}</span> ${esc(snap.text)}${now('text', (x) => x.text)}
         <span class="wr-sub">${esc([fn?.name, snap.owner].filter(Boolean).join(' · '))}${now('owner', (x) => x.owner || 'no owner')}${esc(snap.due ? ` · ${dueText(snap.due)}` : '')}${now('due', (x) => (x.due ? dueText(x.due) : 'no due date'))}</span>
         ${actionStateMarkup(snap.status)}${now('status', (x) => ACTION_STATE_WORDS[x.status] ?? x.status)}${gone}</li>`;
     }
-    if (!a) return `<li><span class="wa-id">ID ${esc(id.slice(0, 8))}</span> No longer in the Action register on this device</li>`;
+    if (!a) return `<li><span class="wa-id">ID ${esc(id.slice(0, 8))}</span> No longer in the Action register${ON_DEVICE}</li>`;
     const fn = anyFunctionById(m.month, a.fnId);
     return `<li><span class="wa-id">ID ${esc(id.slice(0, 8))}</span> ${esc(a.text)} <span class="wr-sub">${esc([fn?.name, a.owner, a.due ? dueText(a.due) : ''].filter(Boolean).join(' · '))}</span> ${actionStateMarkup(a.status)}</li>`;
   };
@@ -2022,7 +2067,7 @@ function recordBody(m, rec, { print = false } = {}) {
     </section>
     ${amendments}
     ${print ? '' : `<div class="wc-buttons"><button class="btn btn--secondary" type="button" data-record-csv="${esc(rec.id)}">Export CSV</button><button class="btn btn--secondary" type="button" data-record-print="${esc(rec.id)}">Print</button></div>`}
-    <p class="wc-foot">${finalized ? `A finalized record never changes: it keeps its numbers, and a note can be added with its author and reason. A change goes into a revised version: Start a revised version (v${rec.version + 1}) on the Overview, then Finish review; it replaces this one once it's finalized.` : 'A draft record: Save review draft refreshes its numbers; decisions and escalations are added as they happen.'} Saved on this device; the connected version keeps it in LinkedXL OS Governance.</p>`;
+    <p class="wc-foot">${finalized ? `A finalized record never changes: it keeps its numbers, and a note can be added with its author and reason. A change goes into a revised version: Start a revised version (v${rec.version + 1}) on the Overview, then Finish review; it replaces this one once it's finalized.` : 'A draft record: Save review draft refreshes its numbers; decisions and escalations are added as they happen.'} ${cloud.BOARD ? 'Saved to the server with this board.' : 'Saved on this device; the connected version keeps it in LinkedXL OS Governance.'}</p>`;
 }
 
 /**
@@ -2367,7 +2412,7 @@ export function openWorSheet(month, kind, id, day, { focus = null } = {}) {
   if (!drawSheet(month, kind, id, day)) {
     if (!wasOpen) {
       sayWorNote(kind === 'record'
-        ? "That meeting record isn't saved on this device. Meeting records lists the ones that are."
+        ? cloud.here("That meeting record isn't saved on this device. Meeting records lists the ones that are.")
         : kind === 'calc' ? "That weekly value isn't on this page. Each row's View calculation opens its own."
           : "That function or KPI isn't on the board, so there's nothing to add an action for.");
       requestClose();
@@ -2672,6 +2717,8 @@ export function initWor(c) {
       }
       const to = last?.weeks[last.idx + Number(step.dataset.wkStep)];
       if (to) ctx.goToWeek(to.key);
+      // A pilot board: the other half of a split week, or the week next to this one, in the next month.
+      else if (cloud.BOARD && last) ctx.stepWeek?.(Number(step.dataset.wkStep), last.week);
       return;
     }
     const tab = t.closest('[data-wk-tab]');

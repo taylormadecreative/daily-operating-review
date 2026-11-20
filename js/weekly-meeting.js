@@ -13,19 +13,19 @@
 import {
   weekModel, actionSets, previousRecord, latestDraft, COMMENT_FIELDS, hasCommentary, resultWord, goalChangedWords,
   addDecision, addEscalation, readDecisionDraft, writeDecisionDraft, weekLabel,
-} from './wor.js?v=20261117-065120';
-import { isoForDay } from './store.js?v=20261117-065120';
-import { weeklyPair, RULES, addDays } from './weekly.js?v=20261117-065120';
-import { listActions } from './actions.js?v=20261117-065120';
+} from './wor.js?v=20261120-154112';
+import { isoForDay } from './store.js?v=20261120-154112';
+import { weeklyPair, RULES, addDays } from './weekly.js?v=20261120-154112';
+import { listActions } from './actions.js?v=20261120-154112';
 import {
   isOpenAction, isOverdueAction, isEscalatedAction, isVerifiedAction, agingWords, actionStateMarkup,
-} from './action-state.js?v=20261117-065120';
-import { ON, OFF, NO_GOAL, statusWord } from './status.js?v=20261117-065120';
-import { plainLabel } from './format.js?v=20261117-065120';
-import { esc, statusMarkup, glyphMarkup, GLYPH } from './ui.js?v=20261117-065120';
-import { recorderReady, addActionIcon } from './recorder.js?v=20261117-065120';
-import { lapsedWords, fitClampedText } from './board.js?v=20261117-065120';
-import { toast } from './toast.js?v=20261117-065120';
+} from './action-state.js?v=20261120-154112';
+import { ON, OFF, NO_GOAL, statusWord } from './status.js?v=20261120-154112';
+import { plainLabel } from './format.js?v=20261120-154112';
+import { esc, statusMarkup, glyphMarkup, GLYPH } from './ui.js?v=20261120-154112';
+import { recorderReady, addActionIcon } from './recorder.js?v=20261120-154112';
+import { lapsedWords, fitClampedText } from './board.js?v=20261120-154112';
+import { toast } from './toast.js?v=20261120-154112';
 
 const AGENDA = ['Safety & readiness', 'Performance', 'Top gaps', 'Actions', 'Escalations', 'Forward look'];
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];

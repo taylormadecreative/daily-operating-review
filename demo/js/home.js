@@ -2,21 +2,21 @@
 // the function × area matrix, trends and key metrics, issues and actions,
 // and the daily questions. Every number is calculated from the month.
 
-import { dailySeries, isoForDay, notesFor, noteParagraphs, entryInfo, hasProblem, kpiRowsFor, NO_ISSUE } from './store.js?v=20261117-065120';
+import { dailySeries, isoForDay, dateBounds, notesFor, noteParagraphs, entryInfo, hasProblem, kpiRowsFor, NO_ISSUE } from './store.js?v=20261120-154112';
 import {
   ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED, STATUS_WORD,
   dayStatus, monthStatus, isProductionDay, compareToGoal, boardSummary, statusWord,
-} from './status.js?v=20261117-065120';
+} from './status.js?v=20261120-154112';
 import {
   formatPair, glossaryTerm, formatDayLong, formatDayMedium, formatEnteredAt, formatTicks, dayHeading, plainLabel,
-} from './format.js?v=20261117-065120';
-import { esc, termButton, GLYPH, issueStatusMarkup } from './ui.js?v=20261117-065120';
-import { icon } from './icons.js?v=20261117-065120';
-import { getUndoable, plantName, actionStateFor, needsSummary, ACTION_WORD, recordedOn, issueGap, ISSUE_GAP_WORD, NO_FUNCTIONS, periodDateMarkup } from './board.js?v=20261117-065120';
-import { getIdentity } from './identity.js?v=20261117-065120';
-import { isVerifiedAction, isCompletedAction } from './action-state.js?v=20261117-065120';
-import { pageHref } from './shell.js?v=20261117-065120';
-import { weekGlance } from './wor.js?v=20261117-065120';
+} from './format.js?v=20261120-154112';
+import { esc, termButton, GLYPH, issueStatusMarkup } from './ui.js?v=20261120-154112';
+import { icon } from './icons.js?v=20261120-154112';
+import { getUndoable, plantName, actionStateFor, needsSummary, ACTION_WORD, recordedOn, issueGap, ISSUE_GAP_WORD, NO_FUNCTIONS, periodDateMarkup } from './board.js?v=20261120-154112';
+import { getIdentity } from './identity.js?v=20261120-154112';
+import { isVerifiedAction, isCompletedAction } from './action-state.js?v=20261120-154112';
+import { pageHref } from './shell.js?v=20261120-154112';
+import { weekGlance } from './wor.js?v=20261120-154112';
 
 export const AREA_OPTIONS = [
   { id: 'all', name: 'Plant total' },
@@ -852,11 +852,12 @@ export function renderHome(month, day, area) {
   label.innerHTML = periodDateMarkup(formatDayLong(month, day));
   label.setAttribute('datetime', isoForDay(month, day));
   const picker = document.querySelector('[data-date-input]');
-  picker.min = isoForDay(month, 1);
-  picker.max = isoForDay(month, month.daysInMonth);
+  const bounds = dateBounds(month);
+  picker.min = bounds.min;
+  picker.max = bounds.max;
   picker.value = isoForDay(month, day);
-  document.querySelector('[data-home-prev]').disabled = day <= 1;
-  document.querySelector('[data-home-next]').disabled = day >= month.daysInMonth;
+  document.querySelector('[data-home-prev]').disabled = isoForDay(month, day) <= bounds.min;
+  document.querySelector('[data-home-next]').disabled = isoForDay(month, day) >= bounds.max;
   // The Area filter is in the scope line (shell.js), as on the DOR board.
 
   // Identity chip: initials and name, or a person icon when nobody is set.

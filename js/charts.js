@@ -4,9 +4,9 @@
 // labels in text tokens, a hover/focus tooltip, and a table twin for every chart.
 // Charts are drawn at their real pixel width so text never stretches.
 
-import { ON, OFF, statusWord } from './status.js?v=20261117-065120';
-import { formatTicks, formatPair } from './format.js?v=20261117-065120';
-import { esc, glyphMarkup, statusMarkup } from './ui.js?v=20261117-065120';
+import { ON, OFF, statusWord } from './status.js?v=20261120-154112';
+import { formatTicks, formatPair } from './format.js?v=20261120-154112';
+import { esc, glyphMarkup, statusMarkup } from './ui.js?v=20261120-154112';
 
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 

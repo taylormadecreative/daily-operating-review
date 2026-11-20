@@ -1,13 +1,15 @@
 // Dashboard shell: the navy sidebar (and its phone drawer), Settings and the
 // identity menu, the Export menu, the Area filter, and matrix cell tooltips.
 
-import { esc, glyphMarkup } from './ui.js?v=20261117-065120';
-import { icon, DEPT_ICON } from './icons.js?v=20261117-065120';
-import { isoForDay, dailySeries, rowForDay, storageWorks, getOrg } from './store.js?v=20261117-065120';
-import { weeksOf, zoneWords, productionWords } from './weekly.js?v=20261117-065120';
-import { getIdentity } from './identity.js?v=20261117-065120';
-import { formatDayLong, formatDayMedium } from './format.js?v=20261117-065120';
-import { ON } from './status.js?v=20261117-065120';
+import { esc, glyphMarkup } from './ui.js?v=20261120-154112';
+import { icon, DEPT_ICON } from './icons.js?v=20261120-154112';
+import { isoForDay, dailySeries, rowForDay, storageWorks, getOrg, boardToday } from './store.js?v=20261120-154112';
+import { weeksOf, zoneWords, productionWords } from './weekly.js?v=20261120-154112';
+import { getIdentity } from './identity.js?v=20261120-154112';
+import { formatDayLong, formatDayMedium } from './format.js?v=20261120-154112';
+import { ON, OFF } from './status.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-154112';
+import { statusWords, unlockButtonMarkup } from './unlock.js?v=20261120-154112';
 
 const narrow = () => matchMedia('(max-width: 760px)').matches;
 
@@ -32,9 +34,11 @@ export const setNavState = ({ area, view, week } = {}) => {
 export function pageHref(month, day, { view = navView, hash = '' } = {}) {
   const p = new URLSearchParams();
   if (view !== 'home' && PAGES.includes(view)) p.set('view', view);
-  p.set('date', isoForDay(month, day));
+  // A pilot board's today needs no date: a link with none opens on the day it's opened.
+  if (!cloud.BOARD || isoForDay(month, day) !== boardToday()) p.set('date', isoForDay(month, day));
   if (navArea && navArea !== 'all') p.set('area', navArea);
   if (view === 'wor' && navWeek) p.set('week', navWeek);
+  if (cloud.BOARD) p.set('b', cloud.BOARD);
   return `./?${p}${hash ? `#${hash}` : ''}`;
 }
 
@@ -61,6 +65,7 @@ export function navMarkup(month, day, view, where = 0) {
       ${command('data-open-actions', 'clipboard', 'Action register')}
       ${command('data-open-minutes', 'fileText', 'Meeting records')}
       ${command('data-open-setup', 'layers', 'Board setup')}
+      ${cloud.BOARD ? command('data-open-history', 'clock', 'Save history') : ''}
       ${view === 'dor' ? command('data-customize', 'sliders', 'Customize this board', 'side-drawer-only') : ''}
     </ul>
     <p class="side-group" id="${groupId}">Functions</p>
@@ -90,6 +95,8 @@ export function renderNav(month, day, view) {
   document.querySelectorAll('[data-nav-home]').forEach((a) => { a.href = pageHref(month, day, { view: 'home' }); });
   // The TV board's Menu lists the pages too (the sidebar steps aside there).
   document.querySelectorAll('[data-nav-page]').forEach((a) => { a.href = pageHref(month, day, { view: a.dataset.navPage }); });
+  // On a pilot board every in-app link carries the board (the DOR board sets its own This week link too).
+  if (cloud.BOARD) document.querySelectorAll('[data-week-link]').forEach((a) => { a.href = pageHref(month, day, { view: 'wor' }).replace(/&week=[^&#]*/, ''); });
 }
 
 /* ---------- The icon rail (remembered on this device) ---------- */
@@ -133,7 +140,7 @@ export const scopeWord = (area) => AREA_WORDS[area] ?? 'Plant total';
  * plant totals. "Entered" counts the functions with a number for the day in that scope.
  */
 export function scopeMarkup(month, day, { area = 'all', view = navView, offOnly = false } = {}) {
-  const plantLabel = `${String(month.plant ?? '').replace(/\s+plant$/i, '')} plant`;
+  const plantLabel = month.pilot ? String(month.plant ?? '') : `${String(month.plant ?? '').replace(/\s+plant$/i, '')} plant`;
   const scoped = view === 'dor' || view === 'home' ? area : 'all';
   const areaId = scoped === 'all' ? 'plant' : scoped;
   const fns = month.functions;
@@ -159,7 +166,8 @@ export function scopeMarkup(month, day, { area = 'all', view = navView, offOnly 
   }
   const saving = storageWorks();
   const sep = '<span class="sr-only">, </span>';
-  const scopeItem = view === 'dor' || view === 'home'
+  // A pilot board has plant totals only, so it has no Area filter.
+  const scopeItem = (view === 'dor' || view === 'home') && !month.pilot
     ? `<label class="scope-item scope-area"><span>Area</span><select class="scope-select" data-scope-area>${Object.entries(AREA_WORDS)
       .map(([id, name]) => `<option value="${id}"${id === scoped ? ' selected' : ''}>${esc(name)}</option>`).join('')}</select></label>`
     : `<span class="scope-item scope-area-word">${esc(scopeWord(scoped))}</span>`;
@@ -173,10 +181,18 @@ export function scopeMarkup(month, day, { area = 'all', view = navView, offOnly 
     + `${when}${sep}`
     + filter
     + `<span class="scope-item">${enteredWords}</span>${sep}`
-    + (saving
+    + (month.pilot ? pilotSaved()
+      : saving
       ? `<span class="scope-item scope-saved">${SAVED_MARK}Saved on this device</span>`
       : '<span class="scope-item scope-saved is-off">Not saving in this browser</span>')
     + '</p>';
+}
+
+/** A pilot board's save state and its Unlock to edit / Lock button. */
+function pilotSaved() {
+  const w = statusWords();
+  return `<span class="scope-item scope-saved${w.off ? ' is-off' : ''}" data-save-state>${w.off ? glyphMarkup(OFF) : w.text.startsWith('Saved') ? SAVED_MARK : ''}${esc(w.text)}</span>`
+    + `<span class="sr-only">, </span><span class="scope-item">${unlockButtonMarkup()}</span>`;
 }
 
 /** The organization's week holding a day (the Weekly review's scope). */
@@ -345,7 +361,7 @@ function settingsMarkup(month) {
     <p class="menu-title">Settings</p>
     <p class="menu-text">${who ? `Entering as <strong>${esc(who.name)}</strong> (${esc(month.functions.find((f) => f.id === who.functionId)?.name ?? '')})` : 'Nobody is entering on this device yet.'}</p>
     <button class="menu-item" type="button" data-switch-person>${icon('userSwitch')}<span>${who ? 'Switch person' : "Choose who's entering"}</span></button>
-    <button class="menu-item" type="button" data-reset>${icon('rotate')}<span>Start the demo over</span></button>`;
+    ${cloud.BOARD ? '' : `<button class="menu-item" type="button" data-reset>${icon('rotate')}<span>Start the demo over</span></button>`}`;
 }
 
 export function wireShell({ getMonth, onArea, onExport, onSwitchPerson }) {

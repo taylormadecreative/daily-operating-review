@@ -1,0 +1,295 @@
+{
+  "_about": "A new pilot board's setup (PILOT-SPEC.md, 'What a new board starts with'): the eight functions of the workbook's structure, their DOR questions and daily measures. No owners, goals, numbers, areas or plant name.",
+  "setup": {
+    "version": 1,
+    "plant": "",
+    "functions": {},
+    "added": [
+      {
+        "id": "safety",
+        "name": "Safety",
+        "owner": "",
+        "question": "Did we identify and correct hazards before exposure today?"
+      },
+      {
+        "id": "people",
+        "name": "People",
+        "owner": "",
+        "question": "Do we have the right people, trained and ready, on the floor today?"
+      },
+      {
+        "id": "quality",
+        "name": "Quality",
+        "owner": "",
+        "question": "Are our controls strong enough to prevent defects today?"
+      },
+      {
+        "id": "engineering",
+        "name": "Engineering",
+        "owner": "",
+        "question": "Is the process capable and controlled today?"
+      },
+      {
+        "id": "operations",
+        "name": "Operations",
+        "owner": "",
+        "question": "Did we start the shift in control?"
+      },
+      {
+        "id": "maintenance",
+        "name": "Maintenance",
+        "owner": "",
+        "question": "Are we maintaining equipment before it fails?"
+      },
+      {
+        "id": "materials",
+        "name": "Materials",
+        "owner": "",
+        "question": "Will material flow support the schedule today?"
+      },
+      {
+        "id": "plant",
+        "name": "Plant",
+        "owner": "",
+        "question": "Are we capable of earning our hours today?"
+      }
+    ],
+    "kpis": {
+      "safety": [
+        {
+          "id": "safety-daily",
+          "name": "Safety & EHS incidents",
+          "unit": "count",
+          "better": "lower",
+          "goal": null
+        }
+      ],
+      "people": [
+        {
+          "id": "people-daily",
+          "name": "Clocked in",
+          "unit": "people",
+          "better": "higher",
+          "goal": null
+        }
+      ],
+      "quality": [
+        {
+          "id": "quality-daily",
+          "name": "Quality incidents",
+          "unit": "count",
+          "better": "lower",
+          "goal": null
+        }
+      ],
+      "engineering": [
+        {
+          "id": "engineering-daily",
+          "name": "Scrap %",
+          "unit": "fraction",
+          "better": "lower",
+          "goal": null
+        }
+      ],
+      "operations": [
+        {
+          "id": "operations-daily",
+          "name": "Parts produced",
+          "unit": "parts",
+          "better": "higher",
+          "goal": null
+        }
+      ],
+      "maintenance": [
+        {
+          "id": "maintenance-daily",
+          "name": "Critical equipment down",
+          "unit": "count",
+          "better": "lower",
+          "goal": null
+        }
+      ],
+      "materials": [
+        {
+          "id": "materials-daily",
+          "name": "Critical buffer parts inventory",
+          "unit": "count",
+          "better": "higher",
+          "goal": null,
+          "weeklyRule": "latest"
+        }
+      ],
+      "plant": [
+        {
+          "id": "plant-daily",
+          "name": "Earned hours",
+          "unit": "hours",
+          "better": "higher",
+          "goal": null
+        }
+      ]
+    },
+    "order": null
+  },
+  "leadingIndicators": {
+    "Environmental Health and Safety": {
+      "purpose": "Predict injury risk before harm occurs",
+      "kbis": [
+        {
+          "level": "Level 1",
+          "text": "% of near-miss cards submitted vs target (daily)"
+        },
+        {
+          "level": "Level 2",
+          "text": "% of near-miss corrective actions completed on time"
+        },
+        {
+          "level": "Level 3",
+          "text": "% of safety audits completed as scheduled"
+        }
+      ],
+      "laggingLink": "TRIR, First Aid, Recordables, Lost Time",
+      "dorQuestion": "Did we identify and correct hazards before exposure today?"
+    },
+    "People": {
+      "purpose": "Ensure capability, coverage, and engagement",
+      "kbis": [
+        {
+          "level": "Level 1",
+          "text": "% of associates fully trained & certified for assigned job"
+        },
+        {
+          "level": "Level 2",
+          "text": "% of critical roles with cross-trained backup"
+        },
+        {
+          "level": "Level 3",
+          "text": "% of planned training completed this week"
+        }
+      ],
+      "laggingLink": "Absenteeism, Turnover, Overtime, Grievances",
+      "dorQuestion": "Do we have the right people, trained and ready, on the floor today?"
+    },
+    "Quality": {
+      "purpose": "Prevent defects from being built or shipped",
+      "kbis": [
+        {
+          "level": "Level 1",
+          "text": "% of critical characteristics verified at first-off"
+        },
+        {
+          "level": "Level 2",
+          "text": "% of layered process audits completed on schedule"
+        },
+        {
+          "level": "Level 3",
+          "text": "% of open corrective actions past due"
+        }
+      ],
+      "laggingLink": "Scrap, PPM, Customer Complaints, Warranty",
+      "dorQuestion": "Are our controls strong enough to prevent defects today?"
+    },
+    "Engineering": {
+      "purpose": "Reduce variation and process risk",
+      "kbis": [
+        {
+          "level": "Level 1",
+          "text": "% of jobs running within control limits"
+        },
+        {
+          "level": "Level 2",
+          "text": "% of open process deviations without containment"
+        },
+        {
+          "level": "Level 3",
+          "text": "% of process capability checks completed as planned"
+        }
+      ],
+      "laggingLink": "Scrap, Rework, Chronic Downtime, Quality Escapes",
+      "dorQuestion": "Is the process capable and controlled today?"
+    },
+    "Tooling": {
+      "purpose": "Ensure tooling readiness and longevity",
+      "kbis": [
+        {
+          "level": "Level 1",
+          "text": "% of PMs completed on time"
+        },
+        {
+          "level": "Level 2",
+          "text": "% of temporary repairs without permanent fix plan"
+        },
+        {
+          "level": "Level 3",
+          "text": "Tool PM completion rate"
+        }
+      ],
+      "laggingLink": "Tool-related downtime, Scrap, Quality Issues",
+      "dorQuestion": "Are tools production-ready before we press ‘start’?"
+    },
+    "Operations": {
+      "purpose": "Ensure stable, predictable production",
+      "kbis": [
+        {
+          "level": "Level 1",
+          "text": "% of pre-flight checklist completed before start-up"
+        },
+        {
+          "level": "Level 2",
+          "text": "% of lines started on time"
+        },
+        {
+          "level": "Level 3",
+          "text": "% of standard work audits completed"
+        }
+      ],
+      "laggingLink": "Attainment, OEE, Throughput, Downtime",
+      "dorQuestion": "Did we start the shift in control?"
+    },
+    "Maintenance": {
+      "purpose": "Prevent unplanned downtime",
+      "kbis": [
+        {
+          "level": "Level 1",
+          "text": "% of PMs completed on time"
+        },
+        {
+          "level": "Level 2",
+          "text": "% of equipment with no overdue work orders"
+        },
+        {
+          "level": "Level 3",
+          "text": "Top 3 repeat failures actively being worked"
+        }
+      ],
+      "laggingLink": "Unplanned Downtime, MTBF, Emergency Repairs",
+      "dorQuestion": "Are we maintaining equipment before it fails?"
+    },
+    "Materials": {
+      "purpose": "Ensure uninterrupted flow",
+      "kbis": [
+        {
+          "level": "Level 1",
+          "text": "% of materials staged & verified before shift start"
+        },
+        {
+          "level": "Level 2",
+          "text": "% of Kanban signals responded to within SLA"
+        },
+        {
+          "level": "Level 3",
+          "text": "Inventory accuracy on critical items"
+        }
+      ],
+      "laggingLink": "Line Stoppages, Expedites, Premium Freight",
+      "dorQuestion": "Will material flow support the schedule today?"
+    }
+  },
+  "glossary": {
+    "TRIR": "Total Recordable Incident Rate: recordable injuries per 200,000 hours worked (OSHA standard).",
+    "DL": "Direct labor: the associates who build product on the line.",
+    "Earned hours": "Standard hours of work the plant produced. More earned than planned means the plant is ahead.",
+    "Scrap %": "Bad parts scrapped, as a percent. The month figure is scrap as a percent of sales. Lower is better.",
+    "Month to date": "Everything from the 1st of the month through the selected day."
+  }
+}

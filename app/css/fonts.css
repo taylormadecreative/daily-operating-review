@@ -1,0 +1,17 @@
+/* Self-hosted variable fonts. Variable fonts default to 400: set weights explicitly. */
+@font-face {
+  font-family: "Big Shoulders Display";
+  src: url("../assets/fonts/BigShouldersDisplay-var.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Archivo";
+  src: url("../assets/fonts/Archivo-var.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-style: normal;
+  font-display: swap;
+}

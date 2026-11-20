@@ -2,25 +2,30 @@
 // URL = ?date=YYYY-MM-DD (production day) + hash for the open view:
 //   (none) board · #safety detail · #enter[/fn] enter numbers · #meeting[/n] meeting
 
-import * as store from './store.js?v=20261117-065120';
-import { renderBoard, revealRow, setUndoable, getOffOnly, setOffOnly, shownFunctions, offOnlyLabel } from './board.js?v=20261117-065120';
-import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261117-065120';
-import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261117-065120';
-import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261117-065120';
-import { initToast, toast, dismissAll } from './toast.js?v=20261117-065120';
-import { formatDayMedium, formatMonthShort, formatMonthName, termName } from './format.js?v=20261117-065120';
-import { renderHome, revealHomeRow, AREA_OPTIONS, fitSide } from './home.js?v=20261117-065120';
-import { renderNav, wireShell, setNavState, toggleMenu, showPopoverFrom, renderScope, PAGES, pageHref } from './shell.js?v=20261117-065120';
-import { initOrg, renderOrg, openPerson, closePerson, isPersonOpen, refreshPerson } from './org.js?v=20261117-065120';
-import { initWor, renderWor, openWorSheet, closeWorSheet, isWorSheetOpen, refreshWorSheet, worDay, attachMeetingSession, syncWorTab, sayWorNote, weekOfDay } from './wor.js?v=20261117-065120';
-import { downloadCsv, printDay } from './export.js?v=20261117-065120';
-import { esc, statusMarkup } from './ui.js?v=20261117-065120';
-import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261117-065120';
-import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261117-065120';
-import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261117-065120';
-import { initActions, openActions, addAction, listActions, refreshActions } from './actions.js?v=20261117-065120';
-import { initRecorder, openMinutes } from './recorder.js?v=20261117-065120';
-import { initSetup, openSetup } from './setup.js?v=20261117-065120';
+import * as store from './store.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-154112';
+import { getIdentity } from './identity.js?v=20261120-154112';
+import { initUnlock } from './unlock.js?v=20261120-154112';
+import { initHistory } from './history.js?v=20261120-154112';
+import { renderBoard, revealRow, setUndoable, getOffOnly, setOffOnly, shownFunctions, offOnlyLabel } from './board.js?v=20261120-154112';
+import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261120-154112';
+import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261120-154112';
+import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261120-154112';
+import { initToast, toast, dismissAll } from './toast.js?v=20261120-154112';
+import { formatDayMedium, formatMonthShort, formatMonthName, termName, useBoardToday } from './format.js?v=20261120-154112';
+import { monthKey, clampIso, addDays, isoTime, monthDate, shiftMonth } from './calendar.js?v=20261120-154112';
+import { renderHome, revealHomeRow, AREA_OPTIONS, fitSide } from './home.js?v=20261120-154112';
+import { renderNav, wireShell, setNavState, toggleMenu, showPopoverFrom, renderScope, PAGES, pageHref } from './shell.js?v=20261120-154112';
+import { initOrg, renderOrg, openPerson, closePerson, isPersonOpen, refreshPerson } from './org.js?v=20261120-154112';
+import { initWor, renderWor, openWorSheet, closeWorSheet, isWorSheetOpen, refreshWorSheet, worDay, attachMeetingSession, syncWorTab, sayWorNote, weekOfDay, worWeeks, weekNear } from './wor.js?v=20261120-154112';
+import { downloadCsv, printDay } from './export.js?v=20261120-154112';
+import { esc, statusMarkup } from './ui.js?v=20261120-154112';
+import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261120-154112';
+import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261120-154112';
+import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261120-154112';
+import { initActions, openActions, addAction, listActions, refreshActions } from './actions.js?v=20261120-154112';
+import { initRecorder, openMinutes } from './recorder.js?v=20261120-154112';
+import { initSetup, openSetup } from './setup.js?v=20261120-154112';
 
 // We decide where the page scrolls after views close (the saved row).
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -114,10 +119,32 @@ const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matche
 
 function parseRoute() {
   const params = new URLSearchParams(location.search);
-  const raw = params.get('date');
+  let raw = params.get('date');
+  let outside = false;
+  if (store.boardToday()) {
+    // A pilot board: any day from its first day through today, in whichever month it falls.
+    // No date means today; a date outside the board is shown as the nearest day it has.
+    const { min, max } = store.dateBounds(month);
+    const t = isoTime(raw);
+    const real = !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === raw;
+    const iso = real ? clampIso(raw, min, max) : max;
+    outside = raw !== null && iso !== raw;
+    // A form with unsaved numbers keeps its month: applyRoute's Leave check runs on it first.
+    let at = iso;
+    if (!(isEnterOpen() && isDirty())) {
+      showMonthOf(at);
+      // A month whose days so far hold no production week (Sunday the 1st): its Weekly review
+      // shows the month before, where the week holding today begins.
+      if (params.get('view') === 'wor' && !worWeeks(month).length && month.month > monthKey(min)) {
+        at = addDays(monthDate(month.month, 1), -1);
+        showMonthOf(at);
+      }
+    }
+    raw = raw === null && at === iso ? null : at;
+  }
   const parsed = store.dayFromIso(month, raw);
   const d = parsed ?? store.boardDay(month);
-  const badDate = raw !== null && parsed === null;
+  const badDate = outside || (raw !== null && parsed === null);
   const page = PAGES.includes(params.get('view')) ? params.get('view') : 'home';
   const a = params.get('area');
   const pickedArea = AREA_OPTIONS.some((o) => o.id === a) ? a : 'all';
@@ -156,9 +183,24 @@ function parseRoute() {
   return { ...base, view: 'board' };
 }
 
+/**
+ * A pilot board shows one month at a time: a day in another month (or a new today) builds that
+ * month (store.useMonth). Returns true when the month changed.
+ */
+function showMonthOf(iso) {
+  if (!store.boardToday()) return false;
+  const today = store.boardToday();
+  const want = monthKey(iso);
+  const stale = want === monthKey(today) && month.boardDate !== today;
+  if (want === month.month && !stale) return false;
+  month = store.useMonth(want);
+  return true;
+}
+
 function urlFor(d, hash = '') {
   const params = new URLSearchParams(location.search);
   params.set('date', store.isoForDay(month, d));
+  if (cloud.BOARD) params.set('b', cloud.BOARD);
   return `${location.pathname}?${params}${hash ? `#${hash}` : ''}`;
 }
 
@@ -348,7 +390,8 @@ function renderView() {
   document.documentElement.dataset.view = view;
   syncDensity();
   // The tab and bookmarks: the page's header name, the plant, the brand ("Weekly Operating Review (WOR), <plant> · LinkedXL OS").
-  const plant = String(month.plant ?? '').replace(/\s+plant$/i, '');
+  const plant = month.pilot ? String(month.plant ?? '') : String(month.plant ?? '').replace(/\s+plant$/i, '');
+  if (month.pilot) document.querySelectorAll('[data-plant-name]').forEach((n) => { n.textContent = plant; n.title = plant; });
   document.title = `${PAGE_NAME[view] ?? PAGE_NAME.home}, ${plant} · LinkedXL OS`;
   const skip = document.querySelector('[data-skip]');
   if (skip) { [skip.href, skip.textContent] = [SKIP[view][0], SKIP[view][1]]; }
@@ -385,6 +428,13 @@ function dayEdgeNote(dir) {
     note.id = id;
     note.hidden = true;
     document.body.append(note);
+  }
+  if (store.boardToday()) {
+    const { min, max } = store.dateBounds(month);
+    const iso = dir < 0 ? min : max;
+    const words = formatDayMedium({ month: iso.slice(0, 7) }, Number(iso.slice(8, 10)));
+    note.textContent = dir < 0 ? `${words} is the board's first day.` : `${words} is today. Later days can't be picked.`;
+    return note;
   }
   const edge = dir < 0 ? 1 : month.daysInMonth;
   note.textContent = `${formatMonthShort(month)} ${edge} is the ${dir < 0 ? 'first' : 'last'} day of ${formatMonthName(month)}'s data.`;
@@ -424,7 +474,8 @@ function syncDayButtons() {
   for (const [sel, dir] of DAY_BUTTONS) {
     const btn = document.querySelector(sel);
     if (!btn) continue;
-    const off = dir < 0 ? day <= 1 : day >= month.daysInMonth;
+    const { min, max } = store.dateBounds(month);
+    const off = dir < 0 ? store.isoForDay(month, day) <= min : store.isoForDay(month, day) >= max;
     if (btn.disabled) btn.disabled = false;
     if (off) {
       btn.setAttribute('aria-disabled', 'true');
@@ -512,7 +563,9 @@ function applyRoute() {
 
   if (r.badDate) {
     // A date outside this month's data: say so quietly and fix the URL.
-    showDateNote(`That date isn't in this month's data. Showing ${formatDayMedium(month, r.day)}.`);
+    showDateNote(cloud.BOARD
+      ? `That date isn't on this board. Showing ${formatDayMedium(month, r.day)}.`
+      : `That date isn't in this month's data. Showing ${formatDayMedium(month, r.day)}.`);
     history.replaceState(history.state, '', urlFor(r.day, location.hash.slice(1)));
   }
   let weekNote = null;
@@ -629,15 +682,16 @@ function keepBoardPlace() {
 
 /* ---------- Saving and Undo ---------- */
 
-let lastSave = null; // { fnId, fnName, day, previous, dayLabel }
+let lastSave = null; // { fnId, fnName, day, previous, dayLabel, inMonth }
 
 /** "Fri, Feb 27" with a no-break space between the month and the day, so a toast never splits it. */
 const keepDayTogether = (label) => String(label ?? '').replace(/ (\d{1,2})$/, '\u00a0$1');
 
 function undoSave() {
   if (!lastSave) return;
-  const { fnId, fnName, day: savedDay, previous, dayLabel } = lastSave;
-  store.restoreEntry(fnId, savedDay, previous);
+  const { fnId, fnName, day: savedDay, previous, dayLabel, inMonth } = lastSave;
+  // The month the save went into: a pilot board may have moved to another month since.
+  store.restoreEntry(fnId, savedDay, previous, inMonth);
   lastSave = null;
   setUndoable(null);
   refreshAll();
@@ -646,7 +700,7 @@ function undoSave() {
 }
 
 function onSaved(info) {
-  lastSave = info;
+  lastSave = { ...info, inMonth: month.month };
   setUndoable({ fnId: info.fnId, day: info.day });
   month = store.getMonth();
   returnToBoard(info.day, () => {
@@ -876,6 +930,19 @@ function toggleOffOnly(on) {
 }
 
 /** Show another day (the ‹ › buttons and the date picker). */
+/** Any day the board reaches, in this month or another (kept between the first day and today). */
+function goToDate(iso) {
+  const { min, max } = store.dateBounds(month);
+  const target = clampIso(iso, min, max);
+  const moved = showMonthOf(target);
+  const next = store.dayFromIso(month, target);
+  if (next === null || (next === day && !moved)) return;
+  history.replaceState(history.state, '', urlFor(next, location.hash.slice(1)));
+  day = next;
+  showDateNote(null);
+  renderView();
+}
+
 function goToDay(next) {
   if (next === day) return;
   history.replaceState(history.state, '', urlFor(next, location.hash.slice(1)));
@@ -890,15 +957,42 @@ function goToDay(next) {
  * kept, so sheets still close by one step back.
  */
 function goToWeek(key) {
+  // A pilot board: a week that isn't in this month's review is in the month its Monday falls in
+  // (kept between the first day and today).
+  let from = day;
+  if (store.boardToday() && worDay(month, key, day).badWeek && !Number.isNaN(isoTime(key))) {
+    const { min, max } = store.dateBounds(month);
+    // A day number from the month before means nothing here: the week looks from its own days.
+    if (showMonthOf(clampIso(key, min, max))) from = 0;
+  }
   const params = new URLSearchParams(location.search);
   params.set('week', key);
-  const next = worDay(month, key, day).day;
+  const next = worDay(month, key, from).day;
   params.set('date', store.isoForDay(month, next));
   const url = `${location.pathname}?${params}${location.hash}`;
   if (url !== `${location.pathname}${location.search}${location.hash}`) history.pushState(history.state, '', url);
   day = next;
   showDateNote(null);
   renderView();
+}
+
+/**
+ * A pilot board's week arrows past the month's first or last week: the other half of a split week
+ * first (December's part of the Nov 30 week), then the week next to it, skipping a month end with
+ * no production week (a shutdown). Never before the first day or after today.
+ */
+function stepWeekAcross(dir, week) {
+  const { min, max } = store.dateBounds(month);
+  const inMonth = week.days.filter((d) => d.day !== null);
+  if (!inMonth.length) return;
+  let iso = dir > 0 ? addDays(inMonth[inMonth.length - 1].iso, 1) : addDays(inMonth[0].iso, -1);
+  for (let tries = 0; tries < 3; tries += 1) {
+    if (iso < min || iso > max) return;
+    showMonthOf(iso);
+    const key = weekNear(month, store.dayFromIso(month, iso), dir);
+    if (key) { day = 0; goToWeek(key); return; }
+    iso = dir > 0 ? monthDate(shiftMonth(month.month, 1), 1) : addDays(monthDate(month.month, 1), -1);
+  }
 }
 
 /** The date text opens the browser's own date picker, limited to the month's data. */
@@ -912,6 +1006,7 @@ function wireDatePicker() {
       try { input.showPicker(); } catch { input.focus(); }
     });
     input.addEventListener('change', () => {
+      if (store.boardToday() && /^\d{4}-\d{2}-\d{2}$/.test(input.value)) { goToDate(input.value); return; }
       const d = store.dayFromIso(month, input.value);
       if (d !== null) goToDay(d);
       else input.value = store.isoForDay(month, day);
@@ -921,12 +1016,21 @@ function wireDatePicker() {
 
 /** ‹ or ›: one day back or ahead, never past the month's first or last day in the data. */
 function stepDay(delta, btn = null) {
-  const next = Math.min(month.daysInMonth, Math.max(1, day + delta));
-  if (next === day) return;
-  history.replaceState(history.state, '', urlFor(next, location.hash.slice(1)));
-  day = next;
-  showDateNote(null);
-  renderView();
+  if (store.boardToday()) {
+    // A pilot board: across month ends, from its first day through today.
+    const { min, max } = store.dateBounds(month);
+    const from = store.isoForDay(month, day);
+    const to = clampIso(addDays(from, delta), min, max);
+    if (to === from) return;
+    goToDate(to);
+  } else {
+    const next = Math.min(month.daysInMonth, Math.max(1, day + delta));
+    if (next === day) return;
+    history.replaceState(history.state, '', urlFor(next, location.hash.slice(1)));
+    day = next;
+    showDateNote(null);
+    renderView();
+  }
   // The arrow keeps focus, even at the month's end (it's aria-disabled there, never disabled).
   if (btn?.isConnected && document.activeElement !== btn && (document.activeElement === document.body || !document.activeElement)) {
     btn.focus({ preventScroll: true });
@@ -949,7 +1053,7 @@ const RESET_FROM = {
 };
 function resetDemo(from = null) {
   // A double click must not run twice: the second pass would find nothing and overwrite Undo with nothing.
-  if (resetting) return;
+  if (resetting || cloud.BOARD) return;
   resetting = true;
   const where = from?.closest('#dor-menu') ? 'menu' : from?.closest('#settings-pop') ? 'settings' : from?.closest('.board-foot') ? 'foot' : null;
   const snapshot = store.resetEverything();
@@ -1362,9 +1466,94 @@ function registerNear() {
 
 /* ---------- Start ---------- */
 
+/** A pilot board's whole-page line: loading, or why it can't be shown (with Try again when it might work next time). */
+function pilotGate(text, { retry = false, link = null } = {}) {
+  let gate = document.querySelector('[data-pilot-gate]');
+  document.documentElement.toggleAttribute('data-pilot-held', Boolean(text));
+  if (!text) { gate?.remove(); return; }
+  if (!gate) {
+    gate = document.createElement('main');
+    gate.className = 'pilot-gate';
+    gate.dataset.pilotGate = '';
+    document.body.prepend(gate);
+  }
+  const a = link ? ` <a href="${esc(link.href)}">${esc(link.text)}</a>` : '';
+  gate.innerHTML = `<p role="${retry ? 'alert' : 'status'}">${esc(text)}${a}</p>${retry ? '<button class="btn btn--primary" type="button" data-pilot-retry>Try again</button>' : ''}`;
+  gate.querySelector('[data-pilot-retry]')?.addEventListener('click', () => location.reload());
+}
+
 async function init() {
+  // The admin page: boards are made and managed here, before any month loads.
+  if (new URLSearchParams(location.search).has('admin') && !cloud.BOARD && (cloud.COPY === 'app' || cloud.COPY === 'dev')) {
+    const { initAdmin } = await import('./admin.js?v=20261120-154112');
+    initAdmin();
+    return;
+  }
+  // Boards open only at /app/. The page's base is the copy's root (dor/ pages set <base href>):
+  // /app/ sits beside the main copy's root, and one level up from /demo/'s.
+  if (cloud.FOREIGN_BOARD) {
+    const href = new URL((cloud.COPY === 'demo' ? '../' : './') + 'app/?b=' + cloud.FOREIGN_BOARD, document.baseURI).href;
+    pilotGate('This board opens at its own link.', { link: { text: 'Open the board', href } });
+    return;
+  }
+  if (cloud.NEEDS_BOARD) {
+    pilotGate('This link needs a board. Ask the person who sent it for the full link.');
+    return;
+  }
+  if (cloud.BOARD) {
+    // Nothing on a pilot page may offer to clear the board.
+    document.querySelectorAll('[data-reset]').forEach((n) => n.remove());
+    // The demo's "from the plant's DOR workbook plus anything entered on this device" isn't true here.
+    document.querySelectorAll('p').forEach((n) => {
+      if (n.textContent.startsWith("Numbers from the plant's DOR workbook")) n.textContent = 'Numbers people entered on this board. Status is calculated from each number and its goal.';
+    });
+    pilotGate('Opening the board…');
+    try {
+      const board = await cloud.openBoard();
+      month = await store.load({ board });
+      useBoardToday(store.boardToday);
+      pilotGate(null);
+    } catch (err) {
+      pilotGate(err.code === 'not_found'
+        ? "We couldn't find that board. Check the link, or ask the person who sent it."
+        : "Can't reach the server. Check your connection and try again.", { retry: err.code !== 'not_found' });
+      return;
+    }
+  }
   try {
-    month = await store.load();
+    if (cloud.BOARD) {
+      cloud.whoFor(() => { try { return getIdentity(store.getMonth())?.name ?? ''; } catch { return ''; } });
+      // Someone else saved: draw what's on the server now, unless someone is in the middle of
+      // something (a sheet or form open, a field in use). Then it's drawn once they're done.
+      let staleView = false;
+      const busy = () => {
+        const f = document.activeElement;
+        return Boolean(document.querySelector('dialog[open]')) || isMeetingOpen()
+          || Boolean(f?.matches?.('input, textarea, select, [contenteditable="true"]') && f.closest('main'));
+      };
+      const redraw = () => { staleView = false; month = store.getMonth(); renderView(); };
+      cloud.onRemoteChange(({ clash }) => {
+        if (busy()) staleView = true;
+        else redraw();
+        if (clash) toast('Updated with changes someone else just saved.');
+      });
+      const catchUp = () => requestAnimationFrame(() => { if (staleView && !busy()) redraw(); });
+      watchMidnight(busy);
+      document.addEventListener('close', catchUp, true);
+      document.addEventListener('focusout', catchUp);
+      initUnlock({
+        toast: (t) => toast(t),
+        onStatus: () => renderScope(month, day, { area, offOnly: getOffOnly() }),
+      });
+      initHistory();
+      let gone = false;
+      cloud.onProblem(({ code }) => {
+        // Archived (or gone) while open: the board stops showing, as it would on a fresh open.
+        if (code === 'not_found' && !gone) { gone = true; pilotGate("We couldn't find that board. Check the link, or ask the person who sent it."); }
+        else if (code === 'near_full') toast('Meeting records are nearly full. Ask Nelson to archive older ones.');
+      });
+      cloud.checkNearFull();
+    } else month = await store.load();
   } catch (err) {
     document.querySelector('[data-summary-lead]').textContent = `${err.message} Reload the page to try again.`;
     return;
@@ -1492,13 +1681,20 @@ async function init() {
     },
   });
   // The Organization page's person sheet: closing it steps back like Detail.
-  initOrg({ onClose: closeView, getMonth: () => month, getDay: () => day });
+  initOrg({
+    onClose: closeView,
+    getMonth: () => month,
+    getDay: () => day,
+    // Days off or extra days changed: production days change everywhere at once.
+    onDaysChange: () => { month = store.getMonth(); renderView(); refreshPerson(month); refreshWorSheet(month); },
+  });
   // The Weekly review: its week picker, tabs, saves and its sheet (View calculation, review records).
   initWor({
     onClose: closeView,
     getMonth: () => month,
     getDay: () => day,
     goToWeek,
+    stepWeek: stepWeekAcross,
     navigate: (hash, opts) => navigate(hash, opts),
     toast,
     openMinutes: (id) => openMinutes(id),
@@ -1523,6 +1719,37 @@ async function init() {
  * board itself (never over Detail, Enter numbers, Meeting or Customize).
  * ?tour=off keeps it away; ?tour=1 runs it again.
  */
+/**
+ * Midnight on a pilot board (the board's time zone): once a minute, a page showing today moves to
+ * the new today, across months too; any other page keeps its day, with the new today in reach. It
+ * waits while a sheet, dialog or form is open, a field is in use, or a change isn't saved yet, so
+ * an entry form keeps the day it was opened on.
+ */
+function watchMidnight(busy) {
+  let shown = store.boardToday();
+  const tick = () => {
+    const today = store.boardToday();
+    if (today === shown) return;
+    const state = cloud.status().state;
+    if (busy() || isEnterOpen() || !['saved', 'view-only', 'too-large'].includes(state)) return;
+    const wasToday = store.isoForDay(month, day) === shown;
+    shown = today;
+    if (wasToday) {
+      // Drop the old date and week from the address and read it again: no date means today.
+      const params = new URLSearchParams(location.search);
+      params.delete('date');
+      params.delete('week');
+      history.replaceState(history.state, '', `${location.pathname}?${params}${location.hash}`);
+      showDateNote(null);
+      applyRoute();
+      return;
+    }
+    month = store.useMonth(month.month);
+    renderView();
+  };
+  setInterval(tick, 60000);
+}
+
 function autoTour() {
   const params = new URLSearchParams(location.search);
   const ask = params.get('tour');
@@ -1537,7 +1764,8 @@ function autoTour() {
   // Every page starts its own short tour on the first visit (the Weekly review's and the Organization's
   // are four and three steps); How it works runs it again.
   if (ask === 'off' || parseRoute().view !== 'board' || isTourOpen()) return;
-  if (ask === '1' || !tourSeen(view)) {
+  // A pilot board never starts a tour on its own; How it works and Take the tour still do.
+  if (ask === '1' || (!cloud.BOARD && !tourSeen(view))) {
     runTour();
     if (ask === '1') {
       // ?tour=1 is for this visit only: a reload or a shared link won't re-run it.

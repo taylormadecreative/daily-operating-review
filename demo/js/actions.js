@@ -30,18 +30,19 @@
 // ctx.onChange() runs after every add, edit, status change, delete and undo,
 // so the board redraws its Action cells.
 
-import { notesFor, ownerFor, isoForDay, functionById, kpiRowsFor, NO_ISSUE, getOrg, accountableFor, readWeekly } from './store.js?v=20261117-065120';
+import { notesFor, ownerFor, isoForDay, functionById, kpiRowsFor, NO_ISSUE, getOrg, accountableFor, readWeekly } from './store.js?v=20261120-154112';
 import {
   ACTION_STATES, ACTION_STATE_WORD, MIGRATED_NOTE, MIGRATED_OPEN_NOTE, isOpenAction, isClosedAction, isVerifiedAction, isCancelledAction,
   isEscalatedAction, isOverdueAction, countsOnDay, coversDay, actionDays, agingWords, verifierOptions, actionStateMarkup,
-} from './action-state.js?v=20261117-065120';
-import { getIdentity } from './identity.js?v=20261117-065120';
-import { isProductionDay, OFF } from './status.js?v=20261117-065120';
-import { formatDayMedium, plainLabel, formatPair, monthSoFar } from './format.js?v=20261117-065120';
-import { esc, issueStatusMarkup, statusMarkup } from './ui.js?v=20261117-065120';
+} from './action-state.js?v=20261120-154112';
+import { getIdentity } from './identity.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-154112';
+import { isProductionDay, OFF } from './status.js?v=20261120-154112';
+import { formatDayMedium, plainLabel, formatPair, monthSoFar } from './format.js?v=20261120-154112';
+import { esc, issueStatusMarkup, statusMarkup } from './ui.js?v=20261120-154112';
 // The board's action words and states (one wording on every screen). Used only
 // inside functions: board.js imports this module too.
-import { actionStateFor, needsSummary, needsLabel, ACTION_WORD, issueGap, ISSUE_GAP_WORD, NO_FUNCTIONS } from './board.js?v=20261117-065120';
+import { actionStateFor, needsSummary, needsLabel, ACTION_WORD, issueGap, ISSUE_GAP_WORD, NO_FUNCTIONS } from './board.js?v=20261120-154112';
 
 const KEY = 'demo.actions.v1';
 const STATUS_WORD = ACTION_STATE_WORD;
@@ -79,7 +80,7 @@ function normStatus(s) {
 const isLegacyClosed = (s) => ['closed', 'done'].includes(String(s ?? '').trim().toLowerCase());
 
 /** Who a step is by when nobody is chosen on this device, and for older steps saved without a name. */
-export const BY_DEVICE = 'Someone on this device';
+export const BY_DEVICE = cloud.BOARD ? 'Someone' : 'Someone on this device';
 const BY_UNKNOWN = 'Not recorded (an older entry)';
 const BY_APP = 'The board (automatic)';
 const HISTORY_KINDS = ['created', 'started', 'completed', 'verified', 'rejected', 'cancelled', 'reopened', 'escalated', 'deescalated', 'linked', 'edited', 'migrated'];
@@ -150,7 +151,7 @@ function readAll() {
   if (storageOk) {
     let raw = null;
     try {
-      raw = localStorage.getItem(KEY);
+      raw = cloud.storage().getItem(KEY);
     } catch {
       storageOk = false; // blocked: keep serving what this visit has
     }
@@ -171,7 +172,7 @@ function readAll() {
           if (id) { a.ownerPersonId = id; moved = true; }
         }
       }
-      if (moved) writeAll(mem);
+      if (moved) writeAll(mem, { quiet: true }); // a read, not a change: never asks a view-only visitor to unlock
     }
   }
   const people = orgPeople();
@@ -187,7 +188,7 @@ let peopleCache = { key: null, people: null };
 function orgPeople() {
   if (!ctx) return null;
   let raw = null;
-  try { raw = localStorage.getItem('demo.org.v1'); } catch { raw = null; }
+  try { raw = cloud.storage().getItem('demo.org.v1'); } catch { raw = null; }
   let month = null;
   try { month = ctx.getMonth(); } catch { return null; }
   if (!month) return null;
@@ -206,11 +207,11 @@ function personIdFor(people, name) {
   return people.find((p) => String(p.name ?? '').trim().toLowerCase() === n)?.id ?? null;
 }
 
-function writeAll(list) {
+function writeAll(list, { quiet = false } = {}) {
   mem = list.map((a) => ({ ...a }));
   if (!storageOk) return false;
   try {
-    localStorage.setItem(KEY, JSON.stringify(mem));
+    cloud.storage().setItem(KEY, JSON.stringify(mem), { quiet });
     return true;
   } catch {
     storageOk = false;
@@ -813,7 +814,7 @@ export function citedBy(id) {
     }
   } catch { /* no weekly records here */ }
   try {
-    const minutes = JSON.parse(localStorage.getItem('demo.meetings.v1') ?? '[]');
+    const minutes = JSON.parse(cloud.storage().getItem('demo.meetings.v1') ?? '[]');
     for (const r of Array.isArray(minutes) ? minutes : []) {
       const ids = new Set([...(r?.actionIds ?? []), ...(r?.actions ?? []).map((a) => a?.id)].filter(Boolean).map(String));
       if (ids.has(String(id))) out.push(`the minutes of ${r.dayIso ?? 'a meeting'}`);
@@ -2202,7 +2203,7 @@ function deescalate(id) {
 
 function renderStorageNote() {
   dlg.querySelector('[data-ar-storage]').textContent = storageOk
-    ? 'Saved on this device.'
+    ? cloud.here('Saved on this device.')
     : "This browser isn't saving. Actions clear when the page reloads.";
 }
 

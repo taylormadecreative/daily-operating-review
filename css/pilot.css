@@ -1,0 +1,79 @@
+/* Pilot boards (PILOT-SPEC.md): the unlock sheet, the view-only banner, the scope line's Lock button.
+   Everything reuses the sheet, field and button styles; nothing here adds a color or a font. */
+
+.sheet--narrow { width: min(480px, 100vw); }
+.unlock-form { display: grid; gap: var(--s-4); padding: var(--s-4) var(--s-6) var(--s-6); max-width: 60ch; }
+.unlock-text { margin: 0; }
+.unlock-stay { display: inline-flex; align-items: center; gap: var(--s-2); min-height: var(--tap); font-weight: 650; cursor: pointer; }
+.unlock-stay input { width: 20px; height: 20px; accent-color: var(--ink); }
+.unlock-msg { margin: 0; }
+.unlock-actions { display: flex; gap: var(--s-2); }
+
+/* A change made in view only: said in words, with the off color on a full border (never a side stripe). */
+.held-banner {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2) var(--s-4);
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid var(--off);
+  background: var(--off-wash);
+  color: var(--ink);
+  font-weight: 650;
+}
+.held-banner[hidden] { display: none; }
+.held-banner p { margin: 0; }
+
+/* The scope line's Lock / Unlock to edit: a text button that fits the line. */
+.scope-line .scope-lock { min-height: 0; padding: 2px 4px; font-size: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Loading a board, or why it can't be shown: nothing else on the page shows (never the demo's names). */
+html[data-pilot-held] body > :not(.pilot-gate) { display: none !important; }
+.pilot-gate { display: grid; place-content: center; gap: var(--s-4); min-height: 100dvh; padding: var(--s-6); text-align: center; }
+.pilot-gate p { margin: 0; max-width: 60ch; font-size: 1.125rem; }
+.pilot-gate .btn { justify-self: center; }
+
+/* Board setup: a pilot month's goal comes from its daily goals (PILOT-SPEC.md, Part 2). */
+html[data-pilot] .su-field:has([data-wb="monthGoal"]) { display: none; }
+
+/* The admin page (?admin): only it shows. */
+html[data-admin] body > :not(.admin) { display: none !important; }
+/* The admin page sits on the home view, whose primary button is blue: here it's the board's navy. */
+html[data-admin] .admin .btn--primary { background: var(--btn-primary-bg); }
+.admin { display: grid; gap: var(--s-6); max-width: 960px; margin: 0 auto; padding: var(--s-6) var(--gutter, var(--s-6)) calc(var(--s-6) * 2); }
+.admin-head { display: grid; gap: var(--s-2); justify-items: start; }
+.admin-head p { margin: 0; max-width: 65ch; }
+.admin-title { margin: 0; font-family: var(--font-display); font-size: 3rem; font-weight: 800; line-height: 0.9; text-transform: uppercase; }
+.admin-card { display: grid; gap: var(--s-4); padding: var(--s-4) var(--s-6) var(--s-6); border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); }
+.admin-signin { max-width: 420px; }
+.admin-client { display: grid; gap: var(--s-2); }
+.admin-client-name { margin: 0; font-size: 1.25rem; font-weight: 750; }
+.admin-list { display: grid; margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+.admin-row { display: grid; grid-template-columns: 1fr auto; gap: var(--s-2) var(--s-4); align-items: center; padding: var(--s-3) 0; border-bottom: 1px solid var(--rule); }
+.admin-row-main p { margin: 0; }
+.admin-board-name { font-weight: 700; }
+.admin-archived { margin-left: var(--s-2); color: var(--ink-2); font-weight: 650; }
+.admin-meta { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); }
+.admin-row-tools { display: flex; flex-wrap: wrap; gap: var(--s-2); justify-content: flex-end; }
+.admin-replace, .admin-note { grid-column: 1 / -1; }
+.admin-replace { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s-3); align-items: end; }
+.admin-replace[hidden] { display: none; }
+.admin-note { margin: 0; font-weight: 650; }
+.admin-note:empty { display: none; }
+.admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--s-4); }
+.admin-grid [hidden] { display: none; }
+.admin-made { display: grid; gap: var(--s-2); justify-items: start; padding: var(--s-4); border: 1px solid var(--rule-strong); border-radius: var(--radius); background: var(--surface-quiet); }
+.admin-made p { margin: 0; }
+.admin-link { font-weight: 650; overflow-wrap: anywhere; user-select: all; }
+@media (max-width: 640px) { .admin-row { grid-template-columns: 1fr; } .admin-row-tools { justify-content: flex-start; } }
+
+/* Save history (PILOT-SPEC.md, Part 3): one save per line, the trust note under the list. */
+.history-list { margin: 0; padding: 0; list-style: none; border-top: 2px solid var(--rule-strong); }
+.history-row { padding: var(--s-2) 0; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+.history-row > span { white-space: nowrap; }
+.history-unnamed { color: var(--ink-2); }
+.history-note { margin: var(--s-4) 0 0; max-width: 60ch; color: var(--ink-2); font-size: var(--fs-caption); }

@@ -335,12 +335,18 @@ function localIso(date) {
  */
 export function relativeDay(month, day, now = new Date()) {
   const iso = `${month.month}-${String(day).padStart(2, '0')}`;
-  if (iso === localIso(now)) return 'today';
-  const y = new Date(now);
-  y.setDate(y.getDate() - 1);
-  if (iso === localIso(y)) return 'yesterday';
+  // A pilot board's today is the board's, in its time zone (app.js sets it).
+  const today = boardToday ? boardToday(now) : localIso(now);
+  if (iso === today) return 'today';
+  const y = new Date(`${today}T12:00:00Z`);
+  y.setUTCDate(y.getUTCDate() - 1);
+  if (iso === y.toISOString().slice(0, 10)) return 'yesterday';
   return null;
 }
+
+let boardToday = null;
+/** A pilot board's today, ('YYYY-MM-DD' for a Date); null goes back to the device's date. */
+export const useBoardToday = (fn) => { boardToday = fn; };
 
 /** Column heading: "Yesterday", "Today" or "Fri, Feb 27". */
 export function dayHeading(month, day) {

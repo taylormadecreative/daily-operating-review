@@ -16,20 +16,24 @@
 // The weekly meeting runs the same session (Record, Add action) with kind 'wor': when it ends, its
 // times, transcript and actions go to ctx.onWeeklyEnd (the week's draft record), not to DOR minutes.
 
-import { kpiRowsFor, ownerFor, isoForDay, getOrg, readWeekly } from './store.js?v=20261117-065120';
-import { getIdentity } from './identity.js?v=20261117-065120';
-import { dayStatus, monthStatus, statusWord, ON, OFF, NO_PRODUCTION } from './status.js?v=20261117-065120';
-import { formatPair, plainLabel, formatDayMedium, formatDayLong, monthSoFar } from './format.js?v=20261117-065120';
-import { notesText, summaryParts, actionStateFor, needsSummary, ACTION_WORD, issueGap, ISSUE_GAP_WORD } from './board.js?v=20261117-065120';
-import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261117-065120';
+import { kpiRowsFor, ownerFor, isoForDay, getOrg, readWeekly } from './store.js?v=20261120-154112';
+import { getIdentity } from './identity.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-154112';
+import { dayStatus, monthStatus, statusWord, ON, OFF, NO_PRODUCTION } from './status.js?v=20261120-154112';
+import { formatPair, plainLabel, formatDayMedium, formatDayLong, monthSoFar } from './format.js?v=20261120-154112';
+import { notesText, summaryParts, actionStateFor, needsSummary, ACTION_WORD, issueGap, ISSUE_GAP_WORD } from './board.js?v=20261120-154112';
+import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261120-154112';
 // Namespace import: the Action register is built in parallel, and a missing
 // export must never stop the board from loading.
-import * as register from './actions.js?v=20261117-065120';
+import * as register from './actions.js?v=20261120-154112';
 // The payoff toast is shared with the Action register, so both say it the same way.
-import { ALL_CLEAR_ADDED, clearedNeeds } from './actions.js?v=20261117-065120';
+import { ALL_CLEAR_ADDED, clearedNeeds } from './actions.js?v=20261120-154112';
 // The sheet's title bar height, so Shift+Tab never leaves a control hidden under it (shared with Detail).
-import { fitSheetHead } from './detail.js?v=20261117-065120';
-import { ACTION_STATE_WORD, actionStateMarkup } from './action-state.js?v=20261117-065120';
+import { fitSheetHead } from './detail.js?v=20261120-154112';
+import { ACTION_STATE_WORD, actionStateMarkup } from './action-state.js?v=20261120-154112';
+
+// Demo copy says where things are kept; on a board they're on the server, so the words drop it.
+const ON_DEVICE = cloud.BOARD ? '' : ' on this device';
 
 /** A verified action (older minutes kept the register's old word, 'closed'). */
 const isDoneStatus = (s) => s === 'verified' || s === 'closed';
@@ -45,8 +49,8 @@ const STAY = 2147483647;
 const NOTICE = "Speech is turned into text by the browser's speech service. Everyone in the room should know the meeting is being recorded.";
 /** Where the minutes come from: the board, plus the recording when something was recorded. */
 const honestLine = (r) => (r?.transcript?.length
-  ? "Built from the board and the meeting's recording on this device."
-  : 'Built from the board on this device.');
+  ? `Built from the board and the meeting's recording${ON_DEVICE}.`
+  : `Built from the board${ON_DEVICE}.`);
 
 let ctx = null;
 let meetingApi = null; // { relayout } from meeting.js
@@ -59,6 +63,8 @@ const safeGet = (store, key) => { try { return store.getItem(key); } catch { ret
 const safeSet = (store, key, value) => { try { store.setItem(key, value); return true; } catch { return false; } };
 const safeRemove = (store, key) => { try { store.removeItem(key); } catch { /* ignore */ } };
 const local = () => { try { return window.localStorage; } catch { return null; } };
+// The board's shared documents: the server in pilot mode, this device in the demo (js/cloud.js).
+const shared = () => { try { return cloud.storage(); } catch { return null; } };
 const sess = () => { try { return window.sessionStorage; } catch { return null; } };
 
 function newId() {
@@ -276,7 +282,7 @@ let meetingsStorageOk = true; // false once this browser refuses to read or writ
 
 function readMeetingsRaw() {
   if (meetingsStorageOk) {
-    const store = local();
+    const store = shared();
     if (store) {
       try {
         meetingsMem = store.getItem(MEETINGS_KEY);
@@ -308,7 +314,7 @@ function readMeetings() {
 function writeMeetings(list) {
   meetingsMem = JSON.stringify(list);
   if (!meetingsStorageOk) return false;
-  if (safeSet(local(), MEETINGS_KEY, meetingsMem)) return true;
+  if (safeSet(shared(), MEETINGS_KEY, meetingsMem)) return true;
   meetingsStorageOk = false;
   return false;
 }
@@ -578,7 +584,7 @@ export function endMeetingSession({ openMinutes: openAfter = false } = {}) {
   // so closing the minutes returns there. "Saved" is said in the minutes' own
   // header, not in a toast over the minutes' text.
   const show = () => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => {
-    headNote = { id: record.id, text: kept ? 'Saved on this device.' : saved, warn: !kept };
+    headNote = { id: record.id, text: kept ? cloud.here('Saved on this device.') : saved, warn: !kept };
     openMinutes(record.id);
   }, 0)));
   if (document.fullscreenElement) {
@@ -1323,7 +1329,7 @@ const NOT_SAVING = "This browser isn't saving, so it will clear when the page re
 
 /** True when the Action register's copy on this device holds the action (false when this browser isn't saving). */
 function storedInRegister(id) {
-  const raw = safeGet(local(), 'dor.actions.v1'); // the register's key (js/actions.js)
+  const raw = safeGet(shared(), 'dor.actions.v1'); // the register's key (js/actions.js)
   try {
     const list = JSON.parse(raw ?? 'null');
     return Array.isArray(list) && list.some((a) => a && String(a.id) === String(id));
@@ -1523,7 +1529,7 @@ function showList(focusId = null) {
       ${sheetHead('Meeting records', 'Close meeting records')}
       <div class="sheet-body mn-body">
         ${any
-          ? `<p class="mn-intro">Weekly reviews and daily meetings saved on this device, each a Draft until it's finalized.</p>
+          ? `<p class="mn-intro">${cloud.here("Weekly reviews and daily meetings saved on this device, each a Draft until it's finalized.")}</p>
              ${weeks ? `<h3 class="mn-list-title">Weekly reviews <span class="mn-count">${weekly.length}</span></h3><ul class="mn-list" aria-label="Weekly reviews">${weeks}</ul>` : ''}
              ${items ? `<h3 class="mn-list-title">Daily meetings <span class="mn-count">${list.length}</span></h3><ul class="mn-list" aria-label="Daily meetings">${items}</ul>`
                : '<p class="mn-quiet">No daily meeting minutes yet: Run daily meeting saves them here when it ends.</p>'}`
@@ -1728,7 +1734,7 @@ function transcriptEmptyText(r) {
 const transcriptEmptyPlain = (r) => (r.recorded ? 'Recorded, but no speech was heard.' : 'Not recorded.');
 
 /** "Riverside plant" (a name typed as "Riverside Plant" doesn't become "Riverside Plant plant"). */
-const plantWords = (plant) => (plant ? `${String(plant).replace(/\s+plant$/i, '')} plant` : '');
+const plantWords = (plant) => (!plant ? '' : cloud.BOARD ? String(plant) : `${String(plant).replace(/\s+plant$/i, '')} plant`);
 
 /** "2 off-goal KPIs have no action yet: People, Operations." from the minutes' snapshot ('' when it didn't keep one). */
 function needsText(needs) {
@@ -1913,7 +1919,7 @@ function frozenActionsHtml(r) {
     const a = live.find((y) => String(y.id) === x.id) ?? null;
     return `<li class="mn-action">
         <p class="mn-action-text">${esc(x.text)}${now(a, x, 'text', (y) => y.text)}</p>
-        <p class="mn-action-meta">${names.get(x.fnId) ? `<span class="mn-action-fn">${esc(names.get(x.fnId))}</span>${SEP}` : ''}Owner: ${esc(x.owner || 'Not set')}${now(a, x, 'owner', (y) => y.owner || 'not set')}${SEP}${esc(dueWords(x.due))}${now(a, x, 'due', (y) => dueWords(y.due))}${SEP}${ACTION_STATE_WORD[x.status] ? actionStateMarkup(x.status) : esc(x.status)}${now(a, x, 'status', (y) => ACTION_STATE_WORD[y.status] ?? y.status)}${a ? '' : ' <span class="wr-now">now: no longer in the Action register on this device</span>'}</p>
+        <p class="mn-action-meta">${names.get(x.fnId) ? `<span class="mn-action-fn">${esc(names.get(x.fnId))}</span>${SEP}` : ''}Owner: ${esc(x.owner || 'Not set')}${now(a, x, 'owner', (y) => y.owner || 'not set')}${SEP}${esc(dueWords(x.due))}${now(a, x, 'due', (y) => dueWords(y.due))}${SEP}${ACTION_STATE_WORD[x.status] ? actionStateMarkup(x.status) : esc(x.status)}${now(a, x, 'status', (y) => ACTION_STATE_WORD[y.status] ?? y.status)}${a ? '' : ` <span class="wr-now">now: no longer in the Action register${ON_DEVICE}</span>`}</p>
       </li>`;
   }).join('')}</ul>
     <p class="mn-quiet">As they stood when the minutes were finalized.</p>`;
@@ -1927,7 +1933,7 @@ function showMeeting(id) {
       <div class="sheet-panel">
         ${sheetHead('Meeting minutes', 'Close meeting minutes')}
         <div class="sheet-body mn-body">
-          <p class="mn-empty-text">These minutes aren't on this device. They may have been deleted.</p>
+          <p class="mn-empty-text">These minutes aren't on this ${cloud.BOARD ? 'board' : 'device'}. They may have been deleted.</p>
           <p class="mn-back-row"><button class="btn btn--secondary" type="button" data-mn-back>${PREV_ICON}See all meeting records</button></p>
         </div>
       </div>`);
@@ -2101,7 +2107,7 @@ function deleteMinutes(id) {
   if (findMeeting(id)?.state === 'finalized') { ctx.toast("Finalized minutes can't be deleted. Add a note instead."); return; }
   const result = id ? removeMeeting(id) : null;
   if (!result) {
-    ctx.toast("These minutes aren't on this device anymore.");
+    ctx.toast(`These minutes aren't on this ${cloud.BOARD ? 'board' : 'device'} anymore.`);
     showList();
     return;
   }

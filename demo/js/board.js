@@ -1,22 +1,23 @@
 // Board (home): the summary sentence and the eight functions in meeting order.
 
-import { dailySeries, isoForDay, notesFor, entryInfo, hasProblem, kpiRowsFor, ownerFor, noteParagraphs, NO_ISSUE } from './store.js?v=20261117-065120';
+import { dailySeries, isoForDay, dateBounds, notesFor, entryInfo, hasProblem, kpiRowsFor, ownerFor, noteParagraphs, NO_ISSUE } from './store.js?v=20261120-154112';
 import {
   ON, OFF, NO_PRODUCTION, NOT_TRACKED, NOT_ENTERED,
   dayStatus, monthStatus, trackRecord, boardSummary, isProductionDay, lastProductionDay, compareToGoal, statusWord,
-} from './status.js?v=20261117-065120';
+} from './status.js?v=20261120-154112';
 import {
   formatPair, plainLabel, glossaryTerm, formatDayLong, formatDayMedium, formatMonthName, formatMonthShort,
   dayHeading, daySentence, monthSoFar, formatEnteredAt, lowerNote, formatValue, goalSign,
-} from './format.js?v=20261117-065120';
-import { trendChart, yearChart } from './charts.js?v=20261117-065120';
-import { actionsFor, actionsForDays, verifiedBetween } from './actions.js?v=20261117-065120';
-import { isOpenAction, isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261117-065120';
-import { icon, DEPT_ICON } from './icons.js?v=20261117-065120';
-import { renderSparkline } from './sparkline.js?v=20261117-065120';
-import { getIdentity } from './identity.js?v=20261117-065120';
-import { esc, statusMarkup, termButton, issueStatusMarkup } from './ui.js?v=20261117-065120';
-import { pageHref, scopeWord } from './shell.js?v=20261117-065120';
+} from './format.js?v=20261120-154112';
+import { trendChart, yearChart } from './charts.js?v=20261120-154112';
+import { actionsFor, actionsForDays, verifiedBetween } from './actions.js?v=20261120-154112';
+import { isOpenAction, isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261120-154112';
+import { icon, DEPT_ICON } from './icons.js?v=20261120-154112';
+import { renderSparkline } from './sparkline.js?v=20261120-154112';
+import { getIdentity } from './identity.js?v=20261120-154112';
+import { esc, statusMarkup, termButton, issueStatusMarkup } from './ui.js?v=20261120-154112';
+import { pageHref, scopeWord } from './shell.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-154112';
 
 /* ---------- Pieces shared with Detail and Meeting ---------- */
 
@@ -307,8 +308,9 @@ export function renderBoard(month, day, area = 'all') {
   const label = document.querySelector('[data-board-date]');
   label.innerHTML = periodDateMarkup(formatDayLong(month, day));
   label.setAttribute('datetime', isoForDay(month, day));
-  document.querySelector('[data-prev]').disabled = day <= 1;
-  document.querySelector('[data-next]').disabled = day >= month.daysInMonth;
+  const bounds = dateBounds(month);
+  document.querySelector('[data-prev]').disabled = isoForDay(month, day) <= bounds.min;
+  document.querySelector('[data-next]').disabled = isoForDay(month, day) >= bounds.max;
   document.querySelectorAll('[data-plant]').forEach((n) => { n.textContent = `${plantName(month)}\u00a0·\u00a0LinkedXL OS`; });
   // "This week →": the week holding this day, on the Weekly review (pageHref keeps the day; the review finds its week).
   document.querySelectorAll('[data-week-link]').forEach((a) => { a.href = pageHref(month, day, { view: 'wor' }).replace(/&week=[^&#]*/, ''); });
@@ -335,10 +337,10 @@ export function renderBoard(month, day, area = 'all') {
     yours.innerHTML = `<a class="your-row-link" href="#fn-${esc(mine.id)}" data-jump="${esc(mine.id)}">Your row: ${esc(mine.name)}</a> ${statusMarkup(st, { tag: 'span', kpi, word })}`;
   }
 
-  // Both pickers (classic and v2 share the top bar): limited to the month's data.
+  // Both pickers (classic and v2 share the top bar): limited to the month's data (a pilot board: first day to today).
   document.querySelectorAll('[data-board-date-input]').forEach((picker) => {
-    picker.min = isoForDay(month, 1);
-    picker.max = isoForDay(month, month.daysInMonth);
+    picker.min = bounds.min;
+    picker.max = bounds.max;
     picker.value = isoForDay(month, day);
   });
 
@@ -376,7 +378,8 @@ export function revealRow(fnId, { highlight = true } = {}) {
 }
 
 /** "Riverside plant" (a name typed as "Riverside Plant" doesn't become "Riverside Plant plant"). */
-export const plantName = (month) => `${String(month.plant ?? '').replace(/\s+plant$/i, '')} plant`;
+// A pilot board's plant name is its board name as typed (PILOT-SPEC.md); the demo's reads "<name> plant".
+export const plantName = (month) => (month.pilot ? String(month.plant ?? '') : `${String(month.plant ?? '').replace(/\s+plant$/i, '')} plant`);
 
 /* ---------- Board v2 (the client's layout, 10/12) ----------
    One group per function, in meeting order. The function and its owner span
@@ -980,7 +983,7 @@ function boardNotes(month, day, area = 'all') {
   }
   const wbDay = Number(month.boardDate.slice(8, 10));
   const anyNotes = month.functions.some((fn) => kpiRowsFor(fn).some((k) => recordedOn(k, day)));
-  if (!anyNotes && day !== wbDay) {
+  if (!cloud.BOARD && !anyNotes && day !== wbDay) {
     out.push(`<p class="board-note">The plant's workbook kept issues and actions for ${esc(formatDayMedium(month, wbDay))} only. <a href="${pageHref(month, wbDay, { view: 'dor' })}" data-go-day="${wbDay}">Go to ${esc(formatDayMedium(month, wbDay))}</a></p>`);
   }
   const sum = needsSummary(month, day);
@@ -1042,7 +1045,8 @@ function renderBoardV2(month, day, area = 'all') {
   watchHead();
   const last = latestEntry(month);
   document.querySelectorAll('[data-last-updated]').forEach((n) => {
-    n.textContent = last ? `Last entry: ${last.by}, ${formatEnteredAt(last.at)}` : `Numbers from the plant workbook, through ${formatDayMedium(month, Number(month.boardDate.slice(8, 10)))}`;
+    n.textContent = last ? `Last entry: ${last.by}, ${formatEnteredAt(last.at)}`
+      : cloud.BOARD ? 'No numbers entered yet.' : `Numbers from the plant workbook, through ${formatDayMedium(month, Number(month.boardDate.slice(8, 10)))}`;
   });
 }
 

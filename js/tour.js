@@ -4,10 +4,11 @@
 // view above it. Keyboard: focus moves into the card, ← → step, Esc skips, and
 // focus goes back where it was afterwards.
 
-import { pageHref } from './shell.js?v=20261117-065120';
-import { esc } from './ui.js?v=20261117-065120';
-import { getSettings, derive } from './customize.js?v=20261117-065120';
-import { dayStatus, OFF } from './status.js?v=20261117-065120';
+import { pageHref } from './shell.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-154112';
+import { esc } from './ui.js?v=20261120-154112';
+import { getSettings, derive } from './customize.js?v=20261120-154112';
+import { dayStatus, OFF } from './status.js?v=20261120-154112';
 
 const FLAG = { home: 'dor.tour.home.v1', dor: 'dor.tour.dor.v2', org: 'dor.tour.org.v1', wor: 'dor.tour.wor.v1' };
 export const ARRIVAL_KEY = 'dor.tour.arrival';
@@ -37,7 +38,7 @@ function markSeen(kind, how) {
  * the board's Menu). Wide screens can shrink it to icons from its top.
  */
 function pagesStep() {
-  const rail = matchMedia('(min-width: 1280px)').matches ? ' The button at its top shrinks it to icons, and this device remembers.' : '';
+  const rail = matchMedia('(min-width: 1280px)').matches ? ` The button at its top shrinks it to icons, and this ${cloud.BOARD ? 'browser' : 'device'} remembers.` : '';
   return {
     target: ['.side .side-list--pages'],
     fallback: '.side-menu-btn, [data-topbar-more]',
@@ -90,7 +91,7 @@ function homeSteps(month, day) {
       done: true,
       title: 'Your turn',
       text: 'Enter a number and watch Home change, or set the board up for your plant.',
-      note: 'Anything you enter saves on this device only. Reopen this tour anytime from How it works.',
+      note: `${cloud.BOARD ? 'Anything you enter saves to the server once the board is unlocked.' : 'Anything you enter saves on this device only.'} Reopen this tour anytime from How it works.`,
       tryLabel: 'Try Enter numbers',
       setupLabel: 'Set up your plant',
       link: { href: pageHref(month, day, { view: 'dor' }), text: 'See the Daily Operating Review board →', kind: 'dor' },
@@ -139,7 +140,7 @@ function boardV2Steps(month, day) {
     {
       target: ['.board-page .scope-line'],
       title: 'What the board is showing',
-      text: "This line names the plant, the area, the day, how many functions have entered their numbers, and that it's saved on this device. Pick an area and the Status column shows that area's day; a missing area number reads Not entered, never the plant's.",
+      text: cloud.here("This line names the plant, the area, the day, how many functions have entered their numbers, and that it's saved on this device.") + " Pick an area and the Status column shows that area's day; a missing area number reads Not entered, never the plant's.",
     },
     ...(row ? [{
       target: [`${row} .kpirow`, row],
@@ -191,7 +192,7 @@ function boardV2Steps(month, day) {
       done: true,
       title: 'Your turn',
       text: 'Enter a number and watch the status change, or set the board up for your plant.',
-      note: 'Anything you enter saves on this device only. Reopen this tour anytime from Take the tour.',
+      note: `${cloud.BOARD ? 'Anything you enter saves to the server once the board is unlocked.' : 'Anything you enter saves on this device only.'} Reopen this tour anytime from Take the tour.`,
       tryLabel: 'Try Enter numbers',
       setupLabel: 'Set up your plant',
       link: { href: pageHref(month, day, { view: 'home' }), text: 'See Home →', kind: 'home' },
@@ -306,7 +307,7 @@ function dorSteps(month, day) {
       done: true,
       title: "That's it",
       text: 'Reopen this tour anytime from Take the tour.',
-      note: 'In this demo, anything you enter saves on this device only.',
+      note: cloud.BOARD ? 'Anything you enter saves to the server once the board is unlocked.' : 'In this demo, anything you enter saves on this device only.',
       tryLabel: 'Try Enter numbers',
       link: { href: pageHref(month, day, { view: 'home' }), text: 'See Home →', kind: 'home' },
     },

@@ -6,16 +6,17 @@
 import {
   readSetup, writeSetup, resetSetup, UNITS, kpiRowsFor, ownerFor, scaleExtraValues, scalePrimaryValues, getMonth, NAME_MAX,
   getOrg, editOrgDraft, checkOrgDraft, activateOrgDraft, discardOrgDraft, snapshotOrg, restoreOrg, ROLES, WEEKDAYS,
-  dailyMeasuresOf, measureLoad, DAILY_MEASURE_MAX, ORG_NAME_MAX,
-} from './store.js?v=20261117-065120';
-import { formatEnteredAt } from './format.js?v=20261117-065120';
-import { glyphMarkup, statusMarkup } from './ui.js?v=20261117-065120';
-import { parseInput, toInputValue, plainLabel } from './format.js?v=20261117-065120';
-import { esc } from './ui.js?v=20261117-065120';
-import { icon, DEPT_ICON } from './icons.js?v=20261117-065120';
-import { avatarMarkup, plantName } from './board.js?v=20261117-065120';
-import { fitSheetHead } from './detail.js?v=20261117-065120';
-import { RULES, RULE_IDS, defaultRule } from './weekly.js?v=20261117-065120';
+  dailyMeasuresOf, measureLoad, DAILY_MEASURE_MAX, ORG_NAME_MAX, isoForDay, boardToday, boardFirstDay,
+} from './store.js?v=20261120-154112';
+import { formatEnteredAt } from './format.js?v=20261120-154112';
+import { glyphMarkup, statusMarkup } from './ui.js?v=20261120-154112';
+import { parseInput, toInputValue, plainLabel } from './format.js?v=20261120-154112';
+import { esc } from './ui.js?v=20261120-154112';
+import { icon, DEPT_ICON } from './icons.js?v=20261120-154112';
+import { avatarMarkup, plantName } from './board.js?v=20261120-154112';
+import { fitSheetHead } from './detail.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-154112';
+import { RULES, RULE_IDS, defaultRule } from './weekly.js?v=20261120-154112';
 
 /** The name a new function's owner starts with: not a person yet. */
 const PLACEHOLDER_OWNER = /^\s*(owner name)?\s*$/i;
@@ -97,6 +98,14 @@ export function initSetup(c) {
   dlg.addEventListener('cancel', (e) => { e.preventDefault(); closeSetup(); });
   dlg.addEventListener('click', onClick);
   dlg.addEventListener('input', onInput);
+  // A pilot board's goal history is worked out from what it was when the goal box got focus, so
+  // each keystroke ("1", "12", "120") replaces today's change instead of adding one.
+  dlg.addEventListener('focusin', (e) => {
+    if (!cloud.BOARD || !e.target.matches?.('[data-k="goal"]')) return;
+    const { fnId, kpiId } = kpiTarget(e.target);
+    const k = (readSetup().kpis[fnId] ?? []).find((x) => x.id === kpiId);
+    if (k) goalStart.set(kpiId, structuredClone({ goals: k.goals, goal: k.goal }));
+  });
   dlg.addEventListener('change', onChange);
   // A paste or typing that won't fit a name box: the box cuts it, and the note says so.
   dlg.addEventListener('beforeinput', (e) => {
@@ -267,6 +276,9 @@ function weeklyRuleOptions(row, picked) {
     + RULE_IDS.map((id) => `<option value="${id}"${picked === id ? ' selected' : ''}>${esc(RULES[id].name)}</option>`).join('');
 }
 
+/** A pilot board's KPI starts on the full date being viewed (each month works out its own start day). */
+const startDate = (month) => (cloud.BOARD ? { startDate: isoForDay(month, ctx.getDay()) } : {});
+
 function goalText(v, unit) {
   if (typeof v !== 'number') return '';
   return toInputValue(v, { unit });
@@ -302,6 +314,7 @@ function kpiCard(fnId, k, { first = false, only = false } = {}) {
             ${pct ? '<span aria-hidden="true">%</span>' : ''}
           </div>
           <p class="su-error" id="${pre}-goal-err" hidden></p>
+          ${cloud.BOARD ? '<p class="su-note">A new goal starts today. Earlier days keep the goal they had.</p>' : ''}
         </div>
         <div class="su-field">
           <label for="${pre}-rollup">The month</label>
@@ -659,7 +672,7 @@ function orgSection(month) {
           <button class="btn btn--secondary" type="button" data-org-shift-add>${icon('plus', 'i')}Add a shift</button>
 
           <h4 class="su-subhead">People</h4>
-          <p class="su-note org-roles-note">Roles are a demo here: anyone on this device can act as any role. The connected version checks sign-in.</p>
+          <p class="su-note org-roles-note">${cloud.BOARD ? 'Anyone with the edit password can act as any role.' : 'Roles are a demo here: anyone on this device can act as any role. The connected version checks sign-in.'}</p>
           <div class="org-people">${personCards}</div>
           <button class="btn btn--secondary" type="button" data-org-person-add>${icon('plus', 'i')}Add a person</button>
 
@@ -911,7 +924,7 @@ function render() {
       </header>
       <div class="su-body">
         <span class="sr-only" aria-live="polite" data-limit-live></span>
-        <p class="su-lead">Set the board up for any plant: its name, the functions in meeting order, who owns each one, and the KPIs they track. Changes show on the board right away and stay on this device.</p>
+        <p class="su-lead">Set the board up for any plant: its name, the functions in meeting order, who owns each one, and the KPIs they track. Changes show on the board right away${cloud.BOARD ? ' and save to the server once the board is unlocked.' : ' and stay on this device.'}</p>
 
         <section class="su-section" aria-labelledby="su-plant">
           <h3 class="su-head" id="su-plant">Plant</h3>
@@ -933,13 +946,13 @@ function render() {
 
         ${orgSection(month)}
 
-        <section class="su-section su-section--reset" aria-labelledby="su-reset">
+        ${cloud.BOARD ? '' : `<section class="su-section su-section--reset" aria-labelledby="su-reset">
           <h3 class="su-head" id="su-reset" tabindex="-1">Start over</h3>
           <p class="su-note">Go back to the plant workbook's setup. Numbers people entered stay.</p>
           <button class="btn btn--secondary" type="button" data-reset-setup>Reset board setup</button>
           ${getOrg(month).stored || getOrg(month).draft ? `<p class="su-note su-reset-org">Or go back to the organization read from the board's owners.</p>
           <button class="btn btn--secondary" type="button" data-reset-org>Reset the organization</button>` : ''}
-        </section>
+        </section>`}
       </div>
     </div>`;
   const panel = dlg.querySelector('.sheet-panel');
@@ -1077,9 +1090,25 @@ function onInput(e) {
     if (!k) return;
     const g = readGoal(el, k.unit);
     if (g === undefined) return;
+    if (cloud.BOARD) k.goals = goalHistory(goalStart.get(kpiId) ?? k, g);
     k.goal = g;
     commitSoon(setup);
   }
+}
+
+/**
+ * A pilot board's goal history after a change: the new goal starts today, replacing any change made
+ * earlier today, and earlier days keep theirs. The first goal ever starts on the board's first day.
+ */
+const goalStart = new Map(); // kpiId -> { goals, goal } when its goal box got focus
+
+function goalHistory(k, goal) {
+  const today = boardToday();
+  const first = boardFirstDay() ?? today;
+  let list = Array.isArray(k.goals) ? k.goals.filter((x) => x.from !== today) : [];
+  if (!Array.isArray(k.goals) && typeof k.goal === 'number') list = [{ from: first, goal: k.goal }];
+  if (!list.length) return [{ from: first < today ? first : today, goal }];
+  return [...list, { from: today, goal }].sort((a, b) => (a.from < b.from ? -1 : 1));
 }
 
 function onChange(e) {
@@ -1179,7 +1208,7 @@ function onClick(e) {
       return;
     }
     // It starts on the board day it's added, so earlier days don't read as misses.
-    const k = { id: newId('k'), name: 'New KPI', unit: 'count', better: 'higher', goal: null, startDay: ctx.getDay() };
+    const k = { id: newId('k'), name: 'New KPI', unit: 'count', better: 'higher', goal: null, startDay: ctx.getDay(), ...startDate(month) };
     (setup.kpis[fnId] ??= []).push(k);
     commit(setup);
     const input = dlg.querySelector(`[data-kpi="${CSS.escape(k.id)}"] [data-k="name"]`);
@@ -1254,7 +1283,7 @@ function onClick(e) {
   if (btn.matches('[data-add-fn]')) {
     const id = newId('f');
     setup.added.push({ id, name: 'New function', owner: 'Owner name', question: '' });
-    setup.kpis[id] = [{ id: newId('k'), name: 'New KPI', unit: 'count', better: 'higher', goal: null, startDay: ctx.getDay() }];
+    setup.kpis[id] = [{ id: newId('k'), name: 'New KPI', unit: 'count', better: 'higher', goal: null, startDay: ctx.getDay(), ...startDate(month) }];
     setup.order = [...fullOrder(month), id];
     openFn = id;
     const ok = commit(setup);
