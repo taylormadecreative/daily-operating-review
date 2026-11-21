@@ -7,8 +7,8 @@
 // 800 ms of quiet, with a version check and a three-way merge (js/merge.js). Every
 // other key stays on the device.
 
-import { CLOUD } from './cloud-config.js?v=20261120-154112';
-import { mergeDoc } from './merge.js?v=20261120-154112';
+import { CLOUD } from './cloud-config.js?v=20261120-181051';
+import { mergeDoc } from './merge.js?v=20261120-181051';
 
 const ID_RE = /^[0-9a-f]{32}$/;
 const NAME_RE = /^(setup|org|weekly|actions|meetings|numbers-20\d{2}-(0[1-9]|1[0-2]))$/;
@@ -59,7 +59,7 @@ export const boardParam = () => (BOARD ? 'b=' + encodeURIComponent(BOARD) : '');
  */
 export function here(text) {
   if (!BOARD) return text;
-  const saved = editKey() ? 'Saved to the server' : 'Not saved yet';
+  const saved = editKey() ? 'Saved for everyone' : 'Not saved yet';
   return String(text)
     .replace(/Saved on this device for this week only/g, 'Saved for this week only')
     .replace(/Saved on this device(?=;)/g, 'Saved on the server')

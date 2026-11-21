@@ -3,8 +3,8 @@
 // is checked by the server on every call; this page keeps it in memory only, so a reload
 // asks for it again. Nothing here can show or reset the admin password.
 
-import { rpc } from './cloud.js?v=20261120-154112';
-import { esc } from './ui.js?v=20261120-154112';
+import { rpc } from './cloud.js?v=20261120-181051';
+import { esc } from './ui.js?v=20261120-181051';
 
 const ZONES = [
   ['America/New_York', 'Eastern'],
@@ -64,7 +64,7 @@ function rowMarkup(b) {
   return `<li class="admin-row" data-admin-board="${esc(b.id)}">
       <div class="admin-row-main">
         <p class="admin-board-name">${esc(b.name)}${b.archived ? ' <span class="admin-archived">Archived</span>' : ''}</p>
-        <p class="admin-meta">First day ${esc(dayWords(b.first_day))} · ${esc(ZONES.find(([z]) => z === b.time_zone)?.[1] ?? b.time_zone)} · Last saved: ${esc(stampWords(b.last_saved_at))}</p>
+        <p class="admin-meta">First day ${esc(dayWords(b.first_day))} · ${esc(ZONES.find(([z]) => z === b.time_zone)?.[1] ?? b.time_zone)} · ${b.last_saved_at ? `Last saved: ${esc(stampWords(b.last_saved_at))}` : 'No numbers saved yet'}</p>
       </div>
       <div class="admin-row-tools">
         <button class="btn btn--secondary" type="button" data-admin-copy>Copy link</button>
@@ -112,7 +112,7 @@ function addMarkup() {
         <div class="su-field"><label for="ab-pass">Edit password</label><input id="ab-pass" type="password" autocomplete="new-password"></div>
         <div class="su-field"><label for="ab-pass2">Type it again</label><input id="ab-pass2" type="password" autocomplete="new-password"></div>
       </div>
-      <p class="admin-meta">The time zone decides when the plant's day starts. It can't be changed in this version.</p>
+      <p class="admin-meta">Pick the plant's local time zone. It decides when the plant's day starts, and can't be changed later.</p>
       <p class="su-error" data-add-msg role="alert" hidden></p>
       <div><button class="btn btn--primary" type="submit" data-admin-create>Add the board</button></div>
       <div data-made></div>
@@ -166,7 +166,7 @@ async function create(form) {
   const btn = form.querySelector('[data-admin-create]');
   btn.disabled = true;
   try {
-    const starter = await (await fetch(new URL('../data/starter-board.json?v=20261120-154112', import.meta.url))).json();
+    const starter = await (await fetch(new URL('../data/starter-board.json?v=20261120-181051', import.meta.url))).json();
     const setup = structuredClone(starter.setup);
     setup.plant = name;
     for (const list of Object.values(setup.kpis)) for (const k of list) k.startDate = first;

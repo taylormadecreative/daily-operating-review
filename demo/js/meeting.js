@@ -13,25 +13,25 @@
 // Escalations, Forward look). Both share the keys, the place line ("3 of 13"), the timer (it never
 // blocks anything), Record and Esc. The weekly meeting's last Next is Finish review.
 
-import { dailySeries, kpiRowsFor, notesFor, hasProblem, isoForDay } from './store.js?v=20261120-154112';
-import { dayStatus, monthStatus, boardSummary, isProductionDay, compareToGoal, ON, OFF, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261120-154112';
+import { dailySeries, kpiRowsFor, notesFor, hasProblem, isoForDay } from './store.js?v=20261120-181051';
+import { dayStatus, monthStatus, boardSummary, isProductionDay, compareToGoal, ON, OFF, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261120-181051';
 import {
   formatPair, plainLabel, formatDayLong, formatDayMedium, formatMonthName, formatMonthShort,
   monthSoFar, dayHeading, weekday,
-} from './format.js?v=20261120-154112';
-import { notesText, recordText, actionStateFor, needsSummary, ACTION_WORD, clampedNote, issueGap, ISSUE_GAP_WORD, fitClampedText } from './board.js?v=20261120-154112';
-import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261120-154112';
-import { barChart } from './charts.js?v=20261120-154112';
+} from './format.js?v=20261120-181051';
+import { notesText, recordText, actionStateFor, needsSummary, ACTION_WORD, clampedNote, issueGap, ISSUE_GAP_WORD, fitClampedText } from './board.js?v=20261120-181051';
+import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261120-181051';
+import { barChart } from './charts.js?v=20261120-181051';
 import {
   connectMeeting, startMeetingSession, updateMeetingSession, endMeetingSession,
   recorderReady, recorderHoldsEscape, addActionIcon, currentMeetingId, meetingDraftFor, draftWords, addTargetName,
-} from './recorder.js?v=20261120-154112';
-import { actionDayText } from './actions.js?v=20261120-154112';
-import { isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261120-154112';
-import { dismissAll } from './toast.js?v=20261120-154112';
+} from './recorder.js?v=20261120-181051';
+import { actionDayText } from './actions.js?v=20261120-181051';
+import { isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261120-181051';
+import { dismissAll } from './toast.js?v=20261120-181051';
 import {
   buildWeeklyAgenda, weeklySlideMarkup, fitWeeklySlide, slidePlace, initWeeklyMeeting, weeklyHoldsEscape,
-} from './weekly-meeting.js?v=20261120-154112';
+} from './weekly-meeting.js?v=20261120-181051';
 
 /** Clear any message showing, without moving focus (the meeting decides where it goes). */
 const dismissToast = () => dismissAll({ refocus: false });

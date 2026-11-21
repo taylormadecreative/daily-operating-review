@@ -11,25 +11,25 @@
 
 import {
   getOrg, kpiRowsFor, isoForDay, anyFunctionById, readWeekly, editWeekly, weekSaved, dateBounds, dayFromIso,
-} from './store.js?v=20261120-154112';
-import { ON, OFF, NOT_ENTERED, NO_GOAL, statusWord, monthStatus, isProductionDay } from './status.js?v=20261120-154112';
+} from './store.js?v=20261120-181051';
+import { ON, OFF, NOT_ENTERED, NO_GOAL, statusWord, monthStatus, isProductionDay } from './status.js?v=20261120-181051';
 import {
   weeksOf, weekForDay, weeklyResult, repeatGap, functionWeek, weeklyPair, ruleFor, RULES, CALC_VERSION, calcWords,
   EXCLUDED_WORDS, keyOf, lastProductionDay, addDays, plainNumber, isoTime,
-} from './weekly.js?v=20261120-154112';
-import { plainLabel, formatValue, goalSign, parseInput, formatEnteredAt, formatStamp, glossaryTerm, formatPair } from './format.js?v=20261120-154112';
-import { esc, statusMarkup, glyphMarkup, termButton, GLYPH } from './ui.js?v=20261120-154112';
-import { icon, DEPT_ICON } from './icons.js?v=20261120-154112';
-import { avatarMarkup, dueText, ACTION_WORD, responseFor, dailyWords, lapsedMarkup, lapsedWords, plantName, fitClampedText } from './board.js?v=20261120-154112';
-import { listActions, escalateAction, addAction, linkCandidates, linkActionDay, nextProductionDayIso } from './actions.js?v=20261120-154112';
+} from './weekly.js?v=20261120-181051';
+import { plainLabel, formatValue, goalSign, parseInput, formatEnteredAt, formatStamp, glossaryTerm, formatPair } from './format.js?v=20261120-181051';
+import { esc, statusMarkup, glyphMarkup, termButton, GLYPH } from './ui.js?v=20261120-181051';
+import { icon, DEPT_ICON } from './icons.js?v=20261120-181051';
+import { avatarMarkup, dueText, ACTION_WORD, responseFor, dailyWords, lapsedMarkup, lapsedWords, plantName, fitClampedText } from './board.js?v=20261120-181051';
+import { listActions, escalateAction, addAction, linkCandidates, linkActionDay, nextProductionDayIso } from './actions.js?v=20261120-181051';
 import {
   isOpenAction, isVerifiedAction, isOverdueAction, openOnDay, agingWords, actionStateMarkup,
-} from './action-state.js?v=20261120-154112';
-import { listMinutes } from './recorder.js?v=20261120-154112';
-import { pageHref, setNavState } from './shell.js?v=20261120-154112';
-import { fitSheetHead } from './detail.js?v=20261120-154112';
-import { getIdentity } from './identity.js?v=20261120-154112';
-import * as cloud from './cloud.js?v=20261120-154112';
+} from './action-state.js?v=20261120-181051';
+import { listMinutes } from './recorder.js?v=20261120-181051';
+import { pageHref, setNavState } from './shell.js?v=20261120-181051';
+import { fitSheetHead } from './detail.js?v=20261120-181051';
+import { getIdentity } from './identity.js?v=20261120-181051';
+import * as cloud from './cloud.js?v=20261120-181051';
 
 // Demo copy says where things are kept; on a board they're on the server, so the words drop it.
 const ON_DEVICE = cloud.BOARD ? '' : ' on this device';
@@ -2067,7 +2067,7 @@ function recordBody(m, rec, { print = false } = {}) {
     </section>
     ${amendments}
     ${print ? '' : `<div class="wc-buttons"><button class="btn btn--secondary" type="button" data-record-csv="${esc(rec.id)}">Export CSV</button><button class="btn btn--secondary" type="button" data-record-print="${esc(rec.id)}">Print</button></div>`}
-    <p class="wc-foot">${finalized ? `A finalized record never changes: it keeps its numbers, and a note can be added with its author and reason. A change goes into a revised version: Start a revised version (v${rec.version + 1}) on the Overview, then Finish review; it replaces this one once it's finalized.` : 'A draft record: Save review draft refreshes its numbers; decisions and escalations are added as they happen.'} ${cloud.BOARD ? 'Saved to the server with this board.' : 'Saved on this device; the connected version keeps it in LinkedXL OS Governance.'}</p>`;
+    <p class="wc-foot">${finalized ? `A finalized record never changes: it keeps its numbers, and a note can be added with its author and reason. A change goes into a revised version: Start a revised version (v${rec.version + 1}) on the Overview, then Finish review; it replaces this one once it's finalized.` : 'A draft record: Save review draft refreshes its numbers; decisions and escalations are added as they happen.'} ${cloud.BOARD ? 'Saved for everyone on this board.' : 'Saved on this device; the connected version keeps it in LinkedXL OS Governance.'}</p>`;
 }
 
 /**

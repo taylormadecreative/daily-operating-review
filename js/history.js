@@ -1,9 +1,9 @@
 // Pilot boards: Save history (PILOT-SPEC.md, Part 3). The Menu's "Save history" opens a sheet with
-// the last 50 saves, newest first: "Thu, Nov 19, 4:52 PM · Numbers for November · B. Taylor".
-// Names are what the app was told, so the trust note sits under the list. Words come from the
-// spec's table.
+// the last 50 saves, newest first, under a heading for each day ("Thu, Nov 19"): each save is
+// "B. Taylor · Numbers for November" with its time ("4:52 PM") under it. Names are what the app
+// was told, so a note sits under the list. Words come from the spec's table.
 
-import * as cloud from './cloud.js?v=20261120-154112';
+import * as cloud from './cloud.js?v=20261120-181051';
 
 const LABELS = {
   setup: 'Board setup',
@@ -12,7 +12,8 @@ const LABELS = {
   actions: 'Action register',
   meetings: 'Meeting records',
 };
-const TRUST = "Names are what each person picked under Who's entering. One password is shared, so this isn't proof of who made a change.";
+const TRUST = "Names come from Who's entering on each device.";
+const UNNAMED = 'Name not picked';
 const OFFLINE = "Can't reach the server. Check your connection and try again.";
 const NOT_FOUND = "We couldn't find that board. Check the link, or ask the person who sent it.";
 
@@ -27,12 +28,13 @@ export function docLabel(name) {
   return LABELS[name] ?? name;
 }
 
-/** "Thu, Nov 19, 4:52 PM", in the board's time zone. */
-function stamp(at) {
+/** In the board's time zone: day ("Thu, Nov 19") and time ("4:52 PM"). */
+function inBoardZone(at, opts) {
   const tz = cloud.boardMeta()?.timeZone;
-  const opts = { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
   try { return new Date(at).toLocaleString('en-US', tz ? { ...opts, timeZone: tz } : opts); } catch { return new Date(at).toLocaleString('en-US', opts); }
 }
+const dayOf = (at) => inBoardZone(at, { weekday: 'short', month: 'short', day: 'numeric' });
+const timeOf = (at) => inBoardZone(at, { hour: 'numeric', minute: '2-digit' });
 
 let dlg = null;
 let returnTo = null;
@@ -50,7 +52,7 @@ function build() {
         <div class="sheet-tools"><button class="btn btn--secondary" type="button" data-history-close>Close</button></div>
       </div>
       <div class="sheet-body">
-        <ol class="history-list" data-history-list aria-busy="true"></ol>
+        <div class="history-days" data-history-list aria-busy="true"></div>
         <p class="history-note">${TRUST}</p>
       </div>
     </div>`;
@@ -64,16 +66,20 @@ function build() {
   });
 }
 
-// One save: its time, document and name each stay whole, so a narrow screen wraps between them.
-function row(...parts) {
-  const li = document.createElement('li');
-  li.className = 'history-row';
-  parts.forEach((text, i) => {
-    if (i) li.append(' · ');
-    const span = document.createElement('span');
-    span.textContent = text;
-    li.append(span);
-  });
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+};
+
+// One save: who and what on the first line, the time under it.
+function row(who, what, at) {
+  const li = el('li', 'history-row');
+  li.dataset.historyRow = '';
+  const line = el('span', 'history-what');
+  line.append(el('span', who ? 'history-who' : 'history-who history-unnamed', who || UNNAMED), ' · ', el('span', null, what));
+  li.append(line, el('span', 'history-time', timeOf(at)));
   return li;
 }
 
@@ -97,13 +103,17 @@ export async function openHistory(from = document.activeElement) {
     problem = err.code === 'not_found' ? NOT_FOUND : OFFLINE;
   }
   if (ask !== asking || !dlg.open) return;
-  if (problem) list.append(row(problem));
+  if (problem) list.append(el('p', 'history-problem', problem));
+  let day = null;
+  let ol = null;
   for (const r of rows ?? []) {
-    const who = String(r.who ?? '').trim();
-    const li = row(stamp(r.at), docLabel(r.name), who || 'Not named');
-    if (!who) li.lastElementChild.classList.add('history-unnamed');
-    li.dataset.historyRow = '';
-    list.append(li);
+    const d = dayOf(r.at);
+    if (d !== day) {
+      day = d;
+      ol = el('ol', 'history-list');
+      list.append(el('h3', 'history-day', d), ol);
+    }
+    ol.append(row(String(r.who ?? '').trim(), docLabel(r.name), r.at));
   }
   list.setAttribute('aria-busy', 'false');
   list.dataset.loaded = '';
