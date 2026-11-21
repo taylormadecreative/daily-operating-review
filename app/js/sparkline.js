@@ -4,8 +4,8 @@
 // end marker, hover crosshair + tooltip. Values stay readable without hover
 // through the caption beside it and the Detail screen's table.
 
-import { STATUS_WORD } from './status.js?v=20261120-181051';
-import { GLYPH } from './ui.js?v=20261120-181051';
+import { STATUS_WORD } from './status.js?v=20261120-182315';
+import { GLYPH } from './ui.js?v=20261120-182315';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const VB_W = 240;

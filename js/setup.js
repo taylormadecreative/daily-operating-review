@@ -7,16 +7,16 @@ import {
   readSetup, writeSetup, resetSetup, UNITS, kpiRowsFor, ownerFor, scaleExtraValues, scalePrimaryValues, getMonth, NAME_MAX,
   getOrg, editOrgDraft, checkOrgDraft, activateOrgDraft, discardOrgDraft, snapshotOrg, restoreOrg, ROLES, WEEKDAYS,
   dailyMeasuresOf, measureLoad, DAILY_MEASURE_MAX, ORG_NAME_MAX, isoForDay, boardToday, boardFirstDay,
-} from './store.js?v=20261120-181051';
-import { formatEnteredAt } from './format.js?v=20261120-181051';
-import { glyphMarkup, statusMarkup } from './ui.js?v=20261120-181051';
-import { parseInput, toInputValue, plainLabel } from './format.js?v=20261120-181051';
-import { esc } from './ui.js?v=20261120-181051';
-import { icon, DEPT_ICON } from './icons.js?v=20261120-181051';
-import { avatarMarkup, plantName } from './board.js?v=20261120-181051';
-import { fitSheetHead } from './detail.js?v=20261120-181051';
-import * as cloud from './cloud.js?v=20261120-181051';
-import { RULES, RULE_IDS, defaultRule } from './weekly.js?v=20261120-181051';
+} from './store.js?v=20261120-182315';
+import { formatEnteredAt } from './format.js?v=20261120-182315';
+import { glyphMarkup, statusMarkup } from './ui.js?v=20261120-182315';
+import { parseInput, toInputValue, plainLabel } from './format.js?v=20261120-182315';
+import { esc } from './ui.js?v=20261120-182315';
+import { icon, DEPT_ICON } from './icons.js?v=20261120-182315';
+import { avatarMarkup, plantName } from './board.js?v=20261120-182315';
+import { fitSheetHead } from './detail.js?v=20261120-182315';
+import * as cloud from './cloud.js?v=20261120-182315';
+import { RULES, RULE_IDS, defaultRule } from './weekly.js?v=20261120-182315';
 
 /** The name a new function's owner starts with: not a person yet. */
 const PLACEHOLDER_OWNER = /^\s*(owner name)?\s*$/i;

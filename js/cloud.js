@@ -7,8 +7,8 @@
 // 800 ms of quiet, with a version check and a three-way merge (js/merge.js). Every
 // other key stays on the device.
 
-import { CLOUD } from './cloud-config.js?v=20261120-181051';
-import { mergeDoc } from './merge.js?v=20261120-181051';
+import { CLOUD } from './cloud-config.js?v=20261120-182315';
+import { mergeDoc } from './merge.js?v=20261120-182315';
 
 const ID_RE = /^[0-9a-f]{32}$/;
 const NAME_RE = /^(setup|org|weekly|actions|meetings|numbers-20\d{2}-(0[1-9]|1[0-2]))$/;

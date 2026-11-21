@@ -10,10 +10,10 @@
 
 import {
   readableShade, contrast, mix, cvdDelta, normalDelta, CVD_TARGET, CVD_FLOOR, NEAR_IDENTICAL, isHex, luminance,
-} from './color.js?v=20261120-181051';
-import { esc } from './ui.js?v=20261120-181051';
-import { toast } from './toast.js?v=20261120-181051';
-import * as cloud from './cloud.js?v=20261120-181051';
+} from './color.js?v=20261120-182315';
+import { esc } from './ui.js?v=20261120-182315';
+import { toast } from './toast.js?v=20261120-182315';
+import * as cloud from './cloud.js?v=20261120-182315';
 
 const KEY = 'pilot.customize.v2';
 // v1 settings carry over, except strength: v2's default is the client's solid blocks.

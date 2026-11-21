@@ -3,8 +3,8 @@
 // is checked by the server on every call; this page keeps it in memory only, so a reload
 // asks for it again. Nothing here can show or reset the admin password.
 
-import { rpc } from './cloud.js?v=20261120-181051';
-import { esc } from './ui.js?v=20261120-181051';
+import { rpc } from './cloud.js?v=20261120-182315';
+import { esc } from './ui.js?v=20261120-182315';
 
 const ZONES = [
   ['America/New_York', 'Eastern'],
@@ -166,7 +166,7 @@ async function create(form) {
   const btn = form.querySelector('[data-admin-create]');
   btn.disabled = true;
   try {
-    const starter = await (await fetch(new URL('../data/starter-board.json?v=20261120-181051', import.meta.url))).json();
+    const starter = await (await fetch(new URL('../data/starter-board.json?v=20261120-182315', import.meta.url))).json();
     const setup = structuredClone(starter.setup);
     setup.plant = name;
     for (const list of Object.values(setup.kpis)) for (const k of list) k.startDate = first;

@@ -1,23 +1,23 @@
 // Board (home): the summary sentence and the eight functions in meeting order.
 
-import { dailySeries, isoForDay, dateBounds, notesFor, entryInfo, hasProblem, kpiRowsFor, ownerFor, noteParagraphs, NO_ISSUE } from './store.js?v=20261120-181051';
+import { dailySeries, isoForDay, dateBounds, notesFor, entryInfo, hasProblem, kpiRowsFor, ownerFor, noteParagraphs, NO_ISSUE } from './store.js?v=20261120-182315';
 import {
   ON, OFF, NO_PRODUCTION, NOT_TRACKED, NOT_ENTERED,
   dayStatus, monthStatus, trackRecord, boardSummary, isProductionDay, lastProductionDay, compareToGoal, statusWord,
-} from './status.js?v=20261120-181051';
+} from './status.js?v=20261120-182315';
 import {
   formatPair, plainLabel, glossaryTerm, formatDayLong, formatDayMedium, formatMonthName, formatMonthShort,
   dayHeading, daySentence, monthSoFar, formatEnteredAt, lowerNote, formatValue, goalSign,
-} from './format.js?v=20261120-181051';
-import { trendChart, yearChart } from './charts.js?v=20261120-181051';
-import { actionsFor, actionsForDays, verifiedBetween } from './actions.js?v=20261120-181051';
-import { isOpenAction, isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261120-181051';
-import { icon, DEPT_ICON } from './icons.js?v=20261120-181051';
-import { renderSparkline } from './sparkline.js?v=20261120-181051';
-import { getIdentity } from './identity.js?v=20261120-181051';
-import { esc, statusMarkup, termButton, issueStatusMarkup } from './ui.js?v=20261120-181051';
-import { pageHref, scopeWord } from './shell.js?v=20261120-181051';
-import * as cloud from './cloud.js?v=20261120-181051';
+} from './format.js?v=20261120-182315';
+import { trendChart, yearChart } from './charts.js?v=20261120-182315';
+import { actionsFor, actionsForDays, verifiedBetween } from './actions.js?v=20261120-182315';
+import { isOpenAction, isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261120-182315';
+import { icon, DEPT_ICON } from './icons.js?v=20261120-182315';
+import { renderSparkline } from './sparkline.js?v=20261120-182315';
+import { getIdentity } from './identity.js?v=20261120-182315';
+import { esc, statusMarkup, termButton, issueStatusMarkup } from './ui.js?v=20261120-182315';
+import { pageHref, scopeWord } from './shell.js?v=20261120-182315';
+import * as cloud from './cloud.js?v=20261120-182315';
 
 /* ---------- Pieces shared with Detail and Meeting ---------- */
 
@@ -212,9 +212,14 @@ export function summaryParts(month, day, area = 'all') {
   const s = boardSummary(month, day);
   const y = s.yesterday;
   // With an area picked, the count still judges plant totals (as Home's does), and says so first.
+  // A pilot board starts each day empty: before numbers come in, the office TV says so rather than
+  // "0 of 8 on track", and after, it counts what's in ("3 of 8 entered, 2 on track today").
+  const entered = y.total - y.missing.length;
   const count = s.productionDay === false
     ? `No production was scheduled ${daySentence(month, day, 'on')}.`
-    : `${area === 'all' ? '' : 'Plant totals: '}${y[ON]} of ${y.total} on track ${daySentence(month, day)}.`;
+    : month.pilot
+      ? (entered ? `${entered} of ${y.total} entered, ${y[ON]} on track ${daySentence(month, day)}.` : `No numbers entered yet ${daySentence(month, day)}.`)
+      : `${area === 'all' ? '' : 'Plant totals: '}${y[ON]} of ${y.total} on track ${daySentence(month, day)}.`;
   return { s, count };
 }
 

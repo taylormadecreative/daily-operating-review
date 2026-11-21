@@ -4,11 +4,11 @@
 // view above it. Keyboard: focus moves into the card, ← → step, Esc skips, and
 // focus goes back where it was afterwards.
 
-import { pageHref } from './shell.js?v=20261120-181051';
-import * as cloud from './cloud.js?v=20261120-181051';
-import { esc } from './ui.js?v=20261120-181051';
-import { getSettings, derive } from './customize.js?v=20261120-181051';
-import { dayStatus, OFF } from './status.js?v=20261120-181051';
+import { pageHref } from './shell.js?v=20261120-182315';
+import * as cloud from './cloud.js?v=20261120-182315';
+import { esc } from './ui.js?v=20261120-182315';
+import { getSettings, derive } from './customize.js?v=20261120-182315';
+import { dayStatus, OFF } from './status.js?v=20261120-182315';
 
 const FLAG = { home: 'demo.tour.home.v1', dor: 'demo.tour.dor.v2', org: 'demo.tour.org.v1', wor: 'demo.tour.wor.v1' };
 export const ARRIVAL_KEY = 'demo.tour.arrival';

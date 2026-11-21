@@ -2,30 +2,30 @@
 // URL = ?date=YYYY-MM-DD (production day) + hash for the open view:
 //   (none) board · #safety detail · #enter[/fn] enter numbers · #meeting[/n] meeting
 
-import * as store from './store.js?v=20261120-181051';
-import * as cloud from './cloud.js?v=20261120-181051';
-import { getIdentity } from './identity.js?v=20261120-181051';
-import { initUnlock } from './unlock.js?v=20261120-181051';
-import { initHistory } from './history.js?v=20261120-181051';
-import { renderBoard, revealRow, setUndoable, getOffOnly, setOffOnly, shownFunctions, offOnlyLabel } from './board.js?v=20261120-181051';
-import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261120-181051';
-import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261120-181051';
-import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261120-181051';
-import { initToast, toast, dismissAll } from './toast.js?v=20261120-181051';
-import { formatDayMedium, formatMonthShort, formatMonthName, termName, useBoardToday } from './format.js?v=20261120-181051';
-import { monthKey, clampIso, addDays, isoTime, monthDate, shiftMonth } from './calendar.js?v=20261120-181051';
-import { renderHome, revealHomeRow, AREA_OPTIONS, fitSide } from './home.js?v=20261120-181051';
-import { renderNav, wireShell, setNavState, toggleMenu, showPopoverFrom, renderScope, PAGES, pageHref } from './shell.js?v=20261120-181051';
-import { initOrg, renderOrg, openPerson, closePerson, isPersonOpen, refreshPerson } from './org.js?v=20261120-181051';
-import { initWor, renderWor, openWorSheet, closeWorSheet, isWorSheetOpen, refreshWorSheet, worDay, attachMeetingSession, syncWorTab, sayWorNote, weekOfDay, worWeeks, weekNear } from './wor.js?v=20261120-181051';
-import { downloadCsv, printDay } from './export.js?v=20261120-181051';
-import { esc, statusMarkup } from './ui.js?v=20261120-181051';
-import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261120-181051';
-import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261120-181051';
-import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261120-181051';
-import { initActions, openActions, addAction, listActions, refreshActions } from './actions.js?v=20261120-181051';
-import { initRecorder, openMinutes } from './recorder.js?v=20261120-181051';
-import { initSetup, openSetup } from './setup.js?v=20261120-181051';
+import * as store from './store.js?v=20261120-182315';
+import * as cloud from './cloud.js?v=20261120-182315';
+import { getIdentity } from './identity.js?v=20261120-182315';
+import { initUnlock } from './unlock.js?v=20261120-182315';
+import { initHistory } from './history.js?v=20261120-182315';
+import { renderBoard, revealRow, setUndoable, getOffOnly, setOffOnly, shownFunctions, offOnlyLabel } from './board.js?v=20261120-182315';
+import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261120-182315';
+import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261120-182315';
+import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261120-182315';
+import { initToast, toast, dismissAll } from './toast.js?v=20261120-182315';
+import { formatDayMedium, formatMonthShort, formatMonthName, termName, useBoardToday } from './format.js?v=20261120-182315';
+import { monthKey, clampIso, addDays, isoTime, monthDate, shiftMonth } from './calendar.js?v=20261120-182315';
+import { renderHome, revealHomeRow, AREA_OPTIONS, fitSide } from './home.js?v=20261120-182315';
+import { renderNav, wireShell, setNavState, toggleMenu, showPopoverFrom, renderScope, PAGES, pageHref } from './shell.js?v=20261120-182315';
+import { initOrg, renderOrg, openPerson, closePerson, isPersonOpen, refreshPerson } from './org.js?v=20261120-182315';
+import { initWor, renderWor, openWorSheet, closeWorSheet, isWorSheetOpen, refreshWorSheet, worDay, attachMeetingSession, syncWorTab, sayWorNote, weekOfDay, worWeeks, weekNear } from './wor.js?v=20261120-182315';
+import { downloadCsv, printDay } from './export.js?v=20261120-182315';
+import { esc, statusMarkup } from './ui.js?v=20261120-182315';
+import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261120-182315';
+import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261120-182315';
+import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261120-182315';
+import { initActions, openActions, addAction, listActions, refreshActions } from './actions.js?v=20261120-182315';
+import { initRecorder, openMinutes } from './recorder.js?v=20261120-182315';
+import { initSetup, openSetup } from './setup.js?v=20261120-182315';
 
 // We decide where the page scrolls after views close (the saved row).
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -1485,7 +1485,7 @@ function pilotGate(text, { retry = false, link = null } = {}) {
 async function init() {
   // The admin page: boards are made and managed here, before any month loads.
   if (new URLSearchParams(location.search).has('admin') && !cloud.BOARD && (cloud.COPY === 'app' || cloud.COPY === 'dev')) {
-    const { initAdmin } = await import('./admin.js?v=20261120-181051');
+    const { initAdmin } = await import('./admin.js?v=20261120-182315');
     initAdmin();
     return;
   }

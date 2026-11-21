@@ -3,7 +3,7 @@
 // "B. Taylor · Numbers for November" with its time ("4:52 PM") under it. Names are what the app
 // was told, so a note sits under the list. Words come from the spec's table.
 
-import * as cloud from './cloud.js?v=20261120-181051';
+import * as cloud from './cloud.js?v=20261120-182315';
 
 const LABELS = {
   setup: 'Board setup',

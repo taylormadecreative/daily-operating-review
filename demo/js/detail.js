@@ -2,19 +2,19 @@
 // <dialog> + showModal gives the dimmed, inert background and Esc; focus is
 // moved in JS because autofocus is ignored here.
 
-import { dailySeries, leadingIndicatorsFor, kpiRowById, isoForDay, notesFor, hasProblem } from './store.js?v=20261120-181051';
-import { dayStatus, monthStatus, isProductionDay, compareToGoal, ON, OFF, NO_PRODUCTION, NOT_TRACKED, NOT_ENTERED } from './status.js?v=20261120-181051';
+import { dailySeries, leadingIndicatorsFor, kpiRowById, isoForDay, notesFor, hasProblem } from './store.js?v=20261120-182315';
+import { dayStatus, monthStatus, isProductionDay, compareToGoal, ON, OFF, NO_PRODUCTION, NOT_TRACKED, NOT_ENTERED } from './status.js?v=20261120-182315';
 import {
   formatPair, plainLabel, formatDayMedium, formatMonthShort, monthSoFar,
   dayHeading, weekday, formatMonthName, lowerNote,
-} from './format.js?v=20261120-181051';
+} from './format.js?v=20261120-182315';
 import {
   measureMarkup, enteredByMarkup, recordText, problemStatusMarkup, notesText, actionStateFor, ACTION_WORD, issueGap, ISSUE_GAP_WORD,
-} from './board.js?v=20261120-181051';
-import { esc, statusMarkup, glyphMarkup, issueStatusMarkup } from './ui.js?v=20261120-181051';
-import { barChart, lineChart, yearChart, dataTable } from './charts.js?v=20261120-181051';
-import { actionsFor, openActions } from './actions.js?v=20261120-181051';
-import { isOpenAction, isVerifiedAction, actionStateMarkup } from './action-state.js?v=20261120-181051';
+} from './board.js?v=20261120-182315';
+import { esc, statusMarkup, glyphMarkup, issueStatusMarkup } from './ui.js?v=20261120-182315';
+import { barChart, lineChart, yearChart, dataTable } from './charts.js?v=20261120-182315';
+import { actionsFor, openActions } from './actions.js?v=20261120-182315';
+import { isOpenAction, isVerifiedAction, actionStateMarkup } from './action-state.js?v=20261120-182315';
 
 const AREAS = ['mold', 'bond', 'prime', 'compounding'];
 

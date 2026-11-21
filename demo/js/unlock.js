@@ -3,9 +3,9 @@
 // sheet; a change made in view only opens it too, and closing it leaves a banner up until the
 // person unlocks or reloads. Words come from the spec's table.
 
-import * as cloud from './cloud.js?v=20261120-181051';
-import { glyphMarkup } from './ui.js?v=20261120-181051';
-import { OFF } from './status.js?v=20261120-181051';
+import * as cloud from './cloud.js?v=20261120-182315';
+import { glyphMarkup } from './ui.js?v=20261120-182315';
+import { OFF } from './status.js?v=20261120-182315';
 
 const WORDS = {
   wrong_password: "That password didn't match.",
@@ -184,5 +184,15 @@ export function initUnlock({ onStatus, toast }) {
     // The first change made in view only opens the sheet; once it's closed, the banner says so.
     if (!dismissed) openUnlock();
   });
-  cloud.onStatus((s) => { syncBanner(); syncEnterButtons(); onStatus?.(s); });
+  // The scope line scrolls away with the page: a save that can't go through also says so in a
+  // toast, once each time it starts, wherever the person is on the page.
+  const LOUD = new Set(['offline', 'too-large', 'device-full']);
+  let lastState = cloud.status().state;
+  cloud.onStatus((s) => {
+    syncBanner();
+    syncEnterButtons();
+    onStatus?.(s);
+    if (LOUD.has(s.state) && s.state !== lastState) toast?.(statusWords().text);
+    lastState = s.state;
+  });
 }

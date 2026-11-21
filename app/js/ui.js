@@ -1,8 +1,8 @@
 // Shared markup helpers. One place for escaping, status glyphs and the
 // word + glyph status pattern, so every screen draws status the same way.
 
-import { statusWord, ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261120-181051';
-import { termName } from './format.js?v=20261120-181051';
+import { statusWord, ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261120-182315';
+import { termName } from './format.js?v=20261120-182315';
 
 /** Escape text for HTML (data such as names and problem text is untrusted). */
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
