@@ -3,9 +3,9 @@
 // "Who's entering". The admin page lists the newest notes. View only can send one: it needs no
 // edit password. Words come from the spec's table.
 
-import * as cloud from './cloud.js?v=20261122-211924';
-import { getIdentity } from './identity.js?v=20261122-211924';
-import { getMonth } from './store.js?v=20261122-211924';
+import * as cloud from './cloud.js?v=20261123-135808';
+import { getIdentity } from './identity.js?v=20261123-135808';
+import { getMonth } from './store.js?v=20261123-135808';
 
 const MAX = 2000;
 const WORDS = {

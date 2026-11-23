@@ -3,18 +3,18 @@
 // their accountable leader and roles, their open actions, and this week so far. The organization
 // itself lives in store.js (dor.org.v1) and is edited in Board setup (Draft, Validate, Activate).
 
-import { getOrg, kpiRowsFor, dailyMeasuresOf, DAILY_MEASURE_MAX, ROLES, isoForDay, setOrgDays, boardFirstDay, dateBounds } from './store.js?v=20261122-211924';
-import * as cloud from './cloud.js?v=20261122-211924';
-import { dayStatus, monthStatus, OFF, NO_GOAL, NOT_TRACKED } from './status.js?v=20261122-211924';
-import { formatDayMedium, formatDayLong, plainLabel, dayHeading, formatEnteredAt } from './format.js?v=20261122-211924';
-import { esc, statusMarkup, glyphMarkup } from './ui.js?v=20261122-211924';
-import { icon, DEPT_ICON } from './icons.js?v=20261122-211924';
-import { avatarMarkup, plantName, dueText, periodDateMarkup } from './board.js?v=20261122-211924';
-import { listActions } from './actions.js?v=20261122-211924';
-import { openOnDay } from './action-state.js?v=20261122-211924';
-import { pageHref } from './shell.js?v=20261122-211924';
-import { fitSheetHead } from './detail.js?v=20261122-211924';
-import { weekFor, weekLabel, weekOfDay } from './wor.js?v=20261122-211924';
+import { getOrg, kpiRowsFor, dailyMeasuresOf, DAILY_MEASURE_MAX, ROLES, isoForDay, setOrgDays, boardFirstDay, dateBounds } from './store.js?v=20261123-135808';
+import * as cloud from './cloud.js?v=20261123-135808';
+import { dayStatus, monthStatus, OFF, NO_GOAL, NOT_TRACKED } from './status.js?v=20261123-135808';
+import { formatDayMedium, formatDayLong, plainLabel, dayHeading, formatEnteredAt } from './format.js?v=20261123-135808';
+import { esc, statusMarkup, glyphMarkup } from './ui.js?v=20261123-135808';
+import { icon, DEPT_ICON } from './icons.js?v=20261123-135808';
+import { avatarMarkup, plantName, dueText, periodDateMarkup } from './board.js?v=20261123-135808';
+import { listActions } from './actions.js?v=20261123-135808';
+import { openOnDay } from './action-state.js?v=20261123-135808';
+import { pageHref } from './shell.js?v=20261123-135808';
+import { fitSheetHead } from './detail.js?v=20261123-135808';
+import { weekFor, weekLabel, weekOfDay } from './wor.js?v=20261123-135808';
 
 let ctx = null;
 let dlg = null;

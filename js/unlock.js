@@ -3,9 +3,9 @@
 // sheet; a change made in view only opens it too, and closing it leaves a banner up until the
 // person unlocks or reloads. Words come from the spec's table.
 
-import * as cloud from './cloud.js?v=20261122-211924';
-import { glyphMarkup } from './ui.js?v=20261122-211924';
-import { OFF } from './status.js?v=20261122-211924';
+import * as cloud from './cloud.js?v=20261123-135808';
+import { glyphMarkup } from './ui.js?v=20261123-135808';
+import { OFF } from './status.js?v=20261123-135808';
 
 const WORDS = {
   wrong_password: "That password didn't match.",

@@ -5,11 +5,11 @@
 // localStorage overlay of what people entered on this device. getMonth()
 // returns a fresh merged copy; nothing outside this file touches storage.
 
-import * as cloud from './cloud.js?v=20261122-211924';
-import { todayIn, monthKey, daysInMonth, monthDate, productionCalendar, shiftMonth } from './calendar.js?v=20261122-211924';
+import * as cloud from './cloud.js?v=20261123-135808';
+import { todayIn, monthKey, daysInMonth, monthDate, productionCalendar, shiftMonth } from './calendar.js?v=20261123-135808';
 
-const DATA_URL = new URL('../data/plant-2026-02.json?v=20261122-211924', import.meta.url);
-const STARTER_URL = new URL('../data/starter-board.json?v=20261122-211924', import.meta.url);
+const DATA_URL = new URL('../data/plant-2026-02.json?v=20261123-135808', import.meta.url);
+const STARTER_URL = new URL('../data/starter-board.json?v=20261123-135808', import.meta.url);
 const OVERLAY_KEY = 'pilot.overlay.v1';
 const SETUP_KEY = 'pilot.setup.v1';
 export const AREA_IDS = ['plant', 'mold', 'bond', 'prime', 'compounding'];

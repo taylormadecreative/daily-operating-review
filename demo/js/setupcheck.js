@@ -3,9 +3,9 @@
 // it once every function has both. Days off are listed but never keep it up: a plant may have none.
 // Each row's button goes to the box to fill in; js/app.js opens Board setup for the first two.
 
-import { readSetup, getOrg } from './store.js?v=20261122-211924';
-import { esc } from './ui.js?v=20261122-211924';
-import { pageHref } from './shell.js?v=20261122-211924';
+import { readSetup, getOrg } from './store.js?v=20261123-135808';
+import { esc } from './ui.js?v=20261123-135808';
+import { pageHref } from './shell.js?v=20261123-135808';
 
 const PLACEHOLDER_OWNER = /^\s*(owner(\s+name)?)?\s*$/i;
 const DONE = '<svg class="setup-check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>';

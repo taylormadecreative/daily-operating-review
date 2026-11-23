@@ -16,21 +16,21 @@
 // The weekly meeting runs the same session (Record, Add action) with kind 'wor': when it ends, its
 // times, transcript and actions go to ctx.onWeeklyEnd (the week's draft record), not to DOR minutes.
 
-import { kpiRowsFor, ownerFor, isoForDay, getOrg, readWeekly } from './store.js?v=20261122-211924';
-import { getIdentity } from './identity.js?v=20261122-211924';
-import * as cloud from './cloud.js?v=20261122-211924';
-import { dayStatus, monthStatus, statusWord, ON, OFF, NO_PRODUCTION } from './status.js?v=20261122-211924';
-import { formatPair, plainLabel, formatDayMedium, formatDayLong, monthSoFar } from './format.js?v=20261122-211924';
-import { notesText, summaryParts, actionStateFor, needsSummary, ACTION_WORD, issueGap, ISSUE_GAP_WORD } from './board.js?v=20261122-211924';
-import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261122-211924';
+import { kpiRowsFor, ownerFor, isoForDay, getOrg, readWeekly } from './store.js?v=20261123-135808';
+import { getIdentity } from './identity.js?v=20261123-135808';
+import * as cloud from './cloud.js?v=20261123-135808';
+import { dayStatus, monthStatus, statusWord, ON, OFF, NO_PRODUCTION } from './status.js?v=20261123-135808';
+import { formatPair, plainLabel, formatDayMedium, formatDayLong, monthSoFar } from './format.js?v=20261123-135808';
+import { notesText, summaryParts, actionStateFor, needsSummary, ACTION_WORD, issueGap, ISSUE_GAP_WORD } from './board.js?v=20261123-135808';
+import { esc, statusMarkup, issueStatusMarkup, glyphMarkup } from './ui.js?v=20261123-135808';
 // Namespace import: the Action register is built in parallel, and a missing
 // export must never stop the board from loading.
-import * as register from './actions.js?v=20261122-211924';
+import * as register from './actions.js?v=20261123-135808';
 // The payoff toast is shared with the Action register, so both say it the same way.
-import { ALL_CLEAR_ADDED, clearedNeeds } from './actions.js?v=20261122-211924';
+import { ALL_CLEAR_ADDED, clearedNeeds } from './actions.js?v=20261123-135808';
 // The sheet's title bar height, so Shift+Tab never leaves a control hidden under it (shared with Detail).
-import { fitSheetHead } from './detail.js?v=20261122-211924';
-import { ACTION_STATE_WORD, actionStateMarkup } from './action-state.js?v=20261122-211924';
+import { fitSheetHead } from './detail.js?v=20261123-135808';
+import { ACTION_STATE_WORD, actionStateMarkup } from './action-state.js?v=20261123-135808';
 
 // Demo copy says where things are kept; on a board they're on the server, so the words drop it.
 const ON_DEVICE = cloud.BOARD ? '' : ' on this device';

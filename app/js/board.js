@@ -1,23 +1,23 @@
 // Board (home): the summary sentence and the eight functions in meeting order.
 
-import { dailySeries, isoForDay, dateBounds, notesFor, entryInfo, hasProblem, kpiRowsFor, ownerFor, noteParagraphs, NO_ISSUE } from './store.js?v=20261122-211924';
+import { dailySeries, isoForDay, dateBounds, notesFor, entryInfo, hasProblem, kpiRowsFor, ownerFor, noteParagraphs, NO_ISSUE } from './store.js?v=20261123-135808';
 import {
   ON, OFF, NO_PRODUCTION, NOT_TRACKED, NOT_ENTERED,
   dayStatus, monthStatus, trackRecord, boardSummary, isProductionDay, lastProductionDay, compareToGoal, statusWord,
-} from './status.js?v=20261122-211924';
+} from './status.js?v=20261123-135808';
 import {
   formatPair, plainLabel, glossaryTerm, formatDayLong, formatDayMedium, formatMonthName, formatMonthShort,
   dayHeading, daySentence, monthSoFar, formatEnteredAt, lowerNote, formatValue, goalSign,
-} from './format.js?v=20261122-211924';
-import { trendChart, yearChart } from './charts.js?v=20261122-211924';
-import { actionsFor, actionsForDays, verifiedBetween } from './actions.js?v=20261122-211924';
-import { isOpenAction, isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261122-211924';
-import { icon, DEPT_ICON } from './icons.js?v=20261122-211924';
-import { renderSparkline } from './sparkline.js?v=20261122-211924';
-import { getIdentity } from './identity.js?v=20261122-211924';
-import { esc, statusMarkup, termButton, issueStatusMarkup } from './ui.js?v=20261122-211924';
-import { pageHref, scopeWord } from './shell.js?v=20261122-211924';
-import * as cloud from './cloud.js?v=20261122-211924';
+} from './format.js?v=20261123-135808';
+import { trendChart, yearChart } from './charts.js?v=20261123-135808';
+import { actionsFor, actionsForDays, verifiedBetween } from './actions.js?v=20261123-135808';
+import { isOpenAction, isVerifiedAction, isCompletedAction, isEscalatedAction } from './action-state.js?v=20261123-135808';
+import { icon, DEPT_ICON } from './icons.js?v=20261123-135808';
+import { renderSparkline } from './sparkline.js?v=20261123-135808';
+import { getIdentity } from './identity.js?v=20261123-135808';
+import { esc, statusMarkup, termButton, issueStatusMarkup } from './ui.js?v=20261123-135808';
+import { pageHref, scopeWord } from './shell.js?v=20261123-135808';
+import * as cloud from './cloud.js?v=20261123-135808';
 
 /* ---------- Pieces shared with Detail and Meeting ---------- */
 

@@ -62,8 +62,20 @@ html[data-admin] .admin .btn--primary { background: var(--btn-primary-bg); }
 .admin-row-main p { margin: 0; }
 .admin-board-name { font-weight: 700; }
 .admin-archived { margin-left: var(--s-2); color: var(--ink-2); font-weight: 650; }
+/* Getting started (the operator's onboarding on the admin page). */
+.admin-head-tools { display: flex; flex-wrap: wrap; gap: 0 var(--s-2); margin-left: calc(var(--s-3) * -1); }
+.admin-head-tools [hidden] { display: none; }
+.admin-guide { gap: var(--s-3); border-color: var(--rule-strong); }
+.admin-guide p { margin: 0; max-width: 72ch; }
+.admin-guide-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.admin-guide-steps { display: grid; gap: var(--s-2); margin: 0; padding-left: 1.6em; max-width: 72ch; list-style: decimal outside; }
+.admin-guide-steps li::marker { font-weight: 800; }
+.admin-guide-sub { margin: var(--s-2) 0 0; font-size: 1rem; font-weight: 750; }
+.admin-guide-list { display: grid; gap: var(--s-1); margin: 0; padding-left: 1.4em; max-width: 72ch; list-style: disc outside; }
+.admin-guide-demo { padding-top: var(--s-3); border-top: 1px solid var(--rule); }
+.admin-guide-demo a { font-weight: 700; }
+
 /* Text buttons line up with the headings above them (Archive only where it wraps to the left, on phones). */
-.admin [data-admin-signout] { margin-left: calc(var(--s-3) * -1); }
 @media (max-width: 640px) { .admin [data-admin-archive] { margin-left: calc(var(--s-3) * -1); } }
 .admin-meta { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); }
 .admin-row-tools { display: flex; flex-wrap: wrap; gap: var(--s-2); justify-content: flex-end; }

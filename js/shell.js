@@ -1,15 +1,15 @@
 // Dashboard shell: the navy sidebar (and its phone drawer), Settings and the
 // identity menu, the Export menu, the Area filter, and matrix cell tooltips.
 
-import { esc, glyphMarkup } from './ui.js?v=20261122-211924';
-import { icon, DEPT_ICON } from './icons.js?v=20261122-211924';
-import { isoForDay, dailySeries, rowForDay, storageWorks, getOrg, boardToday } from './store.js?v=20261122-211924';
-import { weeksOf, zoneWords, productionWords } from './weekly.js?v=20261122-211924';
-import { getIdentity } from './identity.js?v=20261122-211924';
-import { formatDayLong, formatDayMedium } from './format.js?v=20261122-211924';
-import { ON, OFF } from './status.js?v=20261122-211924';
-import * as cloud from './cloud.js?v=20261122-211924';
-import { statusWords, unlockButtonMarkup } from './unlock.js?v=20261122-211924';
+import { esc, glyphMarkup } from './ui.js?v=20261123-135808';
+import { icon, DEPT_ICON } from './icons.js?v=20261123-135808';
+import { isoForDay, dailySeries, rowForDay, storageWorks, getOrg, boardToday } from './store.js?v=20261123-135808';
+import { weeksOf, zoneWords, productionWords } from './weekly.js?v=20261123-135808';
+import { getIdentity } from './identity.js?v=20261123-135808';
+import { formatDayLong, formatDayMedium } from './format.js?v=20261123-135808';
+import { ON, OFF } from './status.js?v=20261123-135808';
+import * as cloud from './cloud.js?v=20261123-135808';
+import { statusWords, unlockButtonMarkup } from './unlock.js?v=20261123-135808';
 
 const narrow = () => matchMedia('(max-width: 760px)').matches;
 

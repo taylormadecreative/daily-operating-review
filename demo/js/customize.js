@@ -10,10 +10,10 @@
 
 import {
   readableShade, contrast, mix, cvdDelta, normalDelta, CVD_TARGET, CVD_FLOOR, NEAR_IDENTICAL, isHex, luminance,
-} from './color.js?v=20261122-211924';
-import { esc } from './ui.js?v=20261122-211924';
-import { toast } from './toast.js?v=20261122-211924';
-import * as cloud from './cloud.js?v=20261122-211924';
+} from './color.js?v=20261123-135808';
+import { esc } from './ui.js?v=20261123-135808';
+import { toast } from './toast.js?v=20261123-135808';
+import * as cloud from './cloud.js?v=20261123-135808';
 
 const KEY = 'demo.customize.v2';
 // v1 settings carry over, except strength: v2's default is the client's solid blocks.

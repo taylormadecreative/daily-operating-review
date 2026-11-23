@@ -1,14 +1,14 @@
 // Export: download the selected day as CSV (built in the browser, no network),
 // or print / save as PDF with the print stylesheet in css/home.css.
 
-import { isoForDay, notesFor, AREA_IDS, kpiRowsFor, entryInfo } from './store.js?v=20261122-211924';
-import { dayStatus, monthStatus, NOT_TRACKED, statusWord } from './status.js?v=20261122-211924';
-import { plainLabel, formatDayLong, formatDayMedium } from './format.js?v=20261122-211924';
-import { homeWord, areaName, oneLine, hasProblem } from './home.js?v=20261122-211924';
-import { actionsFor } from './actions.js?v=20261122-211924';
-import { isVerifiedAction, ACTION_STATE_WORD } from './action-state.js?v=20261122-211924';
-import { recordedOn, issueGap, ISSUE_GAP_WORD, actionStateFor } from './board.js?v=20261122-211924';
-import { ISSUE_WORD } from './ui.js?v=20261122-211924';
+import { isoForDay, notesFor, AREA_IDS, kpiRowsFor, entryInfo } from './store.js?v=20261123-135808';
+import { dayStatus, monthStatus, NOT_TRACKED, statusWord } from './status.js?v=20261123-135808';
+import { plainLabel, formatDayLong, formatDayMedium } from './format.js?v=20261123-135808';
+import { homeWord, areaName, oneLine, hasProblem } from './home.js?v=20261123-135808';
+import { actionsFor } from './actions.js?v=20261123-135808';
+import { isVerifiedAction, ACTION_STATE_WORD } from './action-state.js?v=20261123-135808';
+import { recordedOn, issueGap, ISSUE_GAP_WORD, actionStateFor } from './board.js?v=20261123-135808';
+import { ISSUE_WORD } from './ui.js?v=20261123-135808';
 
 /** Plain numbers for spreadsheets: no thousands separators, at most two decimals, percents as "1.19%". */
 function csvNumber(v, unit) {

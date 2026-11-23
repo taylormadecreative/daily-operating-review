@@ -3,8 +3,8 @@
 // is checked by the server on every call; this page keeps it in memory only, so a reload
 // asks for it again. Nothing here can show or reset the admin password.
 
-import { rpc } from './cloud.js?v=20261122-211924';
-import { esc } from './ui.js?v=20261122-211924';
+import { rpc } from './cloud.js?v=20261123-135808';
+import { esc } from './ui.js?v=20261123-135808';
 
 const ZONES = [
   ['America/New_York', 'Eastern'],
@@ -148,13 +148,51 @@ function addMarkup() {
     </form>`;
 }
 
+/* ---------- Getting started: the operator's onboarding, until it's hidden on this device ---------- */
+
+const GUIDE_KEY = 'dor.adminGuideHidden.v1';
+const guideHidden = () => { try { return localStorage.getItem(GUIDE_KEY) === '1'; } catch { return false; } };
+const setGuideHidden = (v) => { try { if (v) localStorage.setItem(GUIDE_KEY, '1'); else localStorage.removeItem(GUIDE_KEY); } catch { /* per-device only */ } };
+
+function guideMarkup() {
+  const sample = boards.find((b) => !b.archived && b.name === 'Sample Plant');
+  return `
+    <section class="admin-card admin-guide" data-admin-guide aria-labelledby="ag-title">
+      <div class="admin-guide-head">
+        <h2 class="admin-client-name" id="ag-title" tabindex="-1">Getting started</h2>
+        <button class="btn btn--secondary" type="button" data-admin-guide-hide>Hide this</button>
+      </div>
+      <p>You run every client's boards from here. Each plant gets one board, with one link and one edit password.</p>
+      <ol class="admin-guide-steps">
+        <li><b>Add the plant's board</b> at the bottom of this page. Pick the plant's time zone (it can't be changed later) and an edit password. Save the password right away: it can't be shown again, only replaced.</li>
+        <li><b>Copy its link</b> with Copy link. Anyone with the link can view the board. The edit password lets people change it.</li>
+        <li><b>Set it up.</b> Open the link and press Unlock to edit. In Board setup, name each function's owner first, then set each daily goal. On the Organization page, add the plant's days off.</li>
+        <li><b>Put it on the office TV.</b> Open the link on the TV and leave it there. It stays in view only and shows new numbers within a minute.</li>
+        <li><b>Kick off with the owners</b>, 15 minutes at the TV: unlocking, picking their name under Who's entering, entering at the end of the day, and an issue and an action when a number is off goal.</li>
+      </ol>
+      <h3 class="admin-guide-sub">Keeping it running</h3>
+      <ul class="admin-guide-list">
+        <li><b>Someone left, or the password got out:</b> Replace edit password. Every unlocked device is signed out, so give the new one to the rest of the team.</li>
+        <li><b>A plant stops:</b> Archive. Its link stops opening. Nothing is deleted, and Restore brings it back.</li>
+        <li><b>How much each board is used</b> shows under its name. Notes people send from their boards show under Feedback.</li>
+        <li><b>Anything technical:</b> send Nelson the board, what you see and a screenshot.</li>
+      </ul>
+      ${sample ? `<p class="admin-guide-demo"><b>Showing a CEO?</b> Sample Plant is a made-up board for demos. <a href="${esc(linkFor(sample.id))}" target="_blank" rel="noopener">Open Sample Plant</a></p>` : ''}
+    </section>`;
+}
+
 function render() {
+  const hidden = guideHidden();
   root.innerHTML = `
     <header class="admin-head">
       <h1 class="admin-title">Boards</h1>
       <p>Anyone with a board's link can view it. Its edit password lets people change it.</p>
-      <button class="btn btn--quiet" type="button" data-admin-signout>Close the admin page</button>
+      <div class="admin-head-tools">
+        <button class="btn btn--quiet" type="button" data-admin-guide-show${hidden ? '' : ' hidden'}>How this works</button>
+        <button class="btn btn--quiet" type="button" data-admin-signout>Close the admin page</button>
+      </div>
     </header>
+    ${hidden ? '' : guideMarkup()}
     <div data-list>${listMarkup()}</div>
     ${feedbackMarkup()}
     ${addMarkup()}`;
@@ -196,7 +234,7 @@ async function create(form) {
   const btn = form.querySelector('[data-admin-create]');
   btn.disabled = true;
   try {
-    const starter = await (await fetch(new URL('../data/starter-board.json?v=20261122-211924', import.meta.url))).json();
+    const starter = await (await fetch(new URL('../data/starter-board.json?v=20261123-135808', import.meta.url))).json();
     const setup = structuredClone(starter.setup);
     setup.plant = name;
     for (const list of Object.values(setup.kpis)) for (const k of list) k.startDate = first;
@@ -234,6 +272,21 @@ async function copy(text, btn) {
 async function onClick(e) {
   const t = e.target.closest('button');
   if (!t) return;
+  if (t.matches('[data-admin-guide-hide]')) {
+    setGuideHidden(true);
+    root.querySelector('[data-admin-guide]')?.remove();
+    const show = root.querySelector('[data-admin-guide-show]');
+    show.hidden = false;
+    show.focus();
+    return;
+  }
+  if (t.matches('[data-admin-guide-show]')) {
+    setGuideHidden(false);
+    t.hidden = true;
+    root.querySelector('[data-list]').insertAdjacentHTML('beforebegin', guideMarkup());
+    root.querySelector('#ag-title').focus();
+    return;
+  }
   if (t.matches('[data-admin-signout]')) {
     setPass('');
     root.innerHTML = signInMarkup();
