@@ -1,14 +1,14 @@
 // Export: download the selected day as CSV (built in the browser, no network),
 // or print / save as PDF with the print stylesheet in css/home.css.
 
-import { isoForDay, notesFor, AREA_IDS, kpiRowsFor } from './store.js?v=20261120-182315';
-import { dayStatus, monthStatus, NOT_TRACKED } from './status.js?v=20261120-182315';
-import { plainLabel, formatDayLong, formatDayMedium } from './format.js?v=20261120-182315';
-import { homeWord, areaName, oneLine, hasProblem } from './home.js?v=20261120-182315';
-import { actionsFor } from './actions.js?v=20261120-182315';
-import { isVerifiedAction, ACTION_STATE_WORD } from './action-state.js?v=20261120-182315';
-import { recordedOn, issueGap, ISSUE_GAP_WORD, actionStateFor } from './board.js?v=20261120-182315';
-import { ISSUE_WORD } from './ui.js?v=20261120-182315';
+import { isoForDay, notesFor, AREA_IDS, kpiRowsFor, entryInfo } from './store.js?v=20261122-211924';
+import { dayStatus, monthStatus, NOT_TRACKED, statusWord } from './status.js?v=20261122-211924';
+import { plainLabel, formatDayLong, formatDayMedium } from './format.js?v=20261122-211924';
+import { homeWord, areaName, oneLine, hasProblem } from './home.js?v=20261122-211924';
+import { actionsFor } from './actions.js?v=20261122-211924';
+import { isVerifiedAction, ACTION_STATE_WORD } from './action-state.js?v=20261122-211924';
+import { recordedOn, issueGap, ISSUE_GAP_WORD, actionStateFor } from './board.js?v=20261122-211924';
+import { ISSUE_WORD } from './ui.js?v=20261122-211924';
 
 /** Plain numbers for spreadsheets: no thousands separators, at most two decimals, percents as "1.19%". */
 function csvNumber(v, unit) {
@@ -102,6 +102,70 @@ export function dayCsv(month, day, area = 'all') {
     ];
   });
   return [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n');
+}
+
+/** "2026-11-02 16:52" in the board's time zone; '' when there's no time. */
+function stampIn(at, timeZone) {
+  if (!at) return '';
+  const t = new Date(at);
+  if (Number.isNaN(t.getTime())) return '';
+  let parts;
+  try {
+    parts = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(t);
+  } catch {
+    return t.toISOString().slice(0, 16).replace('T', ' ');
+  }
+  const p = Object.fromEntries(parts.map((x) => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
+}
+
+/**
+ * Every number on a pilot board, one row per measure per day, oldest first (PILOT-SPEC.md Part 4):
+ * each production day from the first day through today, and any other day that has a number.
+ * months: store.boardMonths(). The board's own words for blanks and statuses.
+ */
+export function boardCsv(months, { firstDay, today, timeZone }) {
+  const head = ['Date', 'Function', 'Owner', 'Measure', 'Actual', 'Goal', 'Status', 'Issue', 'Action', 'Entered by', 'Entered at'];
+  const rows = [];
+  for (const month of months) {
+    for (let day = 1; day <= month.daysInMonth; day += 1) {
+      const iso = isoForDay(month, day);
+      if ((firstDay && iso < firstDay) || (today && iso > today)) continue;
+      const production = Boolean(month.productionDays?.[day]);
+      for (const f of month.functions) {
+        for (const fn of kpiRowsFor(f)) {
+          const s = dayStatus(month, fn, day);
+          const has = typeof s.actual === 'number';
+          if (!production && !has) continue;
+          const n = notesFor(fn, day);
+          const info = entryInfo(fn, day);
+          const unit = fn.kpiDaily?.unit;
+          rows.push([
+            iso, f.name, String(f.owner ?? '').trim(), plainLabel(fn.kpiDaily),
+            has ? csvNumber(s.actual, unit) : s.status === NOT_TRACKED ? 'Not tracked yet' : 'Not entered',
+            csvNumber(s.goal, unit) || 'No goal set',
+            statusWord(s.status, fn.kpiDaily),
+            oneLine(n.problem ?? ''), oneLine(n.action ?? ''),
+            info?.enteredBy ?? '', stampIn(info?.enteredAt, timeZone),
+          ]);
+        }
+      }
+    }
+  }
+  return [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n');
+}
+
+/** Save CSV text as a file (with a byte-order mark so Excel reads it as UTF-8). */
+export function saveCsv(text, filename) {
+  const blob = new Blob(['\ufeff', text], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function downloadCsv(month, day, area = 'all') {

@@ -7,8 +7,8 @@
 // 800 ms of quiet, with a version check and a three-way merge (js/merge.js). Every
 // other key stays on the device.
 
-import { CLOUD } from './cloud-config.js?v=20261120-182315';
-import { mergeDoc } from './merge.js?v=20261120-182315';
+import { CLOUD } from './cloud-config.js?v=20261122-211924';
+import { mergeDoc } from './merge.js?v=20261122-211924';
 
 const ID_RE = /^[0-9a-f]{32}$/;
 const NAME_RE = /^(setup|org|weekly|actions|meetings|numbers-20\d{2}-(0[1-9]|1[0-2]))$/;
@@ -20,7 +20,7 @@ const QUIET_MS = 800;
 // Meeting records grow with transcripts: past this the app warns, well before the server's 2 MB limit.
 const NEAR_FULL_BYTES = 1500000;
 const CODES = new Set(['not_found', 'wrong_password', 'too_many_tries', 'not_unlocked', 'too_large',
-  'bad_name', 'weak_password', 'bad_time_zone']);
+  'bad_name', 'weak_password', 'bad_time_zone', 'too_many_reports']);
 
 const param = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('b');
 const asked = param ? param.trim().toLowerCase() : null;
@@ -30,6 +30,8 @@ const asked = param ? param.trim().toLowerCase() : null;
  * Only the 'app' and 'dev' copies open board links.
  */
 export const COPY = (typeof window !== 'undefined' && window.DOR_COPY) || 'dev';
+/** The build this page runs (tools/build-share.py writes window.DOR_BUILD); null in the repo. */
+export const BUILD = (typeof window !== 'undefined' && typeof window.DOR_BUILD === 'string' && window.DOR_BUILD) || null;
 const pilotCopy = COPY === 'app' || COPY === 'dev';
 /** The board in the address, or null (demo mode). A malformed id still means pilot mode: it opens as not found. */
 export const BOARD = pilotCopy && asked ? asked : null;
@@ -382,7 +384,56 @@ function startWatching() {
   });
 }
 
+/* ---------- A newer build (PILOT-SPEC.md Part 4) ---------- */
+
+const updateCbs = new Set();
+/** Read the copy's version.txt; a build other than this page's goes to onUpdate (every check, until it reloads). */
+async function checkVersion() {
+  if (!BUILD || typeof fetch === 'undefined') return;
+  try {
+    const res = await fetch(`${new URL('version.txt', location.href).href}?t=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) return;
+    const v = (await res.text()).trim();
+    if (/^[\w.-]{1,40}$/.test(v) && v !== BUILD) for (const cb of updateCbs) { try { cb(v); } catch (e) { console.error(e); } }
+  } catch { /* offline: the next check tries again */ }
+}
+export const onUpdate = (cb) => { updateCbs.add(cb); return () => updateCbs.delete(cb); };
+
+/* ---------- Reports: feedback notes and page errors (PILOT-SPEC.md Part 4) ---------- */
+
+let pageLabel = () => '';
+/** The page a report comes from ("Daily review #enter/safety"), set by the app. */
+export function setPageLabel(fn) { pageLabel = fn; }
+
+/** Send a feedback note or an error. Throws Error('too_many_reports' | 'not_found' | 'offline' | 'bad_name'). */
+export async function report(kind, message, { page = '', who = '' } = {}) {
+  if (!BOARD) return null;
+  return rpc('pilot_report', {
+    p_board: BOARD, p_kind: kind, p_page: String(page ?? ''), p_who: String(who ?? ''),
+    p_message: String(message ?? ''), p_version: BUILD ?? 'dev',
+  });
+}
+
+// Errors a board page can't handle go to the server, quietly: each once, at most 5 a page load.
+const sentErrors = new Set();
+function reportError(message) {
+  const m = String(message ?? '').trim().slice(0, 500);
+  if (!m || sentErrors.has(m) || sentErrors.size >= 5 || /ResizeObserver loop/.test(m)) return;
+  sentErrors.add(m);
+  let page = '';
+  try { page = pageLabel(); } catch { page = ''; }
+  report('error', m, { page }).catch(() => { /* nowhere to say it */ });
+}
+if (BOARD && typeof window !== 'undefined') {
+  window.addEventListener('error', (e) => {
+    const file = e.filename ? String(e.filename).split('/').pop().split('?')[0] : '';
+    reportError(`${e.message || 'Error'}${file ? ` (${file}:${e.lineno})` : ''}`);
+  });
+  window.addEventListener('unhandledrejection', (e) => reportError(`Unhandled: ${e.reason?.message ?? String(e.reason)}`));
+}
+
 export async function poll() {
+  checkVersion();
   if (!BOARD || polling) return;
   polling = true;
   try {

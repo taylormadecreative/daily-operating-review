@@ -6,17 +6,17 @@
 // board does; a number that looks like a slip (an extra digit, a ratio typed
 // as a percent, over 100%) gets a question under its box, never a block.
 
-import { AREA_IDS, saveEntry, notesFor, NO_ISSUE, isoForDay } from './store.js?v=20261120-182315';
-import { getIdentity, setIdentity } from './identity.js?v=20261120-182315';
-import { compareToGoal, isProductionDay, ON, OFF, NOT_ENTERED, NO_PRODUCTION } from './status.js?v=20261120-182315';
+import { AREA_IDS, saveEntry, notesFor, NO_ISSUE, isoForDay } from './store.js?v=20261122-211924';
+import { getIdentity, setIdentity } from './identity.js?v=20261122-211924';
+import { compareToGoal, isProductionDay, ON, OFF, NOT_ENTERED, NO_PRODUCTION } from './status.js?v=20261122-211924';
 import {
   toInputValue, parseInput, formatGoal, plainLabel, formatDayMedium, formatDayLong, monthSoFar, isPercent,
   glossaryTerm, formatPair, formatValue,
-} from './format.js?v=20261120-182315';
-import { toast } from './toast.js?v=20261120-182315';
-import { esc, statusMarkup, termButton } from './ui.js?v=20261120-182315';
-import { statusWord } from './status.js?v=20261120-182315';
-import * as cloud from './cloud.js?v=20261120-182315';
+} from './format.js?v=20261122-211924';
+import { toast } from './toast.js?v=20261122-211924';
+import { esc, statusMarkup, termButton } from './ui.js?v=20261122-211924';
+import { statusWord } from './status.js?v=20261122-211924';
+import * as cloud from './cloud.js?v=20261122-211924';
 
 const AREA_NAME = { plant: 'Plant total', mold: 'Mold', bond: 'Bond', prime: 'Prime', compounding: 'Compounding' };
 const AREA_KEYS = ['mold', 'bond', 'prime', 'compounding'];

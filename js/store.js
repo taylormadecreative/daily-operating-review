@@ -5,11 +5,11 @@
 // localStorage overlay of what people entered on this device. getMonth()
 // returns a fresh merged copy; nothing outside this file touches storage.
 
-import * as cloud from './cloud.js?v=20261120-182315';
-import { todayIn, monthKey, daysInMonth, monthDate, productionCalendar, shiftMonth } from './calendar.js?v=20261120-182315';
+import * as cloud from './cloud.js?v=20261122-211924';
+import { todayIn, monthKey, daysInMonth, monthDate, productionCalendar, shiftMonth } from './calendar.js?v=20261122-211924';
 
-const DATA_URL = new URL('../data/conneaut-2026-02.json?v=20261120-182315', import.meta.url);
-const STARTER_URL = new URL('../data/starter-board.json?v=20261120-182315', import.meta.url);
+const DATA_URL = new URL('../data/conneaut-2026-02.json?v=20261122-211924', import.meta.url);
+const STARTER_URL = new URL('../data/starter-board.json?v=20261122-211924', import.meta.url);
 const OVERLAY_KEY = 'dor.overlay.v1';
 const SETUP_KEY = 'dor.setup.v1';
 export const AREA_IDS = ['plant', 'mold', 'bond', 'prime', 'compounding'];
@@ -1059,6 +1059,21 @@ function builtMonth(m) {
   const month = buildMonth(pilotMonth(pilot.board, pilot.starter, m), readOverlay(overlayKey(m)));
   builtMonths.set(m, { key, month });
   return month;
+}
+
+/**
+ * A pilot board's months, from its first day's month through this month (today in the board's
+ * time zone), each built from the documents in memory. The month on screen is not changed.
+ * For "Download all numbers" (PILOT-SPEC.md Part 4). The demo has one month.
+ */
+export function boardMonths() {
+  if (!pilot || !base) return [getMonth()];
+  const today = todayIn(pilot.board.timeZone);
+  const out = [];
+  for (let m = monthKey(base.firstDay ?? today); m <= monthKey(today); m = shiftMonth(m, 1)) {
+    out.push(m === base.month ? getMonth() : builtMonth(m));
+  }
+  return out;
 }
 
 /** Month to date at the month's end (or the board date this month) and the month goal, for one KPI row. */

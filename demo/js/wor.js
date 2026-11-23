@@ -11,25 +11,25 @@
 
 import {
   getOrg, kpiRowsFor, isoForDay, anyFunctionById, readWeekly, editWeekly, weekSaved, dateBounds, dayFromIso,
-} from './store.js?v=20261120-182315';
-import { ON, OFF, NOT_ENTERED, NO_GOAL, statusWord, monthStatus, isProductionDay } from './status.js?v=20261120-182315';
+} from './store.js?v=20261122-211924';
+import { ON, OFF, NOT_ENTERED, NO_GOAL, statusWord, monthStatus, isProductionDay } from './status.js?v=20261122-211924';
 import {
   weeksOf, weekForDay, weeklyResult, repeatGap, functionWeek, weeklyPair, ruleFor, RULES, CALC_VERSION, calcWords,
   EXCLUDED_WORDS, keyOf, lastProductionDay, addDays, plainNumber, isoTime,
-} from './weekly.js?v=20261120-182315';
-import { plainLabel, formatValue, goalSign, parseInput, formatEnteredAt, formatStamp, glossaryTerm, formatPair } from './format.js?v=20261120-182315';
-import { esc, statusMarkup, glyphMarkup, termButton, GLYPH } from './ui.js?v=20261120-182315';
-import { icon, DEPT_ICON } from './icons.js?v=20261120-182315';
-import { avatarMarkup, dueText, ACTION_WORD, responseFor, dailyWords, lapsedMarkup, lapsedWords, plantName, fitClampedText } from './board.js?v=20261120-182315';
-import { listActions, escalateAction, addAction, linkCandidates, linkActionDay, nextProductionDayIso } from './actions.js?v=20261120-182315';
+} from './weekly.js?v=20261122-211924';
+import { plainLabel, formatValue, goalSign, parseInput, formatEnteredAt, formatStamp, glossaryTerm, formatPair } from './format.js?v=20261122-211924';
+import { esc, statusMarkup, glyphMarkup, termButton, GLYPH } from './ui.js?v=20261122-211924';
+import { icon, DEPT_ICON } from './icons.js?v=20261122-211924';
+import { avatarMarkup, dueText, ACTION_WORD, responseFor, dailyWords, lapsedMarkup, lapsedWords, plantName, fitClampedText } from './board.js?v=20261122-211924';
+import { listActions, escalateAction, addAction, linkCandidates, linkActionDay, nextProductionDayIso } from './actions.js?v=20261122-211924';
 import {
   isOpenAction, isVerifiedAction, isOverdueAction, openOnDay, agingWords, actionStateMarkup,
-} from './action-state.js?v=20261120-182315';
-import { listMinutes } from './recorder.js?v=20261120-182315';
-import { pageHref, setNavState } from './shell.js?v=20261120-182315';
-import { fitSheetHead } from './detail.js?v=20261120-182315';
-import { getIdentity } from './identity.js?v=20261120-182315';
-import * as cloud from './cloud.js?v=20261120-182315';
+} from './action-state.js?v=20261122-211924';
+import { listMinutes } from './recorder.js?v=20261122-211924';
+import { pageHref, setNavState } from './shell.js?v=20261122-211924';
+import { fitSheetHead } from './detail.js?v=20261122-211924';
+import { getIdentity } from './identity.js?v=20261122-211924';
+import * as cloud from './cloud.js?v=20261122-211924';
 
 // Demo copy says where things are kept; on a board they're on the server, so the words drop it.
 const ON_DEVICE = cloud.BOARD ? '' : ' on this device';

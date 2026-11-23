@@ -2,7 +2,7 @@
 // Dates are 'YYYY-MM-DD' strings and months 'YYYY-MM'; "today" is the date in
 // the board's time zone, so the day turns at midnight plant time.
 
-import { addDays, isoTime } from './weekly.js?v=20261120-182315';
+import { addDays, isoTime } from './weekly.js?v=20261122-211924';
 
 export { addDays, isoTime };
 

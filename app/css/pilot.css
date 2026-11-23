@@ -90,3 +90,27 @@ html[data-admin] .admin .btn--primary { background: var(--btn-primary-bg); }
 .history-time { color: var(--ink-2); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
 .history-problem { margin: 0; font-weight: 650; }
 .history-note { margin: var(--s-4) 0 0; max-width: 60ch; color: var(--ink-2); font-size: var(--fs-caption); }
+
+/* Finish setting up this board (Part 4): a plain list under the scope line, no new colors. */
+.setup-check { display: grid; gap: var(--s-3); margin: var(--s-4) 0; padding: var(--s-4) var(--s-6); border: 1px solid var(--rule-strong); border-radius: var(--radius); background: var(--surface); }
+.setup-check-title { margin: 0; font-size: 1.25rem; font-weight: 750; }
+.setup-check-lead { margin: 0; max-width: 65ch; }
+.setup-check-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.setup-check-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--s-2) var(--s-4); align-items: center; min-height: var(--tap); padding: var(--s-2) 0; border-top: 1px solid var(--rule); }
+.setup-check-what { font-weight: 650; }
+.setup-check-state { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); white-space: nowrap; }
+.setup-check-row.is-done .setup-check-state { color: var(--ink); font-weight: 650; }
+.setup-check-mark { width: 13px; height: 13px; flex: none; }
+@media (max-width: 640px) {
+  .setup-check { padding: var(--s-4); }
+  .setup-check-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .setup-check-row .btn { grid-column: 1 / -1; justify-self: start; }
+}
+
+/* Send feedback (Part 4): the unlock sheet's form, with a box for the note. */
+.feedback-form textarea { min-height: 8rem; resize: vertical; }
+.feedback-who { margin: 0; color: var(--ink-2); }
+
+/* The admin page's feedback list. */
+.admin-fb { grid-template-columns: minmax(0, 1fr); }
+.admin-fb-text { margin: 0; max-width: 75ch; white-space: pre-wrap; overflow-wrap: anywhere; }

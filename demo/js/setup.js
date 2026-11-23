@@ -7,16 +7,16 @@ import {
   readSetup, writeSetup, resetSetup, UNITS, kpiRowsFor, ownerFor, scaleExtraValues, scalePrimaryValues, getMonth, NAME_MAX,
   getOrg, editOrgDraft, checkOrgDraft, activateOrgDraft, discardOrgDraft, snapshotOrg, restoreOrg, ROLES, WEEKDAYS,
   dailyMeasuresOf, measureLoad, DAILY_MEASURE_MAX, ORG_NAME_MAX, isoForDay, boardToday, boardFirstDay,
-} from './store.js?v=20261120-182315';
-import { formatEnteredAt } from './format.js?v=20261120-182315';
-import { glyphMarkup, statusMarkup } from './ui.js?v=20261120-182315';
-import { parseInput, toInputValue, plainLabel } from './format.js?v=20261120-182315';
-import { esc } from './ui.js?v=20261120-182315';
-import { icon, DEPT_ICON } from './icons.js?v=20261120-182315';
-import { avatarMarkup, plantName } from './board.js?v=20261120-182315';
-import { fitSheetHead } from './detail.js?v=20261120-182315';
-import * as cloud from './cloud.js?v=20261120-182315';
-import { RULES, RULE_IDS, defaultRule } from './weekly.js?v=20261120-182315';
+} from './store.js?v=20261122-211924';
+import { formatEnteredAt } from './format.js?v=20261122-211924';
+import { glyphMarkup, statusMarkup } from './ui.js?v=20261122-211924';
+import { parseInput, toInputValue, plainLabel } from './format.js?v=20261122-211924';
+import { esc } from './ui.js?v=20261122-211924';
+import { icon, DEPT_ICON } from './icons.js?v=20261122-211924';
+import { avatarMarkup, plantName } from './board.js?v=20261122-211924';
+import { fitSheetHead } from './detail.js?v=20261122-211924';
+import * as cloud from './cloud.js?v=20261122-211924';
+import { RULES, RULE_IDS, defaultRule } from './weekly.js?v=20261122-211924';
 
 /** The name a new function's owner starts with: not a person yet. */
 const PLACEHOLDER_OWNER = /^\s*(owner name)?\s*$/i;
@@ -172,11 +172,17 @@ function notKeptMessage(list) {
  */
 export function openSetup({ section = null, focus = null } = {}) {
   opener = document.activeElement;
+  // Finish setting up (PILOT-SPEC.md Part 4): 'fn-owner:<id>' or 'fn-goal:<id>' opens that function's card.
+  const [kind, fnId] = String(focus ?? '').split(':');
+  const fnBox = (kind === 'fn-owner' || kind === 'fn-goal') && fnId ? kind : null;
+  if (fnBox) openFn = fnId;
   render();
   if (!dlg.open) dlg.showModal();
   fitSheetHead(dlg); // measured once it's showing (render() measures too, while it's open)
   requestAnimationFrame(() => {
-    const target = section === 'org' ? (focus && orgTarget(focus)) || dlg.querySelector('#su-org') : null;
+    const card = fnBox ? dlg.querySelector(`[data-fn="${CSS.escape(fnId)}"]`) : null;
+    const target = card ? card.querySelector(fnBox === 'fn-owner' ? '[data-f="owner"]' : '[data-k="goal"]')
+      : section === 'org' ? (focus && orgTarget(focus)) || dlg.querySelector('#su-org') : null;
     if (target) {
       scrollPanelTo(target, { center: Boolean(focus) });
       target.focus({ preventScroll: true });

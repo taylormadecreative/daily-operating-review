@@ -1,15 +1,15 @@
 // Dashboard shell: the navy sidebar (and its phone drawer), Settings and the
 // identity menu, the Export menu, the Area filter, and matrix cell tooltips.
 
-import { esc, glyphMarkup } from './ui.js?v=20261120-182315';
-import { icon, DEPT_ICON } from './icons.js?v=20261120-182315';
-import { isoForDay, dailySeries, rowForDay, storageWorks, getOrg, boardToday } from './store.js?v=20261120-182315';
-import { weeksOf, zoneWords, productionWords } from './weekly.js?v=20261120-182315';
-import { getIdentity } from './identity.js?v=20261120-182315';
-import { formatDayLong, formatDayMedium } from './format.js?v=20261120-182315';
-import { ON, OFF } from './status.js?v=20261120-182315';
-import * as cloud from './cloud.js?v=20261120-182315';
-import { statusWords, unlockButtonMarkup } from './unlock.js?v=20261120-182315';
+import { esc, glyphMarkup } from './ui.js?v=20261122-211924';
+import { icon, DEPT_ICON } from './icons.js?v=20261122-211924';
+import { isoForDay, dailySeries, rowForDay, storageWorks, getOrg, boardToday } from './store.js?v=20261122-211924';
+import { weeksOf, zoneWords, productionWords } from './weekly.js?v=20261122-211924';
+import { getIdentity } from './identity.js?v=20261122-211924';
+import { formatDayLong, formatDayMedium } from './format.js?v=20261122-211924';
+import { ON, OFF } from './status.js?v=20261122-211924';
+import * as cloud from './cloud.js?v=20261122-211924';
+import { statusWords, unlockButtonMarkup } from './unlock.js?v=20261122-211924';
 
 const narrow = () => matchMedia('(max-width: 760px)').matches;
 
@@ -66,6 +66,7 @@ export function navMarkup(month, day, view, where = 0) {
       ${command('data-open-minutes', 'fileText', 'Meeting records')}
       ${command('data-open-setup', 'layers', 'Board setup')}
       ${cloud.BOARD ? command('data-open-history', 'clock', 'Save history') : ''}
+      ${cloud.BOARD ? command('data-open-feedback', 'message', 'Send feedback') : ''}
       ${view === 'dor' ? command('data-customize', 'sliders', 'Customize this board', 'side-drawer-only') : ''}
     </ul>
     <p class="side-group" id="${groupId}">Functions</p>

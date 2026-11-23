@@ -3,8 +3,8 @@
 // is checked by the server on every call; this page keeps it in memory only, so a reload
 // asks for it again. Nothing here can show or reset the admin password.
 
-import { rpc } from './cloud.js?v=20261120-182315';
-import { esc } from './ui.js?v=20261120-182315';
+import { rpc } from './cloud.js?v=20261122-211924';
+import { esc } from './ui.js?v=20261122-211924';
 
 const ZONES = [
   ['America/New_York', 'Eastern'],
@@ -24,6 +24,7 @@ const word = (e) => WORDS[e?.code] ?? WORDS.offline;
 
 let root;
 let boards = [];
+let feedback = null; // the newest notes from every board; null when they can't be read
 
 // Held in this page's memory only: never in storage another page on this site could read. A reload asks again.
 let adminPass = '';
@@ -56,6 +57,33 @@ function signInMarkup(msg = '') {
 async function signIn(pass) {
   boards = await rpc('pilot_admin_list', { p_admin: pass });
   setPass(pass);
+  try {
+    const rows = await rpc('pilot_admin_feedback', { p_admin: pass, p_limit: 50 });
+    feedback = Array.isArray(rows) ? rows : null;
+  } catch {
+    feedback = null; // the list still works without it
+  }
+}
+
+/** "Numbers saved on 5 of the last 7 days · 38 numbers in November" (PILOT-SPEC.md Part 4). */
+function usageWords(b) {
+  if (b.days_saved_7 == null || !b.last_saved_at) return '';
+  const n = Number(b.numbers_this_month) || 0;
+  const m = /^(\d{4})-(\d{2})$/.exec(String(b.this_month ?? ''));
+  const month = m ? new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 1)).toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' }) : 'this month';
+  return `Numbers saved on ${Number(b.days_saved_7) || 0} of the last 7 days · ${n} ${n === 1 ? 'number' : 'numbers'} in ${month}`;
+}
+
+function feedbackMarkup() {
+  if (feedback === null) return '';
+  const rows = feedback.map((f) => `<li class="admin-row admin-fb" data-feedback-row>
+      <p class="admin-meta">${esc([f.board || 'A board', stampWords(f.at), f.who || 'Name not picked', f.page].filter(Boolean).join(' · '))}</p>
+      <p class="admin-fb-text">${esc(f.message)}</p>
+    </li>`).join('');
+  return `<section class="admin-client admin-feedback" aria-labelledby="admin-fb-title">
+      <h2 class="admin-client-name" id="admin-fb-title">Feedback</h2>
+      <div data-feedback-list>${rows ? `<ul class="admin-list">${rows}</ul>` : '<p class="admin-empty">No feedback yet.</p>'}</div>
+    </section>`;
 }
 
 /* ---------- The list and the forms ---------- */
@@ -65,6 +93,7 @@ function rowMarkup(b) {
       <div class="admin-row-main">
         <p class="admin-board-name">${esc(b.name)}${b.archived ? ' <span class="admin-archived">Archived</span>' : ''}</p>
         <p class="admin-meta">First day ${esc(dayWords(b.first_day))} · ${esc(ZONES.find(([z]) => z === b.time_zone)?.[1] ?? b.time_zone)} · ${b.last_saved_at ? `Last saved: ${esc(stampWords(b.last_saved_at))}` : 'No numbers saved yet'}</p>
+        ${usageWords(b) ? `<p class="admin-meta" data-usage>${esc(usageWords(b))}</p>` : ''}
       </div>
       <div class="admin-row-tools">
         <button class="btn btn--secondary" type="button" data-admin-copy>Copy link</button>
@@ -127,6 +156,7 @@ function render() {
       <button class="btn btn--quiet" type="button" data-admin-signout>Close the admin page</button>
     </header>
     <div data-list>${listMarkup()}</div>
+    ${feedbackMarkup()}
     ${addMarkup()}`;
 }
 
@@ -166,7 +196,7 @@ async function create(form) {
   const btn = form.querySelector('[data-admin-create]');
   btn.disabled = true;
   try {
-    const starter = await (await fetch(new URL('../data/starter-board.json?v=20261120-182315', import.meta.url))).json();
+    const starter = await (await fetch(new URL('../data/starter-board.json?v=20261122-211924', import.meta.url))).json();
     const setup = structuredClone(starter.setup);
     setup.plant = name;
     for (const list of Object.values(setup.kpis)) for (const k of list) k.startDate = first;

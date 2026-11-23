@@ -2,30 +2,32 @@
 // URL = ?date=YYYY-MM-DD (production day) + hash for the open view:
 //   (none) board · #safety detail · #enter[/fn] enter numbers · #meeting[/n] meeting
 
-import * as store from './store.js?v=20261120-182315';
-import * as cloud from './cloud.js?v=20261120-182315';
-import { getIdentity } from './identity.js?v=20261120-182315';
-import { initUnlock } from './unlock.js?v=20261120-182315';
-import { initHistory } from './history.js?v=20261120-182315';
-import { renderBoard, revealRow, setUndoable, getOffOnly, setOffOnly, shownFunctions, offOnlyLabel } from './board.js?v=20261120-182315';
-import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261120-182315';
-import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261120-182315';
-import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261120-182315';
-import { initToast, toast, dismissAll } from './toast.js?v=20261120-182315';
-import { formatDayMedium, formatMonthShort, formatMonthName, termName, useBoardToday } from './format.js?v=20261120-182315';
-import { monthKey, clampIso, addDays, isoTime, monthDate, shiftMonth } from './calendar.js?v=20261120-182315';
-import { renderHome, revealHomeRow, AREA_OPTIONS, fitSide } from './home.js?v=20261120-182315';
-import { renderNav, wireShell, setNavState, toggleMenu, showPopoverFrom, renderScope, PAGES, pageHref } from './shell.js?v=20261120-182315';
-import { initOrg, renderOrg, openPerson, closePerson, isPersonOpen, refreshPerson } from './org.js?v=20261120-182315';
-import { initWor, renderWor, openWorSheet, closeWorSheet, isWorSheetOpen, refreshWorSheet, worDay, attachMeetingSession, syncWorTab, sayWorNote, weekOfDay, worWeeks, weekNear } from './wor.js?v=20261120-182315';
-import { downloadCsv, printDay } from './export.js?v=20261120-182315';
-import { esc, statusMarkup } from './ui.js?v=20261120-182315';
-import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261120-182315';
-import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261120-182315';
-import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261120-182315';
-import { initActions, openActions, addAction, listActions, refreshActions } from './actions.js?v=20261120-182315';
-import { initRecorder, openMinutes } from './recorder.js?v=20261120-182315';
-import { initSetup, openSetup } from './setup.js?v=20261120-182315';
+import * as store from './store.js?v=20261122-211924';
+import * as cloud from './cloud.js?v=20261122-211924';
+import { getIdentity } from './identity.js?v=20261122-211924';
+import { initUnlock } from './unlock.js?v=20261122-211924';
+import { initHistory } from './history.js?v=20261122-211924';
+import { initFeedback } from './feedback.js?v=20261122-211924';
+import { renderSetupCheck } from './setupcheck.js?v=20261122-211924';
+import { renderBoard, revealRow, setUndoable, getOffOnly, setOffOnly, shownFunctions, offOnlyLabel } from './board.js?v=20261122-211924';
+import { initDetail, openDetail, closeDetail, isDetailOpen, refreshDetail } from './detail.js?v=20261122-211924';
+import { initEnter, openEnter, closeEnter, isEnterOpen, isDirty, showLeave } from './enter.js?v=20261122-211924';
+import { initMeeting, openMeeting, closeMeeting, isMeetingOpen, requestFullscreen, refreshMeeting, leaveFullscreen } from './meeting.js?v=20261122-211924';
+import { initToast, toast, dismissAll } from './toast.js?v=20261122-211924';
+import { formatDayMedium, formatMonthShort, formatMonthName, termName, useBoardToday } from './format.js?v=20261122-211924';
+import { monthKey, clampIso, addDays, isoTime, monthDate, shiftMonth } from './calendar.js?v=20261122-211924';
+import { renderHome, revealHomeRow, AREA_OPTIONS, fitSide } from './home.js?v=20261122-211924';
+import { renderNav, wireShell, setNavState, toggleMenu, showPopoverFrom, renderScope, PAGES, pageHref } from './shell.js?v=20261122-211924';
+import { initOrg, renderOrg, openPerson, closePerson, isPersonOpen, refreshPerson } from './org.js?v=20261122-211924';
+import { initWor, renderWor, openWorSheet, closeWorSheet, isWorSheetOpen, refreshWorSheet, worDay, attachMeetingSession, syncWorTab, sayWorNote, weekOfDay, worWeeks, weekNear } from './wor.js?v=20261122-211924';
+import { downloadCsv, printDay, boardCsv, saveCsv } from './export.js?v=20261122-211924';
+import { esc, statusMarkup } from './ui.js?v=20261122-211924';
+import { initCustomize, openCustomize, closeCustomize, isCustomizeOpen } from './customize.js?v=20261122-211924';
+import { startTour, endTour, isTourOpen, tourSeen, ARRIVAL_KEY } from './tour.js?v=20261122-211924';
+import { ON, OFF, NOT_ENTERED, NO_GOAL, NO_PRODUCTION, NOT_TRACKED } from './status.js?v=20261122-211924';
+import { initActions, openActions, addAction, listActions, refreshActions } from './actions.js?v=20261122-211924';
+import { initRecorder, openMinutes } from './recorder.js?v=20261122-211924';
+import { initSetup, openSetup } from './setup.js?v=20261122-211924';
 
 // We decide where the page scrolls after views close (the saved row).
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -384,6 +386,19 @@ document.fonts?.addEventListener?.('loadingdone', () => {
  * the header and the tab say "Daily Operating Review (DOR)", the sidebar says it short, "Daily review (DOR)".
  */
 const PAGE_NAME = { home: 'Home', dor: 'Daily Operating Review (DOR)', wor: 'Weekly Operating Review (WOR)', org: 'Organization' };
+// Short page names for feedback notes and error reports (PILOT-SPEC.md Part 4).
+const PAGE_SHORT = { home: 'Home', dor: 'Daily review', wor: 'Weekly review', org: 'Organization' };
+
+/** "Add days off" lands here (?view=org#days-off): the Days off box, then the hash goes. */
+function focusDaysOff() {
+  history.replaceState(history.state, '', `${location.pathname}${location.search}`);
+  requestAnimationFrame(() => {
+    const box = document.getElementById('org-daysOff-new');
+    if (!box) return;
+    box.scrollIntoView({ block: 'center' });
+    box.focus({ preventScroll: true });
+  });
+}
 const SKIP = { home: ['#home', 'Skip to Home'], dor: ['#board', 'Skip to the board'], wor: ['#wor', 'Skip to the weekly review'], org: ['#org', 'Skip to the organization'] };
 
 function renderView() {
@@ -401,6 +416,8 @@ function renderView() {
   else if (view === 'org') renderOrg(month, day);
   else renderWor(month, day);
   renderScope(month, day, { area, offOnly: getOffOnly() });
+  if (month.pilot) renderSetupCheck(month, day);
+  if (month.pilot && view === 'org' && location.hash === '#days-off') focusDaysOff();
   document.querySelectorAll('[data-off-only-menu]').forEach((b) => {
     b.setAttribute('aria-checked', String(getOffOnly()));
     b.textContent = offOnlyLabel(month, day);
@@ -1466,6 +1483,42 @@ function registerNear() {
 
 /* ---------- Start ---------- */
 
+/**
+ * "Download all numbers" (a pilot board, PILOT-SPEC.md Part 4): in the Menu after Save history,
+ * and in Home's Export menu after the day's CSV. One CSV of every number from the first day on.
+ */
+function initDownloadAll() {
+  const add = (menu, before, withIcon) => {
+    if (!menu || menu.querySelector('[data-download-all]')) return;
+    const btn = document.createElement('button');
+    btn.className = 'menu-item';
+    btn.type = 'button';
+    btn.setAttribute('role', 'menuitem');
+    btn.dataset.downloadAll = '';
+    const icon = withIcon ? menu.querySelector('[data-export="csv"] svg')?.cloneNode(true) : null;
+    if (icon) btn.append(icon);
+    btn.append(document.createTextNode('Download all numbers'));
+    if (before) before.before(btn);
+    else menu.append(btn);
+  };
+  const dorMenu = document.getElementById('dor-menu');
+  add(dorMenu, dorMenu?.querySelector('[data-customize]'), false);
+  const exportMenu = document.getElementById('export-menu');
+  add(exportMenu, exportMenu?.querySelector('[data-export="print"]'), true);
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-download-all]');
+    if (!btn) return;
+    e.preventDefault();
+    btn.closest('[popover]')?.hidePopover?.();
+    const today = store.boardToday();
+    const text = boardCsv(store.boardMonths(), { firstDay: store.boardFirstDay(), today, timeZone: cloud.boardMeta()?.timeZone });
+    const slug = String(month.plant ?? '').toLowerCase().replace(/\W+/g, '-').replace(/^-+|-+$/g, '') || 'board';
+    const name = `${slug}-all-numbers-${today}.csv`;
+    saveCsv(text, name);
+    toast(`Downloaded ${name}.`);
+  });
+}
+
 /** A pilot board's whole-page line: loading, or why it can't be shown (with Try again when it might work next time). */
 function pilotGate(text, { retry = false, link = null } = {}) {
   let gate = document.querySelector('[data-pilot-gate]');
@@ -1485,7 +1538,7 @@ function pilotGate(text, { retry = false, link = null } = {}) {
 async function init() {
   // The admin page: boards are made and managed here, before any month loads.
   if (new URLSearchParams(location.search).has('admin') && !cloud.BOARD && (cloud.COPY === 'app' || cloud.COPY === 'dev')) {
-    const { initAdmin } = await import('./admin.js?v=20261120-182315');
+    const { initAdmin } = await import('./admin.js?v=20261122-211924');
     initAdmin();
     return;
   }
@@ -1546,6 +1599,34 @@ async function init() {
         onStatus: () => renderScope(month, day, { area, offOnly: getOffOnly() }),
       });
       initHistory();
+      initDownloadAll();
+      initFeedback({ toast: (t) => toast(t), page: () => PAGE_SHORT[view] ?? 'Home' });
+      cloud.setPageLabel(() => `${PAGE_SHORT[view] ?? 'Home'}${location.hash ? ` ${location.hash}` : ''}`);
+      // Finish setting up: its buttons open Board setup on the box to fill in.
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-setup-check] button[data-check]');
+        if (!btn) return;
+        e.preventDefault();
+        openSetup({ focus: `${btn.dataset.check === 'owners' ? 'fn-owner' : 'fn-goal'}:${btn.dataset.checkFn}` });
+      });
+      // A newer build is out (PILOT-SPEC.md Part 4): reload once nothing is unsaved and nobody is in the
+      // middle of something; at most once for each build, so a slow cache can't make it loop.
+      let update = null;
+      const tryUpdate = () => {
+        if (!update || busy() || cloud.hasUnsaved()) return;
+        let done = null;
+        try { done = sessionStorage.getItem('demo.reloadedFor.v1'); } catch { return; }
+        if (done === update) return;
+        try {
+          sessionStorage.setItem('demo.reloadedFor.v1', update);
+          sessionStorage.setItem('demo.updated.v1', '1');
+        } catch { return; }
+        location.reload();
+      };
+      cloud.onUpdate((v) => { update = v; tryUpdate(); });
+      cloud.onStatus(() => requestAnimationFrame(tryUpdate));
+      document.addEventListener('close', () => requestAnimationFrame(tryUpdate), true);
+      document.addEventListener('focusout', () => requestAnimationFrame(tryUpdate));
       let gone = false;
       cloud.onProblem(({ code }) => {
         // Archived (or gone) while open: the board stops showing, as it would on a fresh open.
@@ -1753,6 +1834,12 @@ function watchMidnight(busy) {
 function autoTour() {
   const params = new URLSearchParams(location.search);
   const ask = params.get('tour');
+  // Reloaded for a newer build: say so once (PILOT-SPEC.md Part 4).
+  if (cloud.BOARD) {
+    let updated = null;
+    try { updated = sessionStorage.getItem('demo.updated.v1'); sessionStorage.removeItem('demo.updated.v1'); } catch { /* storage blocked */ }
+    if (updated) toast('The board was updated.');
+  }
   // Arrived from the other view's tour: one greeting, no second tour back to back.
   let arrived = null;
   try { arrived = sessionStorage.getItem(ARRIVAL_KEY); sessionStorage.removeItem(ARRIVAL_KEY); } catch { /* storage blocked */ }
